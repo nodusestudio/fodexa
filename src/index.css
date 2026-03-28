@@ -1,0 +1,133 @@
+﻿@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Reset básico */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #fff;
+  color: #111827;
+  overflow-x: hidden;
+}
+
+/* Mobile safe area */
+@supports (padding: max(0px)) {
+  body {
+    padding-left: max(0px, env(safe-area-inset-left));
+    padding-right: max(0px, env(safe-area-inset-right));
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
+
+/* Touch targets - min 44px */
+@layer components {
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+  
+  /* Utility for responsive grids */
+  .responsive-grid {
+    @apply grid gap-2 sm:gap-3 md:gap-4 lg:gap-6;
+  }
+  
+  /* Responsive padding utility */
+  .p-responsive {
+    @apply p-3 md:p-4 lg:p-6;
+  }
+  
+  .px-responsive {
+    @apply px-3 md:px-4 lg:px-6;
+  }
+  
+  .py-responsive {
+    @apply py-2 md:py-3 lg:py-4;
+  }
+  
+  /* Responsive text */
+  .text-responsive-sm {
+    @apply text-xs md:text-sm;
+  }
+  
+  .text-responsive-base {
+    @apply text-sm md:text-base;
+  }
+  
+  .text-responsive-lg {
+    @apply text-base md:text-lg;
+  }
+  
+  .text-responsive-xl {
+    @apply text-lg md:text-xl;
+  }
+  
+  /* Ensure inputs are readable on mobile */
+  input, textarea, select {
+    @apply text-base; /* Prevents zoom on iOS */
+  }
+  
+  /* Mobile-first button sizing */
+  .btn-responsive {
+    @apply px-2 md:px-4 py-1.5 md:py-2 text-xs md:text-sm;
+  }
+  
+  .btn-responsive-lg {
+    @apply px-3 md:px-6 py-2 md:py-3 text-sm md:text-base;
+  }
+}
+
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar-thumb {
+  background: #4b5563;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+/* Smooth scrolling for better UX */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Prevent text selection on long presses in mobile */
+button, .button {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+}
+
+/* Ensure form inputs zoom in */
+input, textarea, select {
+  font-size: 16px;
+}
