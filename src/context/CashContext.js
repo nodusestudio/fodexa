@@ -1,23 +1,76 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { collection, addDoc, updateDoc, deleteDoc, doc, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import { db } from '../config/firebase';
+import { useAuth } from './AuthContext';
 
 const CashContext = createContext();
 
 export const CashProvider = ({ children }) => {
+  const auth = useAuth();
+  const user = auth?.user;
   const [cashSession, setCashSession] = useState(null);
   const [expenses, setExpenses] = useState([]);
   const [cashMovements, setCashMovements] = useState([]);
-  const [sessionHistory, setSessionHistory] = useState(() => {
-    // Cargar historial de localStorage al inicializar
-    try {
-      const saved = localStorage.getItem('cashSessionHistory');
-      const parsed = saved ? JSON.parse(saved) : [];
-      console.log('📂 CashContext inicializado - Sesiones cargadas de localStorage:', parsed.length);
-      return parsed;
-    } catch (error) {
-      console.error('❌ Error al cargar historial de localStorage:', error);
-      return [];
+  const [sessionHistory, setSessionHistory] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // Sincronizar historial de sesiones desde Firestore
+  useEffect(() => {
+    if (!user) {
+      setSessionHistory([]);
+      setLoading(false);
+      return;
     }
-  });
+
+    setLoading(true);
+    const q = query(
+      collection(db, 'cashSessions'),
+      where('userId', '==', user.uid),
+      orderBy('closeDate', 'desc')
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const sessions = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        closeDate: doc.data().closeDate?.toDate ? doc.data().closeDate.toDate() : doc.data().closeDate,
+        openDate: doc.data().openDate?.toDate ? doc.data().openDate.toDate() : doc.data().openDate,
+      }));
+      setSessionHistory(sessions);
+      setLoading(false);
+    }, (error) => {
+      console.error('Error fetching cash sessions:', error);
+      setLoading(false);
+    });
+
+    return unsubscribe;
+  }, [user]);
+
+  // Sincronizar gastos desde Firestore
+  useEffect(() => {
+    if (!user) {
+      setExpenses([]);
+      return;
+    }
+
+    const q = query(
+      collection(db, 'expenses'),
+      where('userId', '==', user.uid)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const expensesData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        date: doc.data().date?.toDate ? doc.data().date.toDate() : doc.data().date,
+      }));
+      setExpenses(expensesData);
+    }, (error) => {
+      console.error('Error fetching expenses:', error);
+    });
+
+    return unsubscribe;
+  }, [user]);
 
   // Abrir caja
   const openCash = (initialAmount, notes) => {
@@ -31,119 +84,108 @@ export const CashProvider = ({ children }) => {
     };
     setCashSession(session);
     console.log('📂 Caja abierta - ID:', session.id, 'Monto inicial: $', session.initialAmount);
-    
-    // Registrar movimiento de apertura
     addMovement('opening', initialAmount, 'Apertura de caja');
-    
     return session;
   };
 
   // Cerrar caja
-  const closeCash = (finalCount, observations) => {
-    if (!cashSession) return null;
+  const closeCash = async (finalCount, observations) => {
+    if (!user || !cashSession) return null;
     
-    const expectedAmount = calculateExpectedAmount();
-    const difference = finalCount - expectedAmount;
-    
-    // Calcular ventas y egresos de esta sesión
-    const sessionMovements = cashMovements.filter(m => 
-      new Date(m.date) >= new Date(cashSession.openDate)
-    );
-    
-    const sales = sessionMovements
-      .filter(m => m.type === 'sale')
-      .reduce((sum, m) => sum + m.amount, 0);
-    
-    const expenses = sessionMovements
-      .filter(m => m.type === 'expense')
-      .reduce((sum, m) => sum + m.amount, 0);
+    try {
+      const expectedAmount = calculateExpectedAmount();
+      const difference = finalCount - expectedAmount;
+      
+      const sessionMovements = cashMovements.filter(m => 
+        new Date(m.date) >= new Date(cashSession.openDate)
+      );
+      
+      const sales = sessionMovements
+        .filter(m => m.type === 'sale')
+        .reduce((sum, m) => sum + m.amount, 0);
+      
+      const expensesAmount = sessionMovements
+        .filter(m => m.type === 'expense')
+        .reduce((sum, m) => sum + m.amount, 0);
 
-    // Desglose de pagos por tipo
-    const paymentBreakdown = {};
-    sessionMovements
-      .filter(m => m.type === 'sale')
-      .forEach(m => {
-        const paymentType = m.paymentType || 'otros';
-        if (!paymentBreakdown[paymentType]) {
-          paymentBreakdown[paymentType] = 0;
-        }
-        paymentBreakdown[paymentType] += m.amount;
-      });
+      const paymentBreakdown = {};
+      sessionMovements
+        .filter(m => m.type === 'sale')
+        .forEach(m => {
+          const paymentType = m.paymentType || 'otros';
+          if (!paymentBreakdown[paymentType]) {
+            paymentBreakdown[paymentType] = 0;
+          }
+          paymentBreakdown[paymentType] += m.amount;
+        });
 
-    // Total de egresos (en efectivo, se asume que todos los egresos salen de efectivo)
-    const expensesInCash = expenses;
-    
-    const closeDate = new Date();
-    const closedSession = {
-      ...cashSession,
-      closeDate: closeDate.toISOString(), // Guardar como ISO string para consistencia
-      closeDateLocal: closeDate.toLocaleString('es-CO'), // Para mostrar al usuario
-      closeUser: 'Cajero Demo',
-      finalCount: parseFloat(finalCount) || 0,
-      expectedAmount: expectedAmount,
-      difference: difference,
-      observations: observations || '',
-      status: 'closed',
-      sales: sales,
-      expenses: expenses,
-      expensesInCash: expensesInCash,
-      paymentBreakdown: paymentBreakdown,
-      saleCount: sessionMovements.filter(m => m.type === 'sale').length,
-      expenseCount: sessionMovements.filter(m => m.type === 'expense').length,
-    };
-    
-    // Agregar a historial ANTES de resetear la sesión
-    setSessionHistory(prev => {
-      const updated = [...prev, closedSession];
-      try {
-        localStorage.setItem('cashSessionHistory', JSON.stringify(updated));
-        console.log('💾 Sesión cerrada y guardada en localStorage');
-        console.log('   ID:', closedSession.id);
-        console.log('   Ventas: $', closedSession.sales);
-        console.log('   Egresos: $', closedSession.expenses);
-        console.log('   Desglose:', closedSession.paymentBreakdown);
-        console.log('   Total en historial:', updated.length, 'sesiones');
-      } catch (error) {
-        console.error('❌ Error guardando sesión en localStorage:', error);
-      }
-      return updated;
-    });
-    
-    setCashSession(null);
-    
-    // Registrar movimiento de cierre
-    addMovement('closing', finalCount, 'Cierre de caja');
-    
-    return closedSession;
+      const closeDate = new Date();
+      const closedSession = {
+        ...cashSession,
+        userId: user.uid,
+        closeDate: closeDate,
+        closeDateLocal: closeDate.toLocaleString('es-CO'),
+        closeUser: 'Cajero Demo',
+        finalCount: parseFloat(finalCount) || 0,
+        expectedAmount: expectedAmount,
+        difference: difference,
+        observations: observations || '',
+        status: 'closed',
+        sales: sales,
+        expenses: expensesAmount,
+        paymentBreakdown: paymentBreakdown,
+        saleCount: sessionMovements.filter(m => m.type === 'sale').length,
+        expenseCount: sessionMovements.filter(m => m.type === 'expense').length,
+      };
+      
+      // Guardar sesión cerrada en Firestore
+      const docRef = await addDoc(collection(db, 'cashSessions'), closedSession);
+      console.log('💾 Sesión cerrada y guardada en Firestore con ID:', docRef.id);
+      
+      setCashSession(null);
+      addMovement('closing', finalCount, 'Cierre de caja');
+      
+      return { id: docRef.id, ...closedSession };
+    } catch (error) {
+      console.error('Error closing cash session:', error);
+      throw error;
+    }
   };
 
-  // Registrar egreso
-  const addExpense = (data) => {
-    const expense = {
-      id: Date.now(),
-      amount: parseFloat(data.amount) || 0,
-      category: data.category || 'otros',
-      description: data.description || '',
-      date: new Date(),
-      user: 'Cajero Demo',
-    };
+  // Registrar egreso en Firestore
+  const addExpense = async (data) => {
+    if (!user) throw new Error('User not authenticated');
     
-    setExpenses(prev => [...prev, expense]);
-    addMovement('expense', expense.amount, `Egreso: ${expense.description}`);
-    
-    return expense;
+    try {
+      const expense = {
+        userId: user.uid,
+        amount: parseFloat(data.amount) || 0,
+        category: data.category || 'otros',
+        description: data.description || '',
+        date: new Date(),
+        user: 'Cajero Demo',
+      };
+      
+      const docRef = await addDoc(collection(db, 'expenses'), expense);
+      addMovement('expense', expense.amount, `Egreso: ${expense.description}`);
+      
+      return { id: docRef.id, ...expense };
+    } catch (error) {
+      console.error('Error adding expense:', error);
+      throw error;
+    }
   };
 
-  // Registrar movimiento
+  // Registrar movimiento (local, para sesión actual)
   const addMovement = (type, amount, description, metadata = {}) => {
     const movement = {
       id: Date.now(),
-      type, // 'opening', 'closing', 'sale', 'expense', 'refund'
+      type,
       amount: parseFloat(amount) || 0,
       description,
       date: new Date(),
       user: 'Cajero Demo',
-      ...metadata, // Incluir metadatos como paymentType, etc
+      ...metadata,
     };
     
     setCashMovements(prev => [...prev, movement]);
@@ -158,7 +200,7 @@ export const CashProvider = ({ children }) => {
       .filter(m => m.type === 'sale')
       .reduce((sum, m) => sum + m.amount, 0);
     
-    const expenses = cashMovements
+    const expensesAmount = cashMovements
       .filter(m => m.type === 'expense')
       .reduce((sum, m) => sum + m.amount, 0);
     
@@ -166,33 +208,32 @@ export const CashProvider = ({ children }) => {
       .filter(m => m.type === 'refund')
       .reduce((sum, m) => sum + m.amount, 0);
     
-    return cashSession.initialAmount + sales - expenses - refunds;
+    return cashSession.initialAmount + sales - expensesAmount - refunds;
   };
 
   // Obtener resumen de caja
   const getCashSummary = () => {
     if (!cashSession) return null;
     
-    // Filtrar movimientos después de la apertura de caja
     const sessionMovements = cashMovements.filter(m => 
-      m.id !== cashSession.id && // Excluir el movimiento de apertura del resumen
+      m.id !== cashSession.id &&
       new Date(m.date) >= new Date(cashSession.openDate) &&
-      m.type !== 'opening' // No contar la apertura en resumen
+      m.type !== 'opening'
     );
     
     const sales = sessionMovements
       .filter(m => m.type === 'sale')
       .reduce((sum, m) => sum + m.amount, 0);
     
-    const expenses = sessionMovements
+    const expensesAmount = sessionMovements
       .filter(m => m.type === 'expense')
       .reduce((sum, m) => sum + m.amount, 0);
     
     return {
       initialAmount: cashSession.initialAmount,
       sales,
-      expenses,
-      expected: cashSession.initialAmount + sales - expenses,
+      expenses: expensesAmount,
+      expected: cashSession.initialAmount + sales - expensesAmount,
       movementsCount: sessionMovements.length,
     };
   };
@@ -203,7 +244,7 @@ export const CashProvider = ({ children }) => {
     return expenses.filter(e => new Date(e.date).toDateString() === today);
   };
 
-  // Obtener todas las sesiones cerradas del historial
+  // Obtener todas las sesiones cerradas
   const getSessionHistory = () => {
     return sessionHistory;
   };
@@ -233,37 +274,12 @@ export const CashProvider = ({ children }) => {
     };
   };
 
-  // Obtener historial de sesiones
-  const addToHistory = (session) => {
-    setSessionHistory(prev => {
-      const updated = [...prev, session];
-      // Guardar en localStorage
-      try {
-        localStorage.setItem('cashSessionHistory', JSON.stringify(updated));
-        console.log('💾 Historial guardado en localStorage:', updated.length, 'sesiones');
-      } catch (error) {
-        console.error('Error guardando en localStorage:', error);
-      }
-      return updated;
-    });
-  };
-
-  // useEffect para guardar sessionHistory en localStorage cuando cambie
-  useEffect(() => {
-    if (sessionHistory.length > 0) {
-      try {
-        localStorage.setItem('cashSessionHistory', JSON.stringify(sessionHistory));
-      } catch (error) {
-        console.error('Error guardando en localStorage:', error);
-      }
-    }
-  }, [sessionHistory]);
-
   const value = {
     cashSession,
     expenses,
     cashMovements,
     sessionHistory,
+    loading,
     openCash,
     closeCash,
     addExpense,
@@ -275,7 +291,6 @@ export const CashProvider = ({ children }) => {
     getSessionById,
     getSessionsByDateRange,
     getPeriodSummary,
-    addToHistory,
     isCashOpen: !!cashSession,
   };
 

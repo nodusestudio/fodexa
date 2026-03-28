@@ -1,7 +1,9 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
+import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/layout/Layout';
+import Login from './pages/Login';
 import POS from './pages/POS';
 import Dashboard from './pages/Dashboard';
 import Reports from './pages/Reports';
@@ -14,6 +16,7 @@ import CashHistory from './pages/CashHistory';
 import ImportMenu from './pages/ImportMenu';
 import Settings from './pages/Settings';
 
+import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { OrderProvider } from './context/OrderContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -27,42 +30,58 @@ import PushMessage from './components/common/PushMessage';
 
 function App() {
   return (
-    <SettingsProvider>
-      <CashProvider>
-        <TicketProvider>
-          <ProductProvider>
-            <CartProvider>
-              <OrderProvider>
-                <ReportProvider>
-                  <CustomerProvider>
-                    <ThemeProvider>
-                      <Router>
-                        <PushMessage />
-                        <Routes>
-                          <Route path="/" element={<Layout />}>
-                            <Route index element={<POS />} />
-                            <Route path="dashboard" element={<Dashboard />} />
-                            <Route path="reports" element={<Reports />} />
-                            <Route path="customers" element={<Customers />} />
-                            <Route path="customers/reports" element={<CustomerReports />} />
-                            <Route path="articles/*" element={<Articles />} />
-                            <Route path="tickets" element={<Tickets />} />
-                            <Route path="cash" element={<Cash />} />
-                            <Route path="cash/history" element={<CashHistory />} />
-                            <Route path="import-menu" element={<ImportMenu />} />
-                            <Route path="settings" element={<Settings />} />
-                          </Route>
-                        </Routes>
-                      </Router>
-                    </ThemeProvider>
-                  </CustomerProvider>
-                </ReportProvider>
-              </OrderProvider>
-            </CartProvider>
-          </ProductProvider>
-        </TicketProvider>
-      </CashProvider>
-    </SettingsProvider>
+    <AuthProvider>
+      <SettingsProvider>
+        <CashProvider>
+          <TicketProvider>
+            <ProductProvider>
+              <CartProvider>
+                <OrderProvider>
+                  <ReportProvider>
+                    <CustomerProvider>
+                      <ThemeProvider>
+                        <Router>
+                          <PushMessage />
+                          <Routes>
+                            {/* Login Route */}
+                            <Route path="/login" element={<Login />} />
+
+                            {/* Protected Routes */}
+                            <Route
+                              path="/"
+                              element={
+                                <ProtectedRoute>
+                                  <Layout />
+                                </ProtectedRoute>
+                              }
+                            >
+                              <Route index element={<POS />} />
+                              <Route path="dashboard" element={<Dashboard />} />
+                              <Route path="reports" element={<Reports />} />
+                              <Route path="customers" element={<Customers />} />
+                              <Route path="customers/reports" element={<CustomerReports />} />
+                              <Route path="articles/*" element={<Articles />} />
+                              <Route path="tickets" element={<Tickets />} />
+                              <Route path="cash" element={<Cash />} />
+                              <Route path="cash/history" element={<CashHistory />} />
+                              <Route path="import-menu" element={<ImportMenu />} />
+                              <Route path="settings" element={<Settings />} />
+                            </Route>
+
+                            {/* Fallback */}
+                            <Route path="*" element={<Navigate to="/" replace />} />
+                          </Routes>
+                        </Router>
+                      </ThemeProvider>
+                    </CustomerProvider>
+                  </ReportProvider>
+                </OrderProvider>
+              </CartProvider>
+            </ProductProvider>
+          </TicketProvider>
+        </CashProvider>
+      </SettingsProvider>
+    </AuthProvider>
   );
 }
 

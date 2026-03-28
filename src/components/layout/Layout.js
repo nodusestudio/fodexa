@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import DataSeeder from '../common/DataSeeder';
 
 function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -44,6 +45,9 @@ function Layout() {
           <Outlet />
         </main>
       </div>
+
+      {/* Data Seeder para cargar datos de prueba */}
+      <DataSeeder />
     </div>
   );
 }
