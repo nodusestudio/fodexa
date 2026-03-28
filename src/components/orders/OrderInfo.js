@@ -24,25 +24,25 @@ const OrderInfo = ({ orderType, tableNumber, deliveryData, onClear }) => {
   };
 
   return (
-      <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-3 md:p-4 mb-3 md:mb-4 border border-gray-200 dark:border-gray-700">
-        <div className="flex justify-between items-start mb-3">
-          <div className="flex items-center gap-2">
+      <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-2.5 sm:p-3.5 md:p-4 lg:p-5 mb-2.5 sm:mb-3.5 md:mb-4 lg:mb-5 border border-gray-200 dark:border-gray-700 transition-all hover:shadow-md">
+        <div className="flex justify-between items-start mb-2.5 sm:mb-3 md:mb-4">
+          <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 flex-1 min-w-0">
             {orderType === 'table' && (
               <>
-                <span className="text-xl md:text-2xl">ðŸª‘</span>
-                <div>
-                  <h3 className="font-bold text-gray-800 dark:text-white">Mesa {tableNumber}</h3>
+                <span className="text-lg sm:text-xl md:text-2xl lg:text-3xl flex-shrink-0">🪑</span>
+                <div className="min-w-0">
+                  <h3 className="font-bold text-xs sm:text-sm md:text-base lg:text-lg text-gray-800 dark:text-white">Mesa {tableNumber}</h3>
                 </div>
               </>
             )}
           
             {orderType === 'delivery' && (
               <>
-                <Bike size={20} className="text-orange-600 dark:text-orange-400" />
-                <div>
-                  <h3 className="font-bold text-gray-800 dark:text-white">Domicilio</h3>
+                <Bike size={18} className="text-orange-600 dark:text-orange-400 flex-shrink-0 sm:w-6 sm:h-6 md:w-7 md:h-7" />
+                <div className="min-w-0">
+                  <h3 className="font-bold text-xs sm:text-sm md:text-base lg:text-lg text-gray-800 dark:text-white">Domicilio</h3>
                   {deliveryData?.name && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{deliveryData.name}</p>
+                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">{deliveryData.name}</p>
                   )}
                 </div>
               </>
@@ -50,38 +50,41 @@ const OrderInfo = ({ orderType, tableNumber, deliveryData, onClear }) => {
           
             {orderType === 'takeout' && (
               <>
-                <span className="text-xl md:text-2xl">ðŸ›ï¸</span>
-                <div>
-                  <h3 className="font-bold text-gray-800 dark:text-white">Para Llevar</h3>
+                <span className="text-lg sm:text-xl md:text-2xl lg:text-3xl flex-shrink-0">🛒</span>
+                <div className="min-w-0">
+                  <h3 className="font-bold text-xs sm:text-sm md:text-base lg:text-lg text-gray-800 dark:text-white">Para Llevar</h3>
                 </div>
               </>
             )}
           </div>
         
-          <button onClick={onClear} className="text-gray-400 hover:text-red-500">
-            <X size={20} />
+          <button 
+            onClick={onClear} 
+            className="text-gray-400 hover:text-red-500 transition-colors flex-shrink-0 p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+          >
+            <X size={18} />
           </button>
         </div>
 
         {/* Info cliente domicilio */}
         {orderType === 'delivery' && deliveryData && (
-          <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1 mb-3">
+          <div className="text-xs sm:text-sm md:text-base text-gray-600 dark:text-gray-400 space-y-1 sm:space-y-1.5 mb-2.5 sm:mb-3 md:mb-4">
             <div className="flex items-center gap-2">
-              <Phone size={14} />
-              {deliveryData.phone}
+              <Phone size={14} className="flex-shrink-0 sm:w-4 sm:h-4 md:w-5 md:h-5" />
+              <span className="truncate">{deliveryData.phone}</span>
             </div>
             <div className="flex items-center gap-2">
-              <MapPin size={14} />
-              {deliveryData.address}
+              <MapPin size={14} className="flex-shrink-0 sm:w-4 sm:h-4 md:w-5 md:h-5" />
+              <span className="truncate">{deliveryData.address}</span>
             </div>
           </div>
         )}
 
         {/* Costo domicilio - FUNCIONAL */}
         {orderType === 'delivery' && (
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 pt-3 border-t border-gray-300 dark:border-gray-600">
-            <span className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
-              Costo envÃ­o:
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-2.5 md:gap-3 pt-2.5 sm:pt-3 md:pt-4 border-t border-gray-300 dark:border-gray-600">
+            <span className="text-xs sm:text-sm md:text-base font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+              Costo envio:
             </span>
             <input
               type="number"
@@ -96,23 +99,23 @@ const OrderInfo = ({ orderType, tableNumber, deliveryData, onClear }) => {
                 const value = parseFloat(e.target.value) || 0;
                 updateDeliveryCost(value);
               }}
-              className="w-24 sm:w-32 px-2 sm:px-3 py-1 sm:py-2 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-white text-xs sm:text-sm focus:ring-2 focus:ring-orange-500"
+              className="w-20 sm:w-24 md:w-28 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white text-xs sm:text-sm md:text-base focus:ring-2 focus:ring-orange-500 transition-all"
               placeholder="0.00"
             />
-            {/* Botones dinámicos */}
-            <div className="flex flex-wrap gap-1 sm:gap-2">
+            {/* Botones dinamicos */}
+            <div className="flex flex-wrap gap-1 sm:gap-1.5 md:gap-2">
               {deliveryPresets.map((preset, idx) => (
                 <button
                   key={idx}
                   onClick={() => updateDeliveryCost(preset)}
-                  className="px-2 sm:px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded text-xs font-semibold transition-colors"
+                  className="px-2 sm:px-3 md:px-4 py-1 sm:py-1.5 md:py-2 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white rounded-lg text-xs sm:text-sm md:text-base font-semibold transition-colors hover:shadow-md active:scale-95"
                 >
                   ${preset}
                 </button>
               ))}
             </div>
             {localCost > 0 && (
-              <span className="text-xs sm:text-sm text-orange-600 dark:text-orange-400 font-semibold ml-auto">
+              <span className="text-xs sm:text-sm md:text-base text-orange-600 dark:text-orange-400 font-semibold sm:ml-auto">
                 ${Number(localCost).toFixed(2)}
               </span>
             )}
