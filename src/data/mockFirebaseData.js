@@ -16,9 +16,12 @@ export const mockCategories = [
 
 export const mockProducts = [
   // Burger Premium
-  { name: 'Cordillera', category: 'Burger Premium', price: 34000, cost: 13600, description: 'Carne jugosa, queso fundido, maduritos fritos, pepinillos dulces, lechuga fresca', stock: 100, status: 'active', image: null },
-  { name: 'Ranchera', category: 'Burger Premium', price: 30000, cost: 12000, description: 'Carne jugosa, salchicha dorada, queso fundido, coronada con maíz dulce', stock: 100, status: 'active', image: null },
-  { name: 'Plus', category: 'Burger Premium', price: 30000, cost: 12000, description: 'Carne jugosa, queso, topping de chorizo artesanal, ripio de papa', stock: 100, status: 'active', image: null },
+  { name: 'Cordillera', category: 'Burger Premium', price: 34000, cost: 13600, description: 'Carne jugosa, queso fundido, maduritos fritos, pepinillos dulces, lechuga fresca, exquisito topping de chuleta ahumada y salsas artesanales', stock: 100, status: 'active', image: null },
+  { name: 'Ranchera ⭐', category: 'Burger Premium', price: 30000, cost: 12000, description: 'Carne jugosa, salchicha dorada, queso fundido, coronada con maíz dulce, plátano maduro, ripio de papa, vegetales y salsas de la casa (La más pedida)', stock: 100, status: 'active', image: null },
+  { name: 'Plus', category: 'Burger Premium', price: 30000, cost: 12000, description: 'Carne jugosa, queso, topping de chorizo artesanal, ripio de papa, plátano maduro, huevos de codorniz, vegetales y salsas de la casa', stock: 100, status: 'active', image: null },
+  { name: 'Triplete', category: 'Burger Premium', price: 29000, cost: 11600, description: 'La combinación perfecta de carne, pollo y chorizo bien dorados, con queso fundido, tocineta crocante, ripio crujiente, vegetales frescos y salsas irresistibles', stock: 100, status: 'active', image: null },
+  { name: 'Caracas', category: 'Burger Premium', price: 26000, cost: 10400, description: 'Carne artesanal, chorizo jugoso y queso fundido, acompañados de tocineta crocante, huevo a la plancha, aguacate, vegetales y salsas tradicionales', stock: 100, status: 'active', image: null },
+  { name: 'Papuda', category: 'Burger Premium', price: 20000, cost: 8000, description: 'Carne jugosa con queso fundido y tocineta crocante, cargada de papas a la francesa, plátano maduro dorado, con vegetales frescos y salsas de la casa', stock: 100, status: 'active', image: null },
   
   // Burger Clásicas
   { name: 'Clásica Normal Pequeña (1 Carne)', category: 'Burger Clásicas', price: 14000, cost: 5600, description: 'Incluye carne de res, queso, tocineta, ripio, vegetales y salsas', stock: 100, status: 'active', image: null },
