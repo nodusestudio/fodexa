@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { ShoppingCart, LayoutDashboard, FileText, Settings, DollarSign, Users, X } from 'lucide-react';
+import { ShoppingCart, LayoutDashboard, FileText, Settings, DollarSign, Users, X, ChevronDown } from 'lucide-react';
 
 const navItems = [
   { to: '/', icon: ShoppingCart, label: 'Punto de Venta' },
@@ -10,13 +10,17 @@ const navItems = [
 ];
 
 function Sidebar({ onClose }) {
+  const [openSubmenus, setOpenSubmenus] = useState({});
+
   const handleNavClick = () => {
     onClose();
   };
 
   const toggleSubmenu = (id) => {
-    const submenu = document.getElementById(id);
-    submenu.classList.toggle('hidden');
+    setOpenSubmenus(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
   };
 
   return (
@@ -58,38 +62,40 @@ function Sidebar({ onClose }) {
               <DollarSign className="w-5 h-5" />
               <span className="font-medium">Caja</span>
             </div>
-            <svg className="w-4 h-4 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
+            <ChevronDown 
+              className={`w-4 h-4 transform transition-transform ${openSubmenus['cash-submenu'] ? 'rotate-180' : ''}`}
+            />
           </button>
-          <div id="cash-submenu" className="hidden mt-1 ml-4 space-y-1">
-            <NavLink
-              to="/cash"
-              onClick={handleNavClick}
-              className={({ isActive }) =>
-                `block px-3 py-2 text-sm rounded-lg transition-colors ${
-                  isActive
-                    ? 'bg-primary-600 text-white font-semibold'
-                    : 'text-gray-400 hover:text-white hover:bg-gray-700 dark:hover:bg-gray-700'
-                }`
-              }
-            >
-              📊 Caja Actual
-            </NavLink>
-            <NavLink
-              to="/cash/history"
-              onClick={handleNavClick}
-              className={({ isActive }) =>
-                `block px-3 py-2 text-sm rounded-lg transition-colors ${
-                  isActive
-                    ? 'bg-primary-600 text-white font-semibold'
-                    : 'text-gray-400 hover:text-white hover:bg-gray-700 dark:hover:bg-gray-700'
-                }`
-              }
-            >
-              📋 Historial
-            </NavLink>
-          </div>
+          {openSubmenus['cash-submenu'] && (
+            <div className="mt-1 ml-4 space-y-1">
+              <NavLink
+                to="/cash"
+                onClick={handleNavClick}
+                className={({ isActive }) =>
+                  `block px-3 py-2 text-sm rounded-lg transition-colors ${
+                    isActive
+                      ? 'bg-primary-600 text-white font-semibold'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-700 dark:hover:bg-gray-700'
+                  }`
+                }
+              >
+                📊 Caja Actual
+              </NavLink>
+              <NavLink
+                to="/cash/history"
+                onClick={handleNavClick}
+                className={({ isActive }) =>
+                  `block px-3 py-2 text-sm rounded-lg transition-colors ${
+                    isActive
+                      ? 'bg-primary-600 text-white font-semibold'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-700 dark:hover:bg-gray-700'
+                  }`
+                }
+              >
+                📋 Historial
+              </NavLink>
+            </div>
+          )}
         </div>
 
         {/* Clientes - Con Submenú */}
@@ -102,38 +108,40 @@ function Sidebar({ onClose }) {
               <Users className="w-5 h-5" />
               <span className="font-medium">Clientes</span>
             </div>
-            <svg className="w-4 h-4 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
+            <ChevronDown 
+              className={`w-4 h-4 transform transition-transform ${openSubmenus['customers-submenu'] ? 'rotate-180' : ''}`}
+            />
           </button>
-          <div id="customers-submenu" className="hidden mt-1 ml-4 space-y-1">
-            <NavLink
-              to="/customers"
-              onClick={handleNavClick}
-              className={({ isActive }) =>
-                `block px-3 py-2 text-sm rounded-lg transition-colors ${
-                  isActive
-                    ? 'bg-primary-600 text-white font-semibold'
-                    : 'text-gray-400 hover:text-white hover:bg-gray-700 dark:hover:bg-gray-700'
-                }`
-              }
-            >
-              👥 Listado de Clientes
-            </NavLink>
-            <NavLink
-              to="/customers/reports"
-              onClick={handleNavClick}
-              className={({ isActive }) =>
-                `block px-3 py-2 text-sm rounded-lg transition-colors ${
-                  isActive
-                    ? 'bg-primary-600 text-white font-semibold'
-                    : 'text-gray-400 hover:text-white hover:bg-gray-700 dark:hover:bg-gray-700'
-                }`
-              }
-            >
-              📊 Reportes de Clientes
-            </NavLink>
-          </div>
+          {openSubmenus['customers-submenu'] && (
+            <div className="mt-1 ml-4 space-y-1">
+              <NavLink
+                to="/customers"
+                onClick={handleNavClick}
+                className={({ isActive }) =>
+                  `block px-3 py-2 text-sm rounded-lg transition-colors ${
+                    isActive
+                      ? 'bg-primary-600 text-white font-semibold'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-700 dark:hover:bg-gray-700'
+                  }`
+                }
+              >
+                👥 Listado de Clientes
+              </NavLink>
+              <NavLink
+                to="/customers/reports"
+                onClick={handleNavClick}
+                className={({ isActive }) =>
+                  `block px-3 py-2 text-sm rounded-lg transition-colors ${
+                    isActive
+                      ? 'bg-primary-600 text-white font-semibold'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-700 dark:hover:bg-gray-700'
+                  }`
+                }
+              >
+                📊 Reportes de Clientes
+              </NavLink>
+            </div>
+          )}
         </div>
 
         {/* Artículos - Con Submenú */}
@@ -148,51 +156,53 @@ function Sidebar({ onClose }) {
               </svg>
               <span className="font-medium">Artículos</span>
             </div>
-            <svg className="w-4 h-4 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
+            <ChevronDown 
+              className={`w-4 h-4 transform transition-transform ${openSubmenus['articles-submenu'] ? 'rotate-180' : ''}`}
+            />
           </button>
-          <div id="articles-submenu" className="hidden mt-1 ml-4 space-y-1">
-            <NavLink
-              to="/articles/products"
-              onClick={handleNavClick}
-              className={({ isActive }) =>
-                `block px-3 py-2 text-sm rounded-lg transition-colors ${
-                  isActive
-                    ? 'bg-primary-600 text-white font-semibold'
-                    : 'text-gray-400 hover:text-white hover:bg-gray-700 dark:hover:bg-gray-700'
-                }`
-              }
-            >
-              📦 Productos
-            </NavLink>
-            <NavLink
-              to="/articles/categories"
-              onClick={handleNavClick}
-              className={({ isActive }) =>
-                `block px-3 py-2 text-sm rounded-lg transition-colors ${
-                  isActive
-                    ? 'bg-primary-600 text-white font-semibold'
-                    : 'text-gray-400 hover:text-white hover:bg-gray-700 dark:hover:bg-gray-700'
-                }`
-              }
-            >
-              📂 Categorías
-            </NavLink>
-            <NavLink
-              to="/articles/addons"
-              onClick={handleNavClick}
-              className={({ isActive }) =>
-                `block px-3 py-2 text-sm rounded-lg transition-colors ${
-                  isActive
-                    ? 'bg-primary-600 text-white font-semibold'
-                    : 'text-gray-400 hover:text-white hover:bg-gray-700 dark:hover:bg-gray-700'
-                }`
-              }
-            >
-              🎁 Adicionales
-            </NavLink>
-          </div>
+          {openSubmenus['articles-submenu'] && (
+            <div className="mt-1 ml-4 space-y-1">
+              <NavLink
+                to="/articles/products"
+                onClick={handleNavClick}
+                className={({ isActive }) =>
+                  `block px-3 py-2 text-sm rounded-lg transition-colors ${
+                    isActive
+                      ? 'bg-primary-600 text-white font-semibold'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-700 dark:hover:bg-gray-700'
+                  }`
+                }
+              >
+                📦 Productos
+              </NavLink>
+              <NavLink
+                to="/articles/categories"
+                onClick={handleNavClick}
+                className={({ isActive }) =>
+                  `block px-3 py-2 text-sm rounded-lg transition-colors ${
+                    isActive
+                      ? 'bg-primary-600 text-white font-semibold'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-700 dark:hover:bg-gray-700'
+                  }`
+                }
+              >
+                📂 Categorías
+              </NavLink>
+              <NavLink
+                to="/articles/addons"
+                onClick={handleNavClick}
+                className={({ isActive }) =>
+                  `block px-3 py-2 text-sm rounded-lg transition-colors ${
+                    isActive
+                      ? 'bg-primary-600 text-white font-semibold'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-700 dark:hover:bg-gray-700'
+                  }`
+                }
+              >
+                🎁 Adicionales
+              </NavLink>
+            </div>
+          )}
         </div>
       </nav>
       <div className="p-4 border-t border-gray-800 dark:border-gray-900">
