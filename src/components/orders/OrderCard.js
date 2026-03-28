@@ -29,15 +29,15 @@ const OrderCard = ({ order, onEdit, onPay, onDelete }) => {
           <h4 className="font-bold text-gray-800 dark:text-white text-lg">{getName()}</h4>
           <div className="flex items-center gap-2 mt-1">
             <span className="text-xs px-2 py-1 rounded bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
-              {order.type === 'table' ? ' Mesa' : order.type === 'delivery' ? '🚴 Domicilio' : '🛍️ Llevar'}
+              {order.type === 'table' ? '🎯 Mesa' : order.type === 'delivery' ? '🚴 Domicilio' : '🛍️ Llevar'}
             </span>
             <span className="text-xs px-2 py-1 rounded bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200">
-              {order.status === 'pending' ? 'Pendiente' : order.status === 'preparing' ? 'Preparando' : order.status === 'ready' ? 'Listo' : 'Completado'}
+              {order.status === 'pending' ? '⏳ Pendiente' : order.status === 'preparing' ? '👨‍🍳 Preparando' : order.status === 'ready' ? '✅ Listo' : '💰 Completado'}
             </span>
           </div>
         </div>
         <div className="text-right">
-            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{formatCurrency(order.total || 0)}</p>
+          <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{formatCurrency(order.total || 0)}</p>
           <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400 text-sm">
             <Clock size={14} />
             {getTimeElapsed(order.timestamp)}
@@ -45,14 +45,39 @@ const OrderCard = ({ order, onEdit, onPay, onDelete }) => {
         </div>
       </div>
 
+      {/* Items List */}
+      <div className="mb-3 p-2 bg-gray-50 dark:bg-gray-700 rounded">
+        <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">📦 Productos ({(order.items?.length || 0)}):</p>
+        <div className="space-y-1 max-h-[150px] overflow-y-auto">
+          {order.items && order.items.length > 0 ? (
+            order.items.map((item, i) => (
+              <div key={i} className="text-xs text-gray-600 dark:text-gray-400 pl-2 border-l-2 border-blue-300">
+                <div className="flex justify-between">
+                  <span>• {item.quantity}x {item.name}</span>
+                  <span className="font-semibold">{formatCurrency(item.price * item.quantity)}</span>
+                </div>
+                {item.addons && item.addons.length > 0 && (
+                  <div className="pl-2 text-xs text-gray-500">
+                    {item.addons.map((addon, j) => (
+                      <div key={j}>+ {addon.name}</div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))
+          ) : (
+            <p className="text-xs text-gray-500">Sin items</p>
+          )}
+        </div>
+      </div>
+
       {/* Info */}
       <div className="mb-3 text-sm text-gray-600 dark:text-gray-300">
-        <p>📦 {(order.items?.length || 0)} items</p>
         {order.type === 'delivery' && order.deliveryData && (
           <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
             <div className="flex items-center gap-1 text-xs">
               <User size={12} />
-              {order.deliveryData.name}
+              <span className="font-semibold">{order.deliveryData.name}</span>
             </div>
             <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
               <MapPin size={12} />

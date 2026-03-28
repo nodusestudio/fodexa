@@ -6,12 +6,18 @@ import KitchenTicketModal from './KitchenTicketModal';
 
 const OrderBoard = ({ onNewOrder, onEditOrder, onPayOrder, onDeleteOrder }) => {
   const { orders = [] } = useOrder();
-  console.log(' Pedidos recibidos en OrderBoard:', orders);
+  console.log('🎯 OrderBoard - Órdenes del contexto:', orders);
 
   // Solo mostrar pedidos que no han sido cobrados (status !== 'completed')
-  const tableOrders = (orders || []).filter(o => o.type === 'table' && o.status !== 'completed');
+  const tableOrders = (orders || []).filter(o => {
+    const matches = o.type === 'table' && o.status !== 'completed';
+    console.log(`📊 Evaluando orden ${o.id}:`, { type: o.type, status: o.status, matches });
+    return matches;
+  });
   const takeoutOrders = (orders || []).filter(o => o.type === 'takeout' && o.status !== 'completed');
   const deliveryOrders = (orders || []).filter(o => o.type === 'delivery' && o.status !== 'completed');
+
+  console.log('📌 Órdenes filtradas - Mesa:', tableOrders, 'Para Llevar:', takeoutOrders, 'Domicilio:', deliveryOrders);
 
   const [showKitchenTicket, setShowKitchenTicket] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -21,14 +27,16 @@ const OrderBoard = ({ onNewOrder, onEditOrder, onPayOrder, onDeleteOrder }) => {
     setShowKitchenTicket(true);
   };
 
-  const Column = ({ title, Icon, orders, type, color }) => (
+  const Column = ({ title, Icon, orders, type, color }) => {
+    console.log(`🔶 Column ${title} - Órdenes recibidas:`, orders);
+    return (
     <div className="bg-gray-100 dark:bg-gray-900 rounded-lg sm:rounded-xl p-3 sm:p-4 min-h-[300px] sm:min-h-[400px] transition-colors">
       <div className={color + " text-white dark:text-white rounded-lg p-3 sm:p-4 mb-3 sm:mb-4 flex justify-between items-center gap-2 shadow-md transition-colors"}>
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <Icon size={20} className="sm:w-6 sm:h-6 flex-shrink-0" />
           <div className="min-w-0">
             <h3 className="font-bold text-base sm:text-lg truncate">{title}</h3>
-            <span className="text-xs sm:text-sm">{orders.length} pedidos</span>
+            <span className="text-xs sm:text-sm">{(orders || []).length} pedidos</span>
           </div>
         </div>
         <button 
@@ -40,11 +48,13 @@ const OrderBoard = ({ onNewOrder, onEditOrder, onPayOrder, onDeleteOrder }) => {
         </button>
       </div>
       <div className="space-y-2 sm:space-y-3 max-h-[400px] sm:max-h-[600px] overflow-y-auto pb-2">
-        {orders.length === 0 ? (
+        {!orders || orders.length === 0 ? (
           <p className="text-center text-gray-500 dark:text-gray-400 py-12">Sin pedidos</p>
         ) : (
-          orders.map(order => (
-            <div key={order.id}>
+          orders.map((order, idx) => {
+            console.log(`📌 Renderizando orden ${idx}:`, order);
+            return (
+            <div key={order.id || idx}>
               <OrderCard 
                 order={order} 
                 onEdit={onEditOrder} 
@@ -59,11 +69,13 @@ const OrderBoard = ({ onNewOrder, onEditOrder, onPayOrder, onDeleteOrder }) => {
                 🍳 Imprimir para Cocina
               </button>
             </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>
-  );
+    );
+  };
 
   return (
     <>

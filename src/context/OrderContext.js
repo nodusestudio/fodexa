@@ -3,6 +3,7 @@ import { collection, addDoc, updateDoc, deleteDoc, doc, query, where, onSnapshot
 import { db } from '../config/firebase';
 import { useAuth } from './AuthContext';
 import tables from '../data/tables';
+import { mockOrders } from '../data/mockFirebaseData';
 
 const OrderContext = createContext();
 
@@ -22,35 +23,28 @@ export const OrderProvider = ({ children }) => {
   const [tablesData, setTablesData] = useState(tables);
   const [loading, setLoading] = useState(false);
 
-  // Sincronizar órdenes desde Firestore
+  // Cargar órdenes de prueba cuando hay usuario
   useEffect(() => {
     if (!user) {
+      console.log('❌ Sin usuario, limpiando órdenes');
       setOrders([]);
       setLoading(false);
       return;
     }
 
-    setLoading(true);
-    const q = query(
-      collection(db, 'orders'),
-      where('userId', '==', user.uid),
-      orderBy('timestamp', 'desc')
-    );
-    
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const ordersData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        timestamp: doc.data().timestamp?.toDate ? doc.data().timestamp.toDate() : doc.data().timestamp,
-      }));
-      setOrders(ordersData);
-      setLoading(false);
-    }, (error) => {
-      console.error('Error fetching orders:', error);
-      setLoading(false);
-    });
+    console.log('👤 Usuario detectado:', user.uid);
+    console.log('📋 mockOrders original:', mockOrders);
 
-    return unsubscribe;
+    // Agregar userId a los mockOrders (IDs ya existen)
+    const ordersWithUserId = mockOrders.map(order => ({
+      ...order,
+      userId: user.uid,
+      timestamp: order.timestamp || new Date(),
+    }));
+
+    console.log('✅ Órdenes con userId:', ordersWithUserId);
+    setOrders(ordersWithUserId);
+    setLoading(false);
   }, [user]);
 
   // Función para establecer tipo de orden
@@ -71,13 +65,15 @@ export const OrderProvider = ({ children }) => {
   // Filtra pedidos por tipo
   const getOrdersByType = (type) => orders.filter(order => order.type === type);
 
-  // Crea un nuevo pedido en Firestore
+  // Crea un nuevo pedido en Firestore y actualiza estado local
   const createOrder = async (data) => {
-    if (!user) throw new Error('User not authenticated');
+    if (!user) {
+      console.warn('⚠️ Sin usuario autenticado - usando dados locales');
+    }
     try {
       console.log('📝 createOrder llamado con:', data);
       
-      // Recalcular totales
+      // 1️⃣ Recalcular totales primero
       const itemsWithAddons = data.items.map(item => {
         const addonsTotal = item.addons?.reduce((sum, a) => sum + (parseFloat(a.price) || 0), 0) || 0;
         return {
@@ -87,13 +83,16 @@ export const OrderProvider = ({ children }) => {
       });
       
       const subtotal = itemsWithAddons.reduce((sum, item) => sum + item.itemTotal, 0);
-      const iva = subtotal * 0.16;
+      const iva = data.taxesConfig?.enabled ? subtotal * (parseFloat(data.taxesConfig?.value || 0) / 100) : (subtotal * 0.16);
       const deliveryCost = data.type === 'delivery' ? (parseFloat(data.deliveryData?.cost) || 0) : 0;
       const total = subtotal + iva + deliveryCost;
       
+      // 2️⃣ Crear objeto con todas las propiedades calculadas
+      const orderId = `local_${Date.now()}`;
       const orderData = {
+        id: orderId,
         ...data,
-        userId: user.uid,
+        userId: user?.uid || 'anonymous',
         orderNumber: `ORD-${Date.now().toString().slice(-6)}`,
         timestamp: new Date(),
         items: itemsWithAddons,
@@ -103,16 +102,36 @@ export const OrderProvider = ({ children }) => {
         total,
       };
       
-      const docRef = await addDoc(collection(db, 'orders'), orderData);
-      console.log('📦 Orden creada con ID:', docRef.id);
-      return { id: docRef.id, ...orderData };
+      console.log('💾 Guardando orden localmente:', orderData);
+      
+      // 3️⃣ ✅ Guardar en estado local
+      setOrders(prev => {
+        const updated = [...prev, orderData];
+        console.log('✅ Orden agregada al estado. Total:', updated.length);
+        return updated;
+      });
+      
+      // 4️⃣ Intentar guardar en Firestore en background (sin bloquear)
+      if (user?.uid) {
+        (async () => {
+          try {
+            console.log('🔥 Intentando guardar en Firestore...');
+            await addDoc(collection(db, 'orders'), orderData);
+            console.log('📦 Orden también guardada en Firestore');
+          } catch (firestoreError) {
+            console.warn('⚠️ Firestore falló pero orden guardada localmente:', firestoreError.message);
+          }
+        })();
+      }
+      
+      return orderData;
     } catch (error) {
-      console.error('Error creating order:', error);
+      console.error('❌ Error creando orden:', error);
       throw error;
     }
   };
 
-  // Actualiza un pedido existente
+  // Actualiza un pedido existente y actualiza estado local
   const updateOrder = async (id, data) => {
     if (!user) throw new Error('User not authenticated');
     try {
@@ -122,17 +141,27 @@ export const OrderProvider = ({ children }) => {
         ...data,
         updatedAt: new Date(),
       });
+      
+      // ✅ Actualizar en estado local también
+      setOrders(prev => prev.map(order => 
+        order.id === id ? { ...order, ...data, updatedAt: new Date() } : order
+      ));
+      console.log('✅ Pedido actualizado en estado local');
     } catch (error) {
       console.error('Error updating order:', error);
       throw error;
     }
   };
 
-  // Elimina un pedido
+  // Elimina un pedido y lo remueve del estado local
   const deleteOrder = async (id) => {
     if (!user) throw new Error('User not authenticated');
     try {
       await deleteDoc(doc(db, 'orders', id));
+      
+      // ✅ Remover del estado local también
+      setOrders(prev => prev.filter(order => order.id !== id));
+      console.log('✅ Pedido eliminado del estado local');
     } catch (error) {
       console.error('Error deleting order:', error);
       throw error;

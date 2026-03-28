@@ -42,6 +42,7 @@ export const mockAddons = [
 
 export const mockOrders = [
   {
+    id: 'order_0',
     type: 'table',
     tableNumber: 5,
     items: [
@@ -50,8 +51,11 @@ export const mockOrders = [
     ],
     status: 'pending',
     notes: 'Sin picante',
+    timestamp: new Date(),
+    total: 45000,
   },
   {
+    id: 'order_1',
     type: 'delivery',
     deliveryData: { name: 'Juan Pérez', phone: '300 123 4567', address: 'Calle 123 #45', cost: 5000 },
     items: [
@@ -60,8 +64,11 @@ export const mockOrders = [
     ],
     status: 'preparing',
     notes: 'Entregar después de las 7pm',
+    timestamp: new Date(),
+    total: 75000,
   },
   {
+    id: 'order_2',
     type: 'takeout',
     items: [
       { id: 3, name: 'Combo 1 Burger Clásica Normal', price: 21000, quantity: 1, addons: [] },
@@ -69,6 +76,8 @@ export const mockOrders = [
     ],
     status: 'ready',
     notes: 'Para llevar',
+    timestamp: new Date(),
+    total: 47000,
   },
 ];
 

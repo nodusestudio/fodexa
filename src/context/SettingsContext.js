@@ -17,8 +17,9 @@ const defaultSettings = {
   },
   currency: {
     symbol: '$',
-    code: 'MXN',
-    format: '1,234.56'
+    code: 'COP',
+    decimals: false,
+    format: '#,##0'
   },
   language: 'es',
   appearance: {
@@ -40,7 +41,17 @@ const SettingsContext = createContext();
 export const SettingsProvider = ({ children }) => {
   const [settings, setSettings] = useState(() => {
     const saved = localStorage.getItem('settings');
-    return saved ? JSON.parse(saved) : defaultSettings;
+    const loaded = saved ? JSON.parse(saved) : defaultSettings;
+    // ✅ Siempre asegurar que COP sea la moneda predeterminada
+    return {
+      ...loaded,
+      currency: {
+        ...loaded.currency,
+        code: 'COP',
+        symbol: '$',
+        decimals: false
+      }
+    };
   });
 
   useEffect(() => {

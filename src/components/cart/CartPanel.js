@@ -1,5 +1,4 @@
-﻿
-// CartPanel.js - Optimized for mobile-first design
+﻿// CartPanel.js - Optimized for mobile-first design
 import React, { useState } from 'react';
 import { useOrder } from '../../context/OrderContext';
 import { useCart } from '../../context/CartContext';
@@ -38,7 +37,7 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp })
 
 		// Use settings for tax calculation
 		const iva = taxEnabled ? subtotal * (taxValue / 100) : 0;
-		// Si el tipo es delivery y estÃ¡ habilitado, usar el costo de delivery del pedido, o el base de settings
+		// If delivery type and enabled, use delivery cost from data or base amount
 		let deliveryCost = 0;
 		if (orderType === 'delivery' && deliveryEnabled) {
 			if (deliveryData && deliveryData.cost !== undefined && deliveryData.cost !== null && deliveryData.cost !== '') {
@@ -54,59 +53,50 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp })
 
 	const { subtotal, iva, deliveryCost, total } = calculateTotals();
 
-	const handleSaveOrder = () => {
+	const handleSaveOrder = async () => {
 		if (!items || items.length === 0) {
-			alert('âš ï¸ Agrega productos al carrito');
+			alert('⚠️ Agregue productos al carrito');
 			return;
 		}
-    
+
 		const orderData = {
 			type: orderType,
 			tableNumber: orderType === 'table' ? selectedTable : null,
 			deliveryData: orderType === 'delivery' ? deliveryData : null,
 			items: items,
 			subtotal: subtotal,
+			iva: iva,
 			total: total,
 			deliveryCost: deliveryCost,
 			status: 'pending',
+			taxesConfig: { enabled: taxEnabled, value: taxValue },
+			currencyCode: currencyCode,
+			timestamp: new Date(),
 		};
-    
-		createOrder(orderData);
-		clearCart();
-		clearCurrentOrder();
-			const handleSaveOrder = () => {
-				if (!items || items.length === 0) {
-					alert('âš ï¸ Agrega productos al carrito');
-					return;
-				}
-	
-				const orderData = {
-					type: orderType,
-					tableNumber: orderType === 'table' ? selectedTable : null,
-					deliveryData: orderType === 'delivery' ? deliveryData : null,
-					items: items,
-					subtotal: subtotal,
-					total: total,
-					deliveryCost: deliveryCost,
-					status: 'pending',
-					// Pasar explÃ­citamente los datos de cliente/domicilio
-					customer: orderType === 'delivery' ? deliveryData : null,
-					delivery: orderType === 'delivery' ? deliveryData : null,
-				};
-	
-				createOrder(orderData);
-				clearCart();
-				clearCurrentOrder();
-				window.dispatchEvent(new CustomEvent('orderSaved'));
-				alert('âœ… Â¡Pedido guardado exitosamente!');
-			};
-		window.dispatchEvent(new CustomEvent('orderSaved'));
-		alert('âœ… Â¡Pedido guardado exitosamente!');
+
+		try {
+			console.log('📝 Creando orden:', orderData);
+			const savedOrder = await createOrder(orderData);
+			console.log('✅ Orden guardada:', savedOrder);
+			clearCart();
+			clearCurrentOrder();
+			
+			// ✅ Disparar evento para guardar ORDEN (sin imprimir ticket)
+			window.dispatchEvent(new CustomEvent('orderSaved', { detail: { ...savedOrder, status: 'pending' } }));
+			
+			// Mostrar confirmación después
+			setTimeout(() => {
+				alert('✅ ¡Orden guardada exitosamente!');
+			}, 300);
+		} catch (error) {
+			console.error('❌ Error guardando orden:', error);
+			alert('❌ Error: No se pudo guardar la orden');
+		}
 	};
 
 	const handleProcessPayment = () => {
 		if (!items || items.length === 0) {
-			alert('âš ï¸ Agrega productos al carrito');
+			alert('⚠️ Agregue productos al carrito');
 			return;
 		}
 		setShowPaymentModal(true);
@@ -122,7 +112,7 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp })
 						<button 
 							onClick={clearCart}
 							className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-							title="Limpiar carrito"
+							title="Clear cart"
 						>
 							<Trash2 size={18} />
 						</button>
@@ -134,7 +124,7 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp })
 					{!items || items.length === 0 ? (
 						<div className="text-center py-8">
 							<ShoppingBag className="text-gray-300 dark:text-gray-600 mx-auto mb-2" size={32} />
-							<p className="text-gray-500 dark:text-gray-400 text-sm">Sin productos</p>
+						<p className="text-gray-500 dark:text-gray-400 text-sm">Sin productos</p>
 						</div>
 					) : (
 						<div>
@@ -146,7 +136,7 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp })
 											<p className="text-sm text-blue-600 dark:text-blue-400">
 												${parseFloat(item.price).toLocaleString('es-CO')} c/u
 											</p>
-                      
+
 											{item.addons && item.addons.length > 0 && (
 												<div className="mt-2 space-y-1">
 													{item.addons.map((addon, idx) => (
@@ -156,10 +146,10 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp })
 													))}
 												</div>
 											)}
-                      
+
 											{item.notes && (
 												<div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 rounded text-xs text-blue-800 dark:text-blue-300">
-													ðŸ“ {item.notes}
+													Note: {item.notes}
 												</div>
 											)}
 										</div>
@@ -167,7 +157,7 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp })
 											${(parseFloat(item.price) * parseInt(item.quantity) + (item.addons?.reduce((sum, a) => sum + parseFloat(a.price), 0) || 0)).toLocaleString('es-CO')}
 										</p>
 									</div>
-                  
+
 									<div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
 										<div className="flex items-center gap-2">
 											<button
@@ -209,7 +199,7 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp })
 					)}
 				</div>
 
-				{/* Footer - Totales y Botones */}
+				{/* Footer - Totals and Buttons */}
 				{items && items.length > 0 && (
 					<div className="border-t border-gray-200 dark:border-gray-700 p-3 sm:p-6 space-y-4 bg-gray-50 dark:bg-gray-900">
 						<div className="space-y-2">
@@ -225,7 +215,7 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp })
 							)}
 							{orderType === 'delivery' && deliveryCost > 0 && (
 								<div className="flex justify-between text-orange-600 dark:text-orange-400 font-medium">
-									<span>ðŸš´ Costo domicilio</span>
+									<span>Costo de Domicilio</span>
 									<span>{formatCurrency(deliveryCost, currencyCode, useDecimals)}</span>
 								</div>
 							)}
@@ -240,15 +230,15 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp })
 								onClick={handleSaveOrder}
 								className="w-full bg-gray-700 dark:bg-gray-600 hover:bg-gray-800 dark:hover:bg-gray-500 text-white py-2 md:py-3 rounded-lg font-semibold text-sm md:text-base transition-colors shadow-lg"
 							>
-								ðŸ’¾ Guardar Pedido
+								💾 Guardar Orden
 							</button>
-              
+
 							<button
 								onClick={handleProcessPayment}
 								className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white py-2 md:py-3 rounded-lg font-semibold text-sm md:text-base transition-all shadow-lg flex items-center justify-center gap-2"
 							>
 								<CreditCard size={20} />
-								Procesar Pago
+								💳 Procesar Pago
 							</button>
 						</div>
 					</div>

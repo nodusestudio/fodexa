@@ -49,9 +49,14 @@ export default function Login() {
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl max-w-md w-full p-8">
         {/* Logo/Title */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            🍔 FODEXA
-          </h1>
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              🍔 FODEXA
+            </h1>
+            <span className="px-2 py-1 bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 text-xs rounded-full font-medium">
+              Demo
+            </span>
+          </div>
           <p className="text-gray-600 dark:text-gray-400">
             Sistema POS - Punto de Venta
           </p>

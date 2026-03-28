@@ -45,9 +45,10 @@ const POS = () => {
 
   useEffect(() => {
     const handleOrderSaved = (e) => {
-      const ticket = e.detail;
-      if (ticket) {
-        setTicketToPrint(ticket);
+      // Solo mostrar ticket si es un PAGO (status: completed)
+      const order = e.detail;
+      if (order && order.status === 'completed') {
+        setTicketToPrint(order);
         setShowPrintModal(true);
       }
       setView('board');
@@ -62,7 +63,7 @@ const POS = () => {
     return () => {
       window.removeEventListener('orderSaved', handleOrderSaved);
     };
-  }, []);
+  }, [clearCurrentOrder]);
 
   const { deleteOrder, updateOrder } = useOrder();
 

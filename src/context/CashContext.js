@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import { collection, addDoc, updateDoc, deleteDoc, doc, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useAuth } from './AuthContext';
+import { mockExpenses } from '../data/mockFirebaseData';
 
 const CashContext = createContext();
 
@@ -14,62 +15,24 @@ export const CashProvider = ({ children }) => {
   const [sessionHistory, setSessionHistory] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Sincronizar historial de sesiones desde Firestore
-  useEffect(() => {
-    if (!user) {
-      setSessionHistory([]);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    const q = query(
-      collection(db, 'cashSessions'),
-      where('userId', '==', user.uid),
-      orderBy('closeDate', 'desc')
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const sessions = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        closeDate: doc.data().closeDate?.toDate ? doc.data().closeDate.toDate() : doc.data().closeDate,
-        openDate: doc.data().openDate?.toDate ? doc.data().openDate.toDate() : doc.data().openDate,
-      }));
-      setSessionHistory(sessions);
-      setLoading(false);
-    }, (error) => {
-      console.error('Error fetching cash sessions:', error);
-      setLoading(false);
-    });
-
-    return unsubscribe;
-  }, [user]);
-
-  // Sincronizar gastos desde Firestore
+  // Cargar gastos de prueba cuando hay usuario
   useEffect(() => {
     if (!user) {
       setExpenses([]);
+      setLoading(false);
       return;
     }
 
-    const q = query(
-      collection(db, 'expenses'),
-      where('userId', '==', user.uid)
-    );
+    // Agregar userId e id a los mockExpenses
+    const expensesWithId = mockExpenses.map((expense, i) => ({
+      id: `expense_${i}`,
+      userId: user.uid,
+      timestamp: new Date(),
+      ...expense
+    }));
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const expensesData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        date: doc.data().date?.toDate ? doc.data().date.toDate() : doc.data().date,
-      }));
-      setExpenses(expensesData);
-    }, (error) => {
-      console.error('Error fetching expenses:', error);
-    });
-
-    return unsubscribe;
+    setExpenses(expensesWithId);
+    setLoading(false);
   }, [user]);
 
   // Abrir caja

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { useSeedData } from '../hooks/useSeedData';
+import { useAuth } from '../../context/AuthContext';
+import { useSeedData } from '../../hooks/useSeedData';
 import { AlertCircle, CheckCircle, Loader } from 'lucide-react';
 
 export const DataSeeder = () => {
-  const { user } = useAuth();
+  const auth = useAuth();
+  const user = auth?.user;
   const { loading, error, success, loadMockData, clearData } = useSeedData();
   const [showModal, setShowModal] = useState(false);
 

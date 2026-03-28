@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import { collection, addDoc, updateDoc, deleteDoc, doc, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useAuth } from './AuthContext';
+import { mockCategories, mockProducts, mockAddons } from '../data/mockFirebaseData';
 
 const ProductContext = createContext();
 
@@ -12,72 +13,48 @@ export const ProductProvider = ({ children }) => {
   const [categories, setCategories] = useState([]);
   const [addons, setAddons] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [dataloaded, setDataLoaded] = useState(false);
 
-  // Sincronizar productos desde Firestore
+  // Cargar datos de prueba cuando hay usuario
   useEffect(() => {
     if (!user) {
       setProducts([]);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    const q = query(collection(db, 'products'), where('userId', '==', user.uid));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const productsData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setProducts(productsData);
-      setLoading(false);
-    }, (error) => {
-      console.error('Error fetching products:', error);
-      setLoading(false);
-    });
-
-    return unsubscribe;
-  }, [user]);
-
-  // Sincronizar categorías desde Firestore
-  useEffect(() => {
-    if (!user) {
       setCategories([]);
-      return;
-    }
-
-    const q = query(collection(db, 'categories'), where('userId', '==', user.uid));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const categoriesData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setCategories(categoriesData);
-    }, (error) => {
-      console.error('Error fetching categories:', error);
-    });
-
-    return unsubscribe;
-  }, [user]);
-
-  // Sincronizar adicionales desde Firestore
-  useEffect(() => {
-    if (!user) {
       setAddons([]);
+      setDataLoaded(false);
       return;
     }
 
-    const q = query(collection(db, 'addons'), where('userId', '==', user.uid));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const addonsData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setAddons(addonsData);
-    }, (error) => {
-      console.error('Error fetching addons:', error);
-    });
+    // Agregar userId y IDs a los datos mock
+    const productsWithId = mockProducts.map((p, i) => ({
+      id: `prod_${i}`,
+      userId: user.uid,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      ...p
+    }));
 
-    return unsubscribe;
+    const categoriesWithId = mockCategories.map((c, i) => ({
+      id: `cat_${i}`,
+      userId: user.uid,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      ...c
+    }));
+
+    const addonsWithId = mockAddons.map((a, i) => ({
+      id: `addon_${i}`,
+      userId: user.uid,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      ...a
+    }));
+
+    setProducts(productsWithId);
+    setCategories(categoriesWithId);
+    setAddons(addonsWithId);
+    setDataLoaded(true);
+    setLoading(false);
   }, [user]);
 
   // Funciones CRUD Productos
