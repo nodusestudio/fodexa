@@ -24,43 +24,59 @@ export const mockProducts = [
   { name: 'Papuda', category: 'Burger Premium', price: 20000, cost: 8000, description: 'Carne jugosa con queso fundido y tocineta crocante, cargada de papas a la francesa, plátano maduro dorado, con vegetales frescos y salsas de la casa', stock: 100, status: 'active', image: null },
   
   // Burger Clásicas
-  { name: 'Clásica Normal Pequeña (1 Carne)', category: 'Burger Clásicas', price: 14000, cost: 5600, description: 'Incluye carne de res, queso, tocineta, ripio, vegetales y salsas', stock: 100, status: 'active', image: null },
-  { name: 'Clásica Normal Mediana (1 Carne)', category: 'Burger Clásicas', price: 17000, cost: 6800, description: 'Incluye carne de res, queso, tocineta, ripio, vegetales y salsas', stock: 100, status: 'active', image: null },
-  { name: 'Clásica Normal Grande (2 Carnes)', category: 'Burger Clásicas', price: 30000, cost: 12000, description: 'Incluye carne de res, queso, tocineta, ripio, vegetales y salsas', stock: 100, status: 'active', image: null },
+  { name: 'Clásica Normal Pequeña (1 Carne)', category: 'Burger Clásicas', price: 14000, cost: 5600, description: 'Hamburguesa jugosa con queso, tocineta, ripio, lechuga, tomate y salsas', stock: 100, status: 'active', image: null },
+  { name: 'Clásica Normal Mediana (1 Carne)', category: 'Burger Clásicas', price: 17000, cost: 6800, description: 'Hamburguesa de tamaño medio con queso fundido, tocineta, ripio de papa, vegetales frescos y salsas de la casa', stock: 100, status: 'active', image: null },
+  { name: 'Clásica Normal Grande (2 Carnes)', category: 'Burger Clásicas', price: 24000, cost: 9600, description: 'Hamburguesa grande con doble carne, queso fundido, tocineta crocante, ripio, vegetales frescos y salsas', stock: 100, status: 'active', image: null },
   
   // Pepitos Venezolanos
-  { name: 'Pepito de Carne', category: 'Pepitos Venezolanos', price: 18000, cost: 7200, description: 'Pan blanco relleno de carne tierna, queso y vegetales', stock: 100, status: 'active', image: null },
-  { name: 'Pepito Mixto', category: 'Pepitos Venezolanos', price: 20000, cost: 8000, description: 'Pan blanco con carne y salchicha, queso fundido y salsas', stock: 100, status: 'active', image: null },
+  { name: 'Pepito de Carne Premium', category: 'Pepitos Venezolanos', price: 18000, cost: 7200, description: 'Pan blanco tostado relleno de carne tierna, queso fundido, tocineta, vegetales frescos y salsas artesanales', stock: 100, status: 'active', image: null },
+  { name: 'Pepito Mixto', category: 'Pepitos Venezolanos', price: 20000, cost: 8000, description: 'Pan blanco con carne y salchicha jugosa, queso fundido, tocineta, vegetales y salsas deliciosas', stock: 100, status: 'active', image: null },
   
   // Perros Calientes
-  { name: 'Perro Clásico', category: 'Perros Calientes', price: 12000, cost: 4800, description: 'Salchicha premium en pan tostado con salsas y vegetales', stock: 100, status: 'active', image: null },
-  { name: 'Perro Especial', category: 'Perros Calientes', price: 15000, cost: 6000, description: 'Salchicha premium con queso, tocineta y papas crujientes', stock: 100, status: 'active', image: null },
+  { name: 'Perro Clásico Simple', category: 'Perros Calientes', price: 12000, cost: 4800, description: 'Salchicha premium en pan tostado con salsas caseras, mostaza y vegetales', stock: 100, status: 'active', image: null },
+  { name: 'Perro Especial', category: 'Perros Calientes', price: 15000, cost: 6000, description: 'Salchicha premium con queso fundido, tocineta crocante, papas fritas y salsas de la casa', stock: 100, status: 'active', image: null },
+  { name: 'Perro Argentino', category: 'Perros Calientes', price: 16000, cost: 6400, description: 'Salchicha premium con chimichurri casero, queso fundido, vegetales y salsas premium', stock: 100, status: 'active', image: null },
   
   // Salchicpapas
-  { name: 'Salchicpapas Individual', category: 'Salchicpapas', price: 13500, cost: 5400, description: 'Salchichas con papas fritas y salsas variadas', stock: 100, status: 'active', image: null },
-  { name: 'Salchicpapas Doble', category: 'Salchicpapas', price: 21000, cost: 8400, description: 'Doble porción de salchichas con papas y queso fundido', stock: 100, status: 'active', image: null },
+  { name: 'Salchicpapas Individual', category: 'Salchicpapas', price: 13500, cost: 5400, description: 'Salchichas con papas fritas crujientes y salsas variadas', stock: 100, status: 'active', image: null },
+  { name: 'Salchicpapas Doble', category: 'Salchicpapas', price: 21000, cost: 8400, description: 'Doble porción de salchichas con papas fritas y queso fundido derretido', stock: 100, status: 'active', image: null },
+  { name: 'Salchicpapas Especial', category: 'Salchicpapas', price: 25000, cost: 10000, description: 'Salchichas premium con papas fritas, queso fundido, tocineta y salsas caseras', stock: 100, status: 'active', image: null },
   
   // Entradas
-  { name: 'Papas Fritas Premium', category: 'Entradas', price: 8000, cost: 3200, description: 'Papas fritas crujientes con sal marina', stock: 100, status: 'active', image: null },
-  { name: 'Aros de Cebolla', category: 'Entradas', price: 9000, cost: 3600, description: 'Aros de cebolla dorados y crujientes', stock: 100, status: 'active', image: null },
+  { name: 'Papas Fritas Premium', category: 'Entradas', price: 8000, cost: 3200, description: 'Papas fritas crujientes con sal marina y especias', stock: 100, status: 'active', image: null },
+  { name: 'Aros de Cebolla Dorados', category: 'Entradas', price: 9000, cost: 3600, description: 'Aros de cebolla dorados y crujientes con salsa de ajo', stock: 100, status: 'active', image: null },
+  { name: 'Tabla de Queso y Embutidos', category: 'Entradas', price: 28000, cost: 11200, description: 'Tabla variada con queso fundido, jamón, salchicha y panes tostados', stock: 100, status: 'active', image: null },
   
   // Combos Express
-  { name: 'Combo Express Simple', category: 'Combos Express', price: 19000, cost: 7600, description: 'Hamburguesa + papas + bebida', stock: 100, status: 'active', image: null },
-  { name: 'Combo Express Doble', category: 'Combos Express', price: 35000, cost: 14000, description: 'Doble hamburguesa + papas grandes + bebida grande', stock: 100, status: 'active', image: null },
+  { name: 'Combo Burger Simple', category: 'Combos Express', price: 19000, cost: 7600, description: 'Hamburguesa clásica + papas medianas + bebida 400ml', stock: 100, status: 'active', image: null },
+  { name: 'Combo Burger Doble', category: 'Combos Express', price: 35000, cost: 14000, description: '2 hamburguesas clásicas + papas grandes + bebida 600ml', stock: 100, status: 'active', image: null },
+  { name: 'Combo Premium Express', category: 'Combos Express', price: 42000, cost: 16800, description: 'Hamburguesa premium + papas grandes + bebida + postre', stock: 100, status: 'active', image: null },
   
   // Combos de Perros
-  { name: 'Combo 1 Perro', category: 'Combos de Perros', price: 17000, cost: 6800, description: 'Perro caliente + papas + bebida', stock: 100, status: 'active', image: null },
-  { name: 'Combo 2 Perros', category: 'Combos de Perros', price: 25000, cost: 10000, description: '2 perros calientes + papas + bebida', stock: 100, status: 'active', image: null },
+  { name: 'Combo 1 Perro', category: 'Combos de Perros', price: 17000, cost: 6800, description: 'Perro caliente + papas medianas + bebida 400ml', stock: 100, status: 'active', image: null },
+  { name: 'Combo 2 Perros', category: 'Combos de Perros', price: 25000, cost: 10000, description: '2 perros calientes + papas grandes + bebida 600ml', stock: 100, status: 'active', image: null },
+  { name: 'Combo 3 Perros', category: 'Combos de Perros', price: 38000, cost: 15200, description: '3 perros calientes especiales + papas grandes + bebida grande + salsa extra', stock: 100, status: 'active', image: null },
   
   // Combos de Burger
-  { name: 'Combo 1 Burger Clásica Normal', category: 'Combos de Burger', price: 21000, cost: 8400, description: 'Hamburguesa clásica + papas + bebida', stock: 100, status: 'active', image: null },
-  { name: 'Combo 2 Burger Clásica Normal', category: 'Combos de Burger', price: 38000, cost: 15200, description: '2 hamburguesas clásicas + papas + bebida', stock: 100, status: 'active', image: null },
-  { name: 'Combo Burger Premium', category: 'Combos de Burger', price: 42000, cost: 16800, description: 'Burger premium + papas grandes + bebida', stock: 100, status: 'active', image: null },
+  { name: 'Combo 1 Burger Clásica', category: 'Combos de Burger', price: 21000, cost: 8400, description: '1 Hamburguesa clásica + papas + bebida', stock: 100, status: 'active', image: null },
+  { name: 'Combo 2 Burger Clásica', category: 'Combos de Burger', price: 38000, cost: 15200, description: '2 Hamburguesas clásicas + papas grandes + bebida grande', stock: 100, status: 'active', image: null },
+  { name: 'Combo Burger Premium', category: 'Combos de Burger', price: 48000, cost: 19200, description: 'Hamburguesa Premium Ranchera + papas premium + bebida grande + postre', stock: 100, status: 'active', image: null },
   
   // Bebidas
-  { name: 'Coca Cola 400ml', category: 'Bebidas', price: 5500, cost: 2200, description: 'Bebida gaseosa Coca Cola 400ml', stock: 100, status: 'active', image: null },
-  { name: 'Agua 600ml', category: 'Bebidas', price: 3500, cost: 1400, description: 'Agua embotellada 600ml', stock: 100, status: 'active', image: null },
-  { name: 'Jugo Natural 400ml', category: 'Bebidas', price: 6000, cost: 2400, description: 'Jugo natural 400ml', stock: 100, status: 'active', image: null },
+  { name: 'Coca Cola 400ml', category: 'Bebidas', price: 5500, cost: 2200, description: 'Refresco gaseoso Coca Cola 400ml helado', stock: 100, status: 'active', image: null },
+  { name: 'Coca Cola 600ml', category: 'Bebidas', price: 7000, cost: 2800, description: 'Refresco gaseoso Coca Cola 600ml helado', stock: 100, status: 'active', image: null },
+  { name: 'Agua Embotellada 600ml', category: 'Bebidas', price: 3500, cost: 1400, description: 'Agua embotellada purificada 600ml fría', stock: 100, status: 'active', image: null },
+  { name: 'Jugo Natural Mango 400ml', category: 'Bebidas', price: 6000, cost: 2400, description: 'Jugo natural de mango fresco 400ml', stock: 100, status: 'active', image: null },
+  { name: 'Jugo Natural Fresa 400ml', category: 'Bebidas', price: 6000, cost: 2400, description: 'Jugo natural de fresa fresca 400ml', stock: 100, status: 'active', image: null },
+  { name: 'Cerveza Artesanal 355ml', category: 'Bebidas', price: 8000, cost: 3200, description: 'Cerveza artesanal 355ml fría', stock: 100, status: 'active', image: null },
+  
+  // Adicionales
+  { name: 'Queso Extra Fundido', category: 'Adicionales', price: 2500, cost: 1000, description: 'Queso fundido adicional de alta calidad', stock: 100, status: 'active', image: null },
+  { name: 'Tocineta Crocante Extra', category: 'Adicionales', price: 3000, cost: 1200, description: 'Porción extra de tocineta crocante', stock: 100, status: 'active', image: null },
+  { name: 'Huevo a la Plancha', category: 'Adicionales', price: 2000, cost: 800, description: 'Huevo a la plancha bien hecho', stock: 100, status: 'active', image: null },
+  { name: 'Salsa Extra Casera', category: 'Adicionales', price: 1000, cost: 400, description: 'Porción extra de salsa artesanal de la casa', stock: 100, status: 'active', image: null },
+  { name: 'Aguacate Fresco', category: 'Adicionales', price: 4000, cost: 1600, description: 'Aguacate fresco y maduro', stock: 100, status: 'active', image: null },
+  { name: 'Chorizo Extra', category: 'Adicionales', price: 3500, cost: 1400, description: 'Porción extra de chorizo artesanal', stock: 100, status: 'active', image: null },
 ];
 
 export const mockAddons = [
