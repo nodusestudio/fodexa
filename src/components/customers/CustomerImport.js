@@ -105,6 +105,20 @@ const CustomerImport = ({ onImportResult }) => {
         });
       });
       
+      // Usar writeBatch para importar de forma eficiente (sin congelar la app)
+      await importCustomersBatch(customers, (progress) => {
+        setProgress(progress.percent);
+        setStatusMessage(`Importado ${progress.count}/${progress.total} clientes...`);
+        onImportResult && onImportResult({ 
+          type: 'progress', 
+          message: `Importando... ${progress.count}/${progress.total}` 
+        });
+      });
+      
+      // Esperar a que Firestore listener notifique los cambios (adicional 3 segundos)
+      setStatusMessage('Sincronizando datos...');
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
       setStatusMessage('✅ ¡Importación completada!');
       setProgress(100);
       
