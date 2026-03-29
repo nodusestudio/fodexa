@@ -12,6 +12,10 @@ const ProductCard = ({ product, onAddToCart }) => {
     'Perros Calientes',
   ];
 
+  // DEBUG: Log product structure
+  console.log('ProductCard DEBUG - Product:', product);
+  console.log('ProductCard DEBUG - product.category:', product.category);
+
   const shouldShowComboSelector = COMBO_CATEGORIES.includes(product.category);
 
   const handleAdd = () => {
