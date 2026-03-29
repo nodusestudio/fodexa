@@ -1,9 +1,23 @@
-﻿import React from 'react';
+﻿import React, { useState } from 'react';
 import { formatCurrency } from '../../utils/formatters';
+import ComboSelector from './ComboSelector';
 
 const ProductCard = ({ product, onAddToCart }) => {
+  const [showComboSelector, setShowComboSelector] = useState(false);
+
+  const COMBO_CATEGORIES = [
+    'Burger Clásicas',
+    'Burger Premium',
+    'Pepitos Venezolanos',
+    'Perros Calientes',
+  ];
+
+  const shouldShowComboSelector = COMBO_CATEGORIES.includes(product.category);
+
   const handleAdd = () => {
-    if (onAddToCart) {
+    if (shouldShowComboSelector) {
+      setShowComboSelector(true);
+    } else if (onAddToCart) {
       onAddToCart({
         id: product.id,
         name: product.name,
@@ -13,8 +27,22 @@ const ProductCard = ({ product, onAddToCart }) => {
     }
   };
 
+  const handleComboConfirm = (cartItem) => {
+    if (onAddToCart) {
+      onAddToCart(cartItem);
+      setShowComboSelector(false);
+    }
+  };
+
   return (
     <>
+      {showComboSelector && (
+        <ComboSelector
+          product={product}
+          onConfirm={handleComboConfirm}
+          onCancel={() => setShowComboSelector(false)}
+        />
+      )}
       <div className="rounded-lg shadow-md hover:shadow-lg transition-all p-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col h-full">
         <div className="w-full h-20 sm:h-24 bg-gray-100 dark:bg-gray-700 rounded-lg mb-2 flex items-center justify-center flex-shrink-0">
           {product.image ? (

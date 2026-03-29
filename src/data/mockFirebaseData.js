@@ -84,6 +84,14 @@ export const mockAddons = [
   { name: 'Tocineta Adicional', price: 3000, status: 'active' },
   { name: 'Huevo', price: 2000, status: 'active' },
   { name: 'Salsa Extra', price: 1000, status: 'active' },
+  // Bebidas para Combo (Papas + Bebida)
+  { name: 'Pepsi Original', price: 0, category: 'bebidas-combo', status: 'active' },
+  { name: 'Pepsi 0', price: 0, category: 'bebidas-combo', status: 'active' },
+  { name: 'Naranja', price: 0, category: 'bebidas-combo', status: 'active' },
+  { name: 'Manzana', price: 0, category: 'bebidas-combo', status: 'active' },
+  { name: 'Colombiana', price: 0, category: 'bebidas-combo', status: 'active' },
+  { name: 'Uva', price: 0, category: 'bebidas-combo', status: 'active' },
+  { name: 'Toronja', price: 0, category: 'bebidas-combo', status: 'active' },
 ];
 
 export const mockOrders = [
