@@ -3,11 +3,54 @@ import { X, Table, ShoppingBag, Bike } from 'lucide-react';
 import { useOrder } from '../../context/OrderContext';
 import tables from '../../data/tables';
 
-const OrderTypeEditor = ({ isOpen, onClose, currentOrderType, selectedTable, deliveryData }) => {
+const OrderTypeEditor = ({ isOpen, onClose,currentOrderType, selectedTable, deliveryData }) => {
   const { setOrderType, selectTable, setDeliveryData, orders } = useOrder();
   const [tempOrderType, setTempOrderType] = useState(currentOrderType);
   const [tempTable, setTempTable] = useState(selectedTable);
   const [tempDeliveryData, setTempDeliveryData] = useState(deliveryData || { name: '', phone: '', address: '', cost: 0 });
+  const [showCustomerSearch, setShowCustomerSearch] = useState(false);
+
+  // DATOS DE EJEMPLO DE CLIENTES
+  const sampleCustomers = [
+    { id: 1, name: 'Juan Perez', phone: '300 123 4567', address: 'Calle 123 #45-67, Bogota', email: 'juan@email.com' },
+    { id: 2, name: 'Maria Garcia', phone: '310 987 6543', address: 'Carrera 45 #12-34, Medellin', email: 'maria@email.com' },
+    { id: 3, name: 'Carlos Lopez', phone: '315 456 7890', address: 'Transversal 78 #90-12, Cali', email: 'carlos@email.com' },
+    { id: 4, name: 'Ana Martinez', phone: '318 234 5678', address: 'Diagonal 23 #56-78, Barranquilla', email: 'ana@email.com' },
+    { id: 5, name: 'Luis Rodriguez', phone: '304 876 5432', address: 'Calle 67 #89-01, Cartagena', email: 'luis@email.com' },
+  ];
+
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [newCustomerData, setNewCustomerData] = useState({ name: '', phone: '', address: '', email: '' });
+
+  const filteredCustomers = sampleCustomers.filter(customer =>
+    customer.name.toLowerCase().includes((customerSearch || '').toLowerCase()) ||
+    customer.phone.includes(customerSearch || '')
+  );
+
+  const handleSelectCustomer = (customer) => {
+    setTempDeliveryData({
+      name: customer.name,
+      phone: customer.phone,
+      address: customer.address,
+      email: customer.email
+    });
+    setShowCustomerSearch(false);
+  };
+
+  const handleCreateNewCustomer = () => {
+    if (!newCustomerData.name || !newCustomerData.phone || !newCustomerData.address) {
+      alert('⚠️ Por favor completa nombre, teléfono y dirección');
+      return;
+    }
+    setTempDeliveryData({
+      name: newCustomerData.name,
+      phone: newCustomerData.phone,
+      address: newCustomerData.address,
+      email: newCustomerData.email
+    });
+    setNewCustomerData({ name: '', phone: '', address: '', email: '' });
+    setShowCustomerSearch(false);
+  };
 
   const getTableStatus = (table) => {
     const order = orders.find(
@@ -161,69 +204,94 @@ const OrderTypeEditor = ({ isOpen, onClose, currentOrderType, selectedTable, del
           {tempOrderType === 'delivery' && (
             <div className="space-y-3">
               <h3 className="font-semibold text-gray-800 dark:text-white mb-3 flex items-center gap-2">
-                <span>📍</span> Datos de Entrega
+                <span>�</span> Seleccionar Cliente
               </h3>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Nombre del Cliente
-                </label>
-                <input
-                  type="text"
-                  value={tempDeliveryData.name || ''}
-                  onChange={(e) =>
-                    setTempDeliveryData({ ...tempDeliveryData, name: e.target.value })
-                  }
-                  placeholder="Ej: Juan García"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+              {!showCustomerSearch ? (
+                <>
+                  {tempDeliveryData.name ? (
+                    <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                      <p className="font-semibold text-green-800 dark:text-green-300">{tempDeliveryData.name}</p>
+                      <p className="text-sm text-green-700 dark:text-green-400">{tempDeliveryData.phone}</p>
+                      <p className="text-sm text-green-700 dark:text-green-400">{tempDeliveryData.address}</p>
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 dark:text-gray-400 p-3">No hay cliente seleccionado</p>
+                  )}
+                  <button
+                    onClick={() => setShowCustomerSearch(true)}
+                    className="w-full py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
+                  >
+                    {tempDeliveryData.name ? '📝 Cambiar Cliente' : '🔍 Buscar Cliente'}
+                  </button>
+                </>
+              ) : (
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  <input
+                    type="text"
+                    value={customerSearch}
+                    onChange={(e) => setCustomerSearch(e.target.value)}
+                    placeholder="Buscar por nombre o teléfono..."
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500"
+                    autoFocus
+                  />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Teléfono
-                </label>
-                <input
-                  type="tel"
-                  value={tempDeliveryData.phone || ''}
-                  onChange={(e) =>
-                    setTempDeliveryData({ ...tempDeliveryData, phone: e.target.value })
-                  }
-                  placeholder="Ej: +58 412 1234567"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+                  <div className="space-y-2">
+                    {filteredCustomers.length === 0 ? (
+                      <p className="text-gray-500 dark:text-gray-400 text-center py-2">No se encontraron clientes</p>
+                    ) : (
+                      filteredCustomers.map(customer => (
+                        <button
+                          key={customer.id}
+                          onClick={() => handleSelectCustomer(customer)}
+                          className="w-full p-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-left transition-colors"
+                        >
+                          <p className="font-semibold text-gray-800 dark:text-white">{customer.name}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-300">{customer.phone}</p>
+                        </button>
+                      ))
+                    )}
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Dirección
-                </label>
-                <textarea
-                  value={tempDeliveryData.address || ''}
-                  onChange={(e) =>
-                    setTempDeliveryData({ ...tempDeliveryData, address: e.target.value })
-                  }
-                  placeholder="Ej: Calle Principal 123, Apto 4B"
-                  rows="3"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+                  <div className="border-t border-gray-300 dark:border-gray-600 pt-3">
+                    <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-2 text-sm">O crear uno nuevo:</h4>
+                    <input
+                      type="text"
+                      value={newCustomerData.name}
+                      onChange={(e) => setNewCustomerData({ ...newCustomerData, name: e.target.value })}
+                      placeholder="Nombre completo"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 mb-2 text-sm"
+                    />
+                    <input
+                      type="tel"
+                      value={newCustomerData.phone}
+                      onChange={(e) => setNewCustomerData({ ...newCustomerData, phone: e.target.value })}
+                      placeholder="Teléfono"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 mb-2 text-sm"
+                    />
+                    <input
+                      type="text"
+                      value={newCustomerData.address}
+                      onChange={(e) => setNewCustomerData({ ...newCustomerData, address: e.target.value })}
+                      placeholder="Dirección"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 mb-2 text-sm"
+                    />
+                    <button
+                      onClick={handleCreateNewCustomer}
+                      className="w-full py-2 px-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors text-sm"
+                    >
+                      ➕ Crear Cliente
+                    </button>
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Costo de Entrega
-                </label>
-                <input
-                  type="number"
-                  value={tempDeliveryData.cost || 0}
-                  onChange={(e) =>
-                    setTempDeliveryData({ ...tempDeliveryData, cost: parseFloat(e.target.value) || 0 })
-                  }
-                  placeholder="Ej: 5000"
-                  step="1000"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+                  <button
+                    onClick={() => setShowCustomerSearch(false)}
+                    className="w-full py-2 px-3 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-semibold transition-colors"
+                  >
+                    Cerrar Búsqueda
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
