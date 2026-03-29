@@ -35,9 +35,9 @@ export const mockProducts = [
   { name: 'Mix', category: 'Pepitos Venezolanos', price: 29000, cost: 11600, description: 'Mezcla irresistible de carnes bien jugosas, con queso fundido, papas a la francesa, huevo, vegetales frescos y salsas de la casa. El clásico completo que nunca falla.', stock: 100, status: 'active', image: null },
   
   // Perros Calientes
-  { name: 'Perro Clásico Simple', category: 'Perros Calientes', price: 12000, cost: 4800, description: 'Salchicha premium en pan tostado con salsas caseras, mostaza y vegetales', stock: 100, status: 'active', image: null },
-  { name: 'Perro Especial', category: 'Perros Calientes', price: 15000, cost: 6000, description: 'Salchicha premium con queso fundido, tocineta crocante, papas fritas y salsas de la casa', stock: 100, status: 'active', image: null },
-  { name: 'Perro Argentino', category: 'Perros Calientes', price: 16000, cost: 6400, description: 'Salchicha premium con chimichurri casero, queso fundido, vegetales y salsas premium', stock: 100, status: 'active', image: null },
+  { name: 'Super', category: 'Perros Calientes', price: 16000, cost: 6400, description: 'Salchicha americana con queso fundido, huevos de codorniz, ripio crujiente, vegetales frescos y salsas clásicas.', stock: 100, status: 'active', image: null },
+  { name: 'Especial ⭐', category: 'Perros Calientes', price: 15000, cost: 6000, description: 'Salchicha americana, queso fundido, ripio crujiente, papas a la francesa, vegetales frescos y salsas clásicas. Favorito callejero.', stock: 100, status: 'active', image: null },
+  { name: 'Normal', category: 'Perros Calientes', price: 12000, cost: 4800, description: 'Salchicha americana, queso fundido, ripio crujiente, vegetales frescos y salsas clásicas.', stock: 100, status: 'active', image: null },
   
   // Salchicpapas
   { name: 'Salchicpapas Individual', category: 'Salchicpapas', price: 13500, cost: 5400, description: 'Salchichas con papas fritas crujientes y salsas variadas', stock: 100, status: 'active', image: null },
