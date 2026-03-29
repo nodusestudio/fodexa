@@ -144,11 +144,16 @@ export const CustomerProvider = ({ children }) => {
 
     const customerTickets = tickets.filter(t => {
       if (!t.customer) return false;
-      // Comparar por nombre o por id
-      return (
-        (t.customer.id === customerId) || 
-        (t.customer.name && t.customer.name.trim() === customer.name.trim())
-      );
+      try {
+        // Comparar por nombre o por id
+        const nameMatch = t.customer.name && customer.name
+          ? t.customer.name.trim() === customer.name.trim()
+          : false;
+        return (t.customer.id === customerId) || nameMatch;
+      } catch (error) {
+        console.warn('⚠️ Error filtrando tickets de cliente:', t, error);
+        return false;
+      }
     });
 
     const totalPurchases = customerTickets.length;
@@ -170,15 +175,26 @@ export const CustomerProvider = ({ children }) => {
     };
   };
 
-  // Buscar clientes
+  // Buscar clientes - ROBUSTO contra datos incompletos
   const searchCustomers = (query) => {
+    if (!query || query.trim() === '') return customers;
+    
     const lowerQuery = query.toLowerCase();
-    return customers.filter(c => 
-      c.name.toLowerCase().includes(lowerQuery) ||
-      c.email.toLowerCase().includes(lowerQuery) ||
-      c.phone.includes(query) ||
-      c.city.toLowerCase().includes(lowerQuery)
-    );
+    return customers.filter(c => {
+      try {
+        // Validar que cada propiedad existe antes de usarla
+        const nameMatch = c.name && String(c.name).toLowerCase().includes(lowerQuery);
+        const emailMatch = c.email && String(c.email).toLowerCase().includes(lowerQuery);
+        const phoneMatch = c.phone && String(c.phone).includes(query);
+        const cityMatch = c.city && String(c.city).toLowerCase().includes(lowerQuery);
+        const contactMatch = c.contact && String(c.contact).toLowerCase().includes(lowerQuery);
+        
+        return nameMatch || emailMatch || phoneMatch || cityMatch || contactMatch;
+      } catch (error) {
+        console.warn('⚠️ Error filtrando cliente:', c, error);
+        return false;
+      }
+    });
   };
 
   // Obtener clientes por clasificación
@@ -192,33 +208,39 @@ export const CustomerProvider = ({ children }) => {
     }).sort((a, b) => b.totalSpent - a.totalSpent);
   };
 
-  // Exportar clientes
+  // Exportar clientes - ROBUSTO contra datos incompletos
   const exportCustomers = (tickets = []) => {
-    const csvContent = [
-      ['ID', 'Nombre', 'Email', 'Teléfono', 'Dirección', 'Ciudad', 'Estado', 'Compras', 'Total Gastado', 'Ticket Promedio', 'Clasificación'],
-      ...customers.map(c => {
-        const stats = getCustomerStats(c.id, tickets);
-        return [
-          c.id,
-          c.name,
-          c.email,
-          c.phone,
-          c.address,
-          c.city,
-          c.status === 'active' ? 'Activo' : 'Inactivo',
-          stats.totalPurchases,
-          stats.totalSpent.toFixed(2),
-          stats.averageTicket.toFixed(2),
-          stats.classification.level,
-        ];
-      })
-    ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+    try {
+      const csvContent = [
+        ['ID', 'Nombre', 'Email', 'Teléfono', 'Dirección', 'Ciudad', 'Estado', 'Compras', 'Total Gastado', 'Ticket Promedio', 'Clasificación'],
+        ...customers.map(c => {
+          const stats = getCustomerStats(c.id, tickets);
+          return [
+            c.id || '',
+            c.name || 'Sin nombre',
+            c.email || '',
+            c.phone || '',
+            c.address || '',
+            c.city || '',
+            c.status === 'active' ? 'Activo' : 'Inactivo',
+            stats.totalPurchases || 0,
+            (stats.totalSpent || 0).toFixed(2),
+            (stats.averageTicket || 0).toFixed(2),
+            stats.classification?.level || 'Desconocido',
+          ];
+        })
+      ].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `clientes-${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `clientes-${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+      console.log('✅ Exportados', customers.length, 'clientes');
+    } catch (error) {
+      console.error('❌ Error exportando clientes:', error);
+      alert('Error al exportar clientes: ' + error.message);
+    }
   };
 
   const value = {

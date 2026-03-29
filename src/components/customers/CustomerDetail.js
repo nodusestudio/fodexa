@@ -34,10 +34,10 @@ const CustomerDetail = ({ customer, stats, onClose }) => {
               <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 text-white text-center">
                 <div className="w-24 h-24 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-4xl font-bold">
-                    {customer.name.charAt(0).toUpperCase()}
+                    {(customer.name || 'C').charAt(0).toUpperCase()}
                   </span>
                 </div>
-                <h3 className="text-xl font-bold">{customer.name}</h3>
+                <h3 className="text-xl font-bold">{customer.name || 'Sin nombre'}</h3>
                 <span className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-semibold ${
                   stats.classification.level === 'VIP' ? 'bg-purple-500' :
                   stats.classification.level === 'Frecuente' ? 'bg-blue-500' :
@@ -52,7 +52,7 @@ const CustomerDetail = ({ customer, stats, onClose }) => {
             <div className="lg:col-span-2 space-y-4">
               <div className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
                 <Phone className="text-blue-600 dark:text-blue-400" size={20} />
-                <span>{customer.phone}</span>
+                <span>{customer.phone || 'Sin teléfono'}</span>
               </div>
               {customer.email && (
                 <div className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
@@ -63,7 +63,7 @@ const CustomerDetail = ({ customer, stats, onClose }) => {
               {customer.address && (
                 <div className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
                   <MapPin className="text-blue-600 dark:text-blue-400" size={20} />
-                  <span>{customer.address}, {customer.city}</span>
+                  <span>{customer.address}{customer.city ? `, ${customer.city}` : ''}</span>
                 </div>
               )}
               {customer.birthdate && (

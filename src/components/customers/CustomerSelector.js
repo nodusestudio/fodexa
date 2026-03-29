@@ -25,10 +25,20 @@ const CustomerSelector = ({ onSelectCustomer }) => {
     email: ''
   });
 
-  const filteredCustomers = sampleCustomers.filter(customer =>
-    customer.name.toLowerCase().includes((searchQuery || '').toLowerCase()) ||
-    customer.phone.includes(searchQuery || '')
-  );
+  const filteredCustomers = sampleCustomers.filter(customer => {
+    try {
+      const nameMatch = customer.name 
+        ? String(customer.name).toLowerCase().includes((searchQuery || '').toLowerCase())
+        : false;
+      const phoneMatch = customer.phone 
+        ? String(customer.phone).includes(searchQuery || '')
+        : false;
+      return nameMatch || phoneMatch;
+    } catch (error) {
+      console.warn('⚠️ Error filtrando cliente en selector:', customer, error);
+      return false;
+    }
+  });
 
   const handleSelect = (customer) => {
     if (onSelectCustomer) {
