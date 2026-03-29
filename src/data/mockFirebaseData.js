@@ -87,12 +87,20 @@ export const mockProducts = [
   { name: 'Frescolita 355 ml', category: 'Bebidas', price: 8000, cost: 3200, description: 'Frescolita 355ml fría. Bebida refrescante venezolana', stock: 100, status: 'active', image: null },
   
   // Adicionales
-  { name: 'Queso Extra Fundido', category: 'Adicionales', price: 2500, cost: 1000, description: 'Queso fundido adicional de alta calidad', stock: 100, status: 'active', image: null },
-  { name: 'Tocineta Crocante Extra', category: 'Adicionales', price: 3000, cost: 1200, description: 'Porción extra de tocineta crocante', stock: 100, status: 'active', image: null },
-  { name: 'Huevo a la Plancha', category: 'Adicionales', price: 2000, cost: 800, description: 'Huevo a la plancha bien hecho', stock: 100, status: 'active', image: null },
-  { name: 'Salsa Extra Casera', category: 'Adicionales', price: 1000, cost: 400, description: 'Porción extra de salsa artesanal de la casa', stock: 100, status: 'active', image: null },
-  { name: 'Aguacate Fresco', category: 'Adicionales', price: 4000, cost: 1600, description: 'Aguacate fresco y maduro', stock: 100, status: 'active', image: null },
-  { name: 'Chorizo Extra', category: 'Adicionales', price: 3500, cost: 1400, description: 'Porción extra de chorizo artesanal', stock: 100, status: 'active', image: null },
+  // Carnes
+  { name: 'Carne de Burger Pequeña', category: 'Adicionales', price: 6000, cost: 2400, description: 'Carne adicional de burger tamaño pequeño de la mejor calidad', stock: 100, status: 'active', image: null },
+  { name: 'Carne de Burger Mediana', category: 'Adicionales', price: 7000, cost: 2800, description: 'Carne adicional de burger tamaño mediano jugosa y fresca', stock: 100, status: 'active', image: null },
+  { name: 'Carne de Burger Grande', category: 'Adicionales', price: 8000, cost: 3200, description: 'Carne adicional de burger tamaño grande, corte premium', stock: 100, status: 'active', image: null },
+  { name: 'Filete de Pollo Mediano', category: 'Adicionales', price: 7000, cost: 2800, description: 'Filete de pollo mediano tierno y jugoso, perfectamente cocido', stock: 100, status: 'active', image: null },
+  // Embutidos
+  { name: 'Chorizo de Cerdo (Porción)', category: 'Adicionales', price: 5000, cost: 2000, description: 'Porción de chorizo de cerdo artesanal ahumado', stock: 100, status: 'active', image: null },
+  { name: 'Chuleta Ahumada', category: 'Adicionales', price: 9000, cost: 3600, description: 'Chuleta ahumada de cerdo, punto perfecto de cocción', stock: 100, status: 'active', image: null },
+  { name: 'Salchicha Americana', category: 'Adicionales', price: 4000, cost: 1600, description: 'Salchicha americana de primera calidad, jugosa y dorada', stock: 100, status: 'active', image: null },
+  { name: 'Tocineta Ahumada', category: 'Adicionales', price: 4000, cost: 1600, description: 'Tocineta ahumada crocante, punto perfecto de cocción', stock: 100, status: 'active', image: null },
+  // Quesos y Huevos
+  { name: 'Queso Tipo Mozarella', category: 'Adicionales', price: 3000, cost: 1200, description: 'Queso tipo mozarella fresco, perfecto para gratinar', stock: 100, status: 'active', image: null },
+  { name: 'Huevo de Gallina', category: 'Adicionales', price: 2000, cost: 800, description: 'Huevo de gallina a la plancha o como lo prefieras', stock: 100, status: 'active', image: null },
+  { name: 'Huevos de Codorniz (5 und.)', category: 'Adicionales', price: 4000, cost: 1600, description: 'Huevos de codorniz 5 unidades, delicados y nutritivos', stock: 100, status: 'active', image: null },
 ];
 
 export const mockAddons = [
