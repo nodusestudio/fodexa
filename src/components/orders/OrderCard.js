@@ -8,7 +8,7 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
   const [elapsedTime, setElapsedTime] = useState(0);
   const [alarmTriggered, setAlarmTriggered] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(window.innerWidth >= 768); // Desktop: expanded, Mobile: collapsed
+  const [isExpanded, setIsExpanded] = useState(false); // Siempre colapsado por defecto (ambos: mobile y desktop)
   
   // Estados para domicilio
   const [deliveryStartTime, setDeliveryStartTime] = useState(null);
@@ -18,16 +18,6 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
 
   // Refs para rastrear alarmas
   const lastDeliveryAlarmMinuteRef = useRef(-1);
-
-  // Detectar cambios de tamaño de pantalla (responsive)
-  useEffect(() => {
-    const handleResize = () => {
-      setIsExpanded(window.innerWidth >= 768);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   // Timer para contar tiempo de preparación
   useEffect(() => {
