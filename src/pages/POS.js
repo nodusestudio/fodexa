@@ -312,6 +312,7 @@ const POS = () => {
                     deliveryData={deliveryData}
                     currentOrder={currentOrder}
                     onPayOrder={handlePayOrder}
+                    onCloseCart={() => setShowCartDrawer(false)}
                   />
                 </div>
               </div>

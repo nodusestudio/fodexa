@@ -4,12 +4,12 @@ import { useOrder } from '../../context/OrderContext';
 import { useCart } from '../../context/CartContext';
 import PaymentModal from '../payments/PaymentModal';
 import CartItem from './CartItem';
-import { Trash2, CreditCard, ShoppingBag, Edit2, Table, Bike } from 'lucide-react';
+import { Trash2, CreditCard, ShoppingBag, Edit2, Table, Bike, ArrowLeft } from 'lucide-react';
 import { useSettings } from '../../context/SettingsContext';
 import { formatCurrency } from '../../utils/formatters';
 import OrderTypeEditor from '../orders/OrderTypeEditor';
 
-const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp, currentOrder, onPayOrder }) => {
+const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp, currentOrder, onPayOrder, onCloseCart }) => {
 	const { deliveryData } = useOrder();
 	const { items, clearCart, updateQuantity, removeItem } = useCart();
 	const { createOrder, clearCurrentOrder } = useOrder();
@@ -126,6 +126,11 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp, c
 			clearCart();
 			clearCurrentOrder();
 			
+			// ✅ Cerrar el carrito en móvil si existe la función
+			if (onCloseCart) {
+				onCloseCart();
+			}
+			
 			// ✅ Disparar evento para guardar ORDEN (sin imprimir ticket)
 			window.dispatchEvent(new CustomEvent('orderSaved', { detail: { ...savedOrder, status: 'pending' } }));
 			
@@ -185,7 +190,18 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp, c
 			<div className="bg-white dark:bg-gray-800 h-full flex flex-col border-0 md:border-l border-gray-300 dark:border-gray-700 rounded-none md:rounded-none">
 				{/* Header */}
 				<div className="flex items-center justify-between p-3 md:p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-					<h2 className="text-base md:text-lg font-bold text-gray-800 dark:text-white">Orden ({items?.length || 0})</h2>
+					<div className="flex items-center gap-2 md:hidden">
+						{onCloseCart && (
+							<button 
+								onClick={onCloseCart}
+								className="p-1.5 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+								title="Volver a productos"
+							>
+								<ArrowLeft size={20} />
+							</button>
+						)}
+					</div>
+					<h2 className="text-base md:text-lg font-bold text-gray-800 dark:text-white flex-1">Orden ({items?.length || 0})</h2>
 					{items && items.length > 0 && (
 						<button 
 							onClick={clearCart}
@@ -273,6 +289,13 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp, c
 						</div>
 
 						<div className="space-y-2 md:space-y-3">
+							<button
+								onClick={onCloseCart || (() => {})}
+								className="w-full md:hidden bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600 text-gray-800 dark:text-white py-2 rounded-lg font-semibold text-sm transition-colors"
+							>
+								← Volver a Productos
+							</button>
+
 							<button
 								onClick={handleSaveOrder}
 								className="w-full bg-gray-700 dark:bg-gray-600 hover:bg-gray-800 dark:hover:bg-gray-500 text-white py-2 md:py-3 rounded-lg font-semibold text-sm md:text-base transition-colors shadow-lg"
