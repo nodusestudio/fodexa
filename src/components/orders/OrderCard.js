@@ -47,7 +47,14 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
 
   // Timer para contar tiempo de espera de domicilio
   useEffect(() => {
-    if (order.status !== 'waiting' || !deliveryStartTime) return;
+    if (order.status !== 'waiting') return;
+
+    // Si no tenemos deliveryStartTime, usa el timestamp de cuando pasó a waiting (o el timestamp actual)
+    if (!deliveryStartTime) {
+      setDeliveryStartTime(new Date());
+      lastDeliveryAlarmMinuteRef.current = -1;
+      return; // Recursión del useEffect con el nuevo deliveryStartTime
+    }
 
     const interval = setInterval(() => {
       const now = new Date();
