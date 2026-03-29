@@ -15,6 +15,12 @@ const CartItem = ({ item, index }) => {
     'Pepitos Venezolanos',
     'Perros Calientes',
   ];
+  
+  // DEBUG: Log item structure to see what's being received
+  console.log('CartItem DEBUG - Item:', item);
+  console.log('CartItem DEBUG - item.category:', item.category);
+  console.log('CartItem DEBUG - canEditCombo will be:', COMBO_CATEGORIES.includes(item.category));
+  
   const canEditCombo = COMBO_CATEGORIES.includes(item.category);
 
   const price = parseFloat(item.price) || 0;
