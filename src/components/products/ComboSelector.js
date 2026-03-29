@@ -37,6 +37,7 @@ const ComboSelector = ({ product, onConfirm, onCancel }) => {
       name: product.name,
       price: product.price,
       quantity: 1,
+      category: product.category,
       addons: addons,
     });
   };
