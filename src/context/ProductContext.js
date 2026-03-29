@@ -15,7 +15,7 @@ export const ProductProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [dataloaded, setDataLoaded] = useState(false);
 
-  // Cargar datos de prueba cuando hay usuario
+  // Cargar datos de Firestore en tiempo real
   useEffect(() => {
     if (!user) {
       setProducts([]);
@@ -25,36 +25,138 @@ export const ProductProvider = ({ children }) => {
       return;
     }
 
-    // Agregar userId y IDs a los datos mock
-    const productsWithId = mockProducts.map((p, i) => ({
-      id: `prod_${i}`,
-      userId: user.uid,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      ...p
-    }));
+    setLoading(true);
 
-    const categoriesWithId = mockCategories.map((c, i) => ({
-      id: `cat_${i}`,
-      userId: user.uid,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      ...c
-    }));
+    // Listener para productos
+    const productsQuery = query(
+      collection(db, `users/${user.uid}/products`),
+      where('userId', '==', user.uid)
+    );
 
-    const addonsWithId = mockAddons.map((a, i) => ({
-      id: `addon_${i}`,
-      userId: user.uid,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      ...a
-    }));
+    const unsubscribeProducts = onSnapshot(
+      productsQuery,
+      (snapshot) => {
+        const productsData = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        
+        // Si no hay productos en Firestore, usar datos mock
+        if (productsData.length === 0) {
+          const productsWithId = mockProducts.map((p, i) => ({
+            id: `prod_${i}`,
+            userId: user.uid,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            ...p
+          }));
+          setProducts(productsWithId);
+        } else {
+          setProducts(productsData);
+        }
+      },
+      (error) => {
+        console.warn('⚠️ Error cargando productos:', error.message);
+        // Fallback a datos mock
+        const productsWithId = mockProducts.map((p, i) => ({
+          id: `prod_${i}`,
+          userId: user.uid,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          ...p
+        }));
+        setProducts(productsWithId);
+      }
+    );
 
-    setProducts(productsWithId);
-    setCategories(categoriesWithId);
-    setAddons(addonsWithId);
+    // Listener para categorías
+    const categoriesQuery = query(
+      collection(db, `users/${user.uid}/categories`),
+      where('userId', '==', user.uid)
+    );
+
+    const unsubscribeCategories = onSnapshot(
+      categoriesQuery,
+      (snapshot) => {
+        const categoriesData = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        
+        if (categoriesData.length === 0) {
+          const categoriesWithId = mockCategories.map((c, i) => ({
+            id: `cat_${i}`,
+            userId: user.uid,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            ...c
+          }));
+          setCategories(categoriesWithId);
+        } else {
+          setCategories(categoriesData);
+        }
+      },
+      (error) => {
+        console.warn('⚠️ Error cargando categorías:', error.message);
+        const categoriesWithId = mockCategories.map((c, i) => ({
+          id: `cat_${i}`,
+          userId: user.uid,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          ...c
+        }));
+        setCategories(categoriesWithId);
+      }
+    );
+
+    // Listener para addons
+    const addonsQuery = query(
+      collection(db, `users/${user.uid}/addons`),
+      where('userId', '==', user.uid)
+    );
+
+    const unsubscribeAddons = onSnapshot(
+      addonsQuery,
+      (snapshot) => {
+        const addonsData = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        
+        if (addonsData.length === 0) {
+          const addonsWithId = mockAddons.map((a, i) => ({
+            id: `addon_${i}`,
+            userId: user.uid,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            ...a
+          }));
+          setAddons(addonsWithId);
+        } else {
+          setAddons(addonsData);
+        }
+      },
+      (error) => {
+        console.warn('⚠️ Error cargando addons:', error.message);
+        const addonsWithId = mockAddons.map((a, i) => ({
+          id: `addon_${i}`,
+          userId: user.uid,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          ...a
+        }));
+        setAddons(addonsWithId);
+      }
+    );
+
     setDataLoaded(true);
     setLoading(false);
+
+    return () => {
+      unsubscribeProducts();
+      unsubscribeCategories();
+      unsubscribeAddons();
+    };
   }, [user]);
 
   // Funciones CRUD Productos

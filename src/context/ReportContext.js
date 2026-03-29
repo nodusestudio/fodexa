@@ -1,17 +1,25 @@
 import { createContext, useContext } from 'react';
 import { useTickets } from './TicketContext';
 import { useProducts } from './ProductContext';
+import { useAuth } from './AuthContext';
 
 const ReportContext = createContext();
 
 export const ReportProvider = ({ children }) => {
   const { tickets } = useTickets();
   const { products } = useProducts();
+  const { user } = useAuth();
+
+  // Filtrar tickets por usuario actual
+  const getUserTickets = () => {
+    return tickets?.filter(t => t.userId === 'shared' || t.userId === user?.uid) || [];
+  };
 
   // Obtener ventas por rango de fechas
   const getSalesByDateRange = (startDate, endDate) => {
-    if (!tickets) return [];
-    return tickets.filter(ticket => {
+    const userTickets = getUserTickets();
+    if (!userTickets) return [];
+    return userTickets.filter(ticket => {
       const ticketDate = new Date(ticket.createdAt || ticket.date || Date.now());
       return ticketDate >= startDate && ticketDate <= endDate && ticket.status !== 'cancelled';
     });
@@ -67,7 +75,8 @@ export const ReportProvider = ({ children }) => {
 
   // Ventas por hora
   const getSalesByHour = (date) => {
-    const sales = tickets.filter(ticket => {
+    const userTickets = getUserTickets();
+    const sales = userTickets.filter(ticket => {
       const ticketDate = new Date(ticket.createdAt || ticket.date || Date.now());
       return ticketDate.toDateString() === date.toDateString() && ticket.status !== 'cancelled';
     });

@@ -23,7 +23,7 @@ export const OrderProvider = ({ children }) => {
   const [tablesData, setTablesData] = useState(tables);
   const [loading, setLoading] = useState(false);
 
-  // Cargar órdenes de prueba cuando hay usuario
+  // Cargar órdenes de Firestore en tiempo real
   useEffect(() => {
     if (!user) {
       console.log('❌ Sin usuario, limpiando órdenes');
@@ -33,18 +33,40 @@ export const OrderProvider = ({ children }) => {
     }
 
     console.log('👤 Usuario detectado:', user.uid);
-    console.log('📋 mockOrders original:', mockOrders);
+    setLoading(true);
 
-    // Agregar userId a los mockOrders (IDs ya existen)
-    const ordersWithUserId = mockOrders.map(order => ({
-      ...order,
-      userId: user.uid,
-      timestamp: order.timestamp || new Date(),
-    }));
+    // Escuchar órdenes del usuario desde Firestore
+    const q = query(
+      collection(db, `users/${user.uid}/orders`),
+      orderBy('timestamp', 'desc')
+    );
 
-    console.log('✅ Órdenes con userId:', ordersWithUserId);
-    setOrders(ordersWithUserId);
-    setLoading(false);
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const ordersData = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          timestamp: doc.data().timestamp?.toDate?.() || doc.data().timestamp,
+        }));
+        console.log('✅ Órdenes cargadas desde la nube:', ordersData.length);
+        setOrders(ordersData);
+        setLoading(false);
+      },
+      (error) => {
+        console.warn('⚠️ Error al cargar órdenes (usando datos locales):', error.message);
+        // Fallback a datos mock si Firestore falla
+        const ordersWithUserId = mockOrders.map(order => ({
+          ...order,
+          userId: user.uid,
+          timestamp: order.timestamp || new Date(),
+        }));
+        setOrders(ordersWithUserId);
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
   }, [user]);
 
   // Función para establecer tipo de orden
@@ -116,7 +138,11 @@ export const OrderProvider = ({ children }) => {
         (async () => {
           try {
             console.log('🔥 Intentando guardar en Firestore...');
-            await addDoc(collection(db, 'orders'), orderData);
+            // Guardar en: users/{userId}/orders
+            await addDoc(collection(db, `users/${user.uid}/orders`), {
+              ...orderData,
+              timestamp: new Date(),
+            });
             console.log('📦 Orden también guardada en Firestore');
           } catch (firestoreError) {
             console.warn('⚠️ Firestore falló pero orden guardada localmente:', firestoreError.message);
@@ -146,7 +172,7 @@ export const OrderProvider = ({ children }) => {
       if (user?.uid && !id.startsWith('local_')) {
         (async () => {
           try {
-            const orderRef = doc(db, 'orders', id);
+            const orderRef = doc(db, `users/${user.uid}/orders`, id);
             await updateDoc(orderRef, {
               ...data,
               updatedAt: new Date(),

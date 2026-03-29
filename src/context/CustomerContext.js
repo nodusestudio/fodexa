@@ -1,88 +1,114 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from './AuthContext';
+import { 
+  collection, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  doc, 
+  query, 
+  where, 
+  onSnapshot 
+} from 'firebase/firestore';
+import { db } from '../config/firebase';
 
 const CustomerContext = createContext();
 
 export const CustomerProvider = ({ children }) => {
-  const [customers, setCustomers] = useState([
-    {
-      id: 1,
-      name: 'Juan Pérez',
-      email: 'juan@email.com',
-      phone: '300 123 4567',
-      address: 'Calle 123 #45-67, Bogotá',
-      city: 'Bogotá',
-      birthdate: '1990-05-15',
-      notes: '',
-      status: 'active',
-      createdAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
-    },
-    {
-      id: 2,
-      name: 'María García',
-      email: 'maria@email.com',
-      phone: '310 987 6543',
-      address: 'Carrera 45 #12-34, Medellín',
-      city: 'Medellín',
-      birthdate: '1985-08-22',
-      notes: 'Cliente VIP',
-      status: 'active',
-      createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
-    },
-    {
-      id: 3,
-      name: 'Carlos López',
-      email: 'carlos@email.com',
-      phone: '315 456 7890',
-      address: 'Transversal 78 #90-12, Cali',
-      city: 'Cali',
-      birthdate: '1995-03-10',
-      notes: '',
-      status: 'active',
-      createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-    },
-    {
-      id: 4,
-      name: 'Ana Martínez',
-      email: 'ana@email.com',
-      phone: '318 234 5678',
-      address: 'Diagonal 23 #56-78, Barranquilla',
-      city: 'Barranquilla',
-      birthdate: '1988-11-05',
-      notes: 'Prefiere domicilios',
-      status: 'active',
-      createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
-    },
-    {
-      id: 5,
-      name: 'Luis Rodríguez',
-      email: 'luis@email.com',
-      phone: '304 876 5432',
-      address: 'Calle 67 #89-01, Cartagena',
-      city: 'Cartagena',
-      birthdate: '1992-07-18',
-      notes: '',
-      status: 'active',
-      createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-    },
-  ]);
+  const { user } = useAuth();
+  const [customers, setCustomers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // CRUD Clientes
-  const addCustomer = (customerData) => {
-    const newCustomer = {
-      ...customerData,
-      id: Date.now(),
-      createdAt: new Date(),
-    };
-    setCustomers(prev => [...prev, newCustomer]);
-    return newCustomer;
+  // 📡 Cargar clientes desde Firestore cuando cambia el usuario
+  useEffect(() => {
+    if (!user) {
+      setCustomers([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+
+    // Crear una búsqueda: "dame todos los clientes de este usuario"
+    const q = query(
+      collection(db, `users/${user.uid}/customers`),
+      where('userId', '==', user.uid)
+    );
+
+    // Escuchar cambios en tiempo real
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const customersData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setCustomers(customersData);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
+  // ➕ Agregar cliente a Firestore
+  const addCustomer = async (customerData) => {
+    if (!user) {
+      alert('Debes estar autenticado');
+      return null;
+    }
+
+    try {
+      const newCustomer = {
+        ...customerData,
+        userId: user.uid,
+        createdAt: new Date(),
+      };
+
+      // Guardar en Firestore
+      const docRef = await addDoc(
+        collection(db, `users/${user.uid}/customers`),
+        newCustomer
+      );
+
+      console.log('✅ Cliente guardado en la nube:', docRef.id);
+      return { id: docRef.id, ...newCustomer };
+    } catch (error) {
+      console.error('❌ Error al guardar cliente:', error);
+      alert('Error al guardar cliente: ' + error.message);
+      return null;
+    }
   };
 
-  const updateCustomer = (id, data) => {
-    setCustomers(prev => prev.map(c => c.id === id ? { ...c, ...data } : c));
+  // ✏️ Actualizar cliente
+  const updateCustomer = async (id, data) => {
+    if (!user) {
+      alert('Debes estar autenticado');
+      return;
+    }
+
+    try {
+      const customerRef = doc(db, `users/${user.uid}/customers`, id);
+      await updateDoc(customerRef, data);
+      console.log('✅ Cliente actualizado en la nube');
+    } catch (error) {
+      console.error('❌ Error al actualizar cliente:', error);
+      alert('Error al actualizar cliente: ' + error.message);
+    }
   };
 
-  const deleteCustomer = (id) => {
-    setCustomers(prev => prev.filter(c => c.id !== id));
+  // 🗑️ Eliminar cliente
+  const deleteCustomer = async (id) => {
+    if (!user) {
+      alert('Debes estar autenticado');
+      return;
+    }
+
+    try {
+      const customerRef = doc(db, `users/${user.uid}/customers`, id);
+      await deleteDoc(customerRef);
+      console.log('✅ Cliente eliminado de la nube');
+    } catch (error) {
+      console.error('❌ Error al eliminar cliente:', error);
+      alert('Error al eliminar cliente: ' + error.message);
+    }
   };
 
   const getCustomerById = (id) => customers.find(c => c.id === id);
@@ -197,6 +223,8 @@ export const CustomerProvider = ({ children }) => {
 
   const value = {
     customers,
+    loading,
+    getUserCustomers: () => customers, // Ya Firestore filtra por usuario
     addCustomer,
     updateCustomer,
     deleteCustomer,

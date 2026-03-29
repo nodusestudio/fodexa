@@ -1,4 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from './AuthContext';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from '../config/firebase';
 
 const defaultSettings = {
   company: {
@@ -39,10 +42,11 @@ const defaultSettings = {
 const SettingsContext = createContext();
 
 export const SettingsProvider = ({ children }) => {
+  const { user } = useAuth();
   const [settings, setSettings] = useState(() => {
-    const saved = localStorage.getItem('settings');
+    const storageKey = `settings_${user?.uid || 'default'}`;
+    const saved = localStorage.getItem(storageKey);
     const loaded = saved ? JSON.parse(saved) : defaultSettings;
-    // ✅ Siempre asegurar que COP sea la moneda predeterminada
     return {
       ...loaded,
       currency: {
@@ -54,9 +58,60 @@ export const SettingsProvider = ({ children }) => {
     };
   });
 
+  // Cargar settings desde Firestore cuando cambia el usuario
   useEffect(() => {
-    localStorage.setItem('settings', JSON.stringify(settings));
-  }, [settings]);
+    if (!user) return;
+
+    const loadSettingsFromFirestore = async () => {
+      try {
+        const docRef = doc(db, `users/${user.uid}/settings`, 'general');
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists()) {
+          const firestoreSettings = docSnap.data();
+          setSettings(prev => ({
+            ...firestoreSettings,
+            currency: {
+              ...firestoreSettings.currency,
+              code: 'COP',
+              symbol: '$',
+              decimals: false
+            }
+          }));
+          console.log('✅ Settings cargados desde Firestore');
+        } else {
+          console.log('📝 Creando settings iniciales en Firestore');
+          // Crear documento inicial si no existe
+          await setDoc(docRef, defaultSettings);
+        }
+      } catch (error) {
+        console.warn('⚠️ Error cargando settings de Firestore:', error.message);
+        // Usar localStorage como fallback
+      }
+    };
+
+    loadSettingsFromFirestore();
+  }, [user]);
+
+  // Guardar en localStorage Y Firestore cuando cambian
+  useEffect(() => {
+    if (!user) return;
+
+    // Guardar en localStorage primero (rápido)
+    const storageKey = `settings_${user.uid}`;
+    localStorage.setItem(storageKey, JSON.stringify(settings));
+
+    // Guardar en Firestore en background (sin bloquear)
+    (async () => {
+      try {
+        const docRef = doc(db, `users/${user.uid}/settings`, 'general');
+        await setDoc(docRef, settings, { merge: true });
+        console.log('✅ Settings guardados en Firestore');
+      } catch (error) {
+        console.warn('⚠️ Error guardando en Firestore (localStorage OK):', error.message);
+      }
+    })();
+  }, [settings, user]);
 
   const updateSettings = (section, key, value) => {
     setSettings(prev => {

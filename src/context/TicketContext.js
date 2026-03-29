@@ -1,12 +1,17 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import { useSettings } from './SettingsContext';
+import { useAuth } from './AuthContext';
+import { collection, addDoc, onSnapshot, query, where, orderBy } from 'firebase/firestore';
+import { db } from '../config/firebase';
 
 const TicketContext = createContext();
 
 export const TicketProvider = ({ children }) => {
+  const { user } = useAuth();
   const [tickets, setTickets] = useState([
     {
       id: 1,
+      userId: 'shared',
       ticketNumber: 'TKT-000001',
       orderId: 1,
       orderType: 'table',
@@ -23,6 +28,7 @@ export const TicketProvider = ({ children }) => {
     },
     {
       id: 2,
+      userId: 'shared',
       ticketNumber: 'TKT-000002',
       orderId: 2,
       orderType: 'takeout',
@@ -39,6 +45,7 @@ export const TicketProvider = ({ children }) => {
     },
     {
       id: 3,
+      userId: 'shared',
       ticketNumber: 'TKT-000003',
       orderId: 3,
       orderType: 'delivery',
@@ -54,6 +61,39 @@ export const TicketProvider = ({ children }) => {
       createdAt: new Date(Date.now() - 120 * 60000),
     },
   ]);
+
+  // Cargar tickets desde Firestore en tiempo real
+  useEffect(() => {
+    if (!user) {
+      setTickets(prev => prev.filter(t => t.userId === 'shared')); // Solo mostrar demo
+      return;
+    }
+
+    const q = query(
+      collection(db, `users/${user.uid}/tickets`),
+      orderBy('createdAt', 'desc')
+    );
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const ticketsData = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          createdAt: doc.data().createdAt?.toDate?.() || doc.data().createdAt,
+        }));
+        // Agregar tickets propios + demo
+        const demoTickets = tickets.filter(t => t.userId === 'shared');
+        setTickets([...ticketsData, ...demoTickets]);
+      },
+      (error) => {
+        console.warn('⚠️ Error cargando tickets:', error.message);
+        // Los tickets de demostración quedan disponibles
+      }
+    );
+
+    return () => unsubscribe();
+  }, [user]);
 
   // Obtener datos de empresa y ticket desde SettingsContext
   const { settings } = useSettings();
@@ -91,13 +131,14 @@ export const TicketProvider = ({ children }) => {
     }
 
     const newTicket = {
-      id: Date.now(),
+      id: Date.now().toString(),
+      userId: user?.uid || 'anonymous',
       ticketNumber: generateTicketNumber(),
       orderId: orderData.id,
       orderType: orderData.type,
       tableNumber: orderData.tableNumber || null,
-      customer: deliveryData, // legacy/compat
-      deliveryData: deliveryData, // para TicketPrint
+      customer: deliveryData,
+      deliveryData: deliveryData,
       items: orderData.items,
       subtotal,
       iva,
@@ -107,7 +148,22 @@ export const TicketProvider = ({ children }) => {
       status: 'completed',
       createdAt: new Date(),
     };
+    
+    // Guardar localmente primero
     setTickets(prev => [...prev, newTicket]);
+    
+    // Guardar en Firestore en background
+    if (user?.uid) {
+      (async () => {
+        try {
+          await addDoc(collection(db, `users/${user.uid}/tickets`), newTicket);
+          console.log('✅ Ticket guardado en la nube');
+        } catch (error) {
+          console.warn('⚠️ Error guardando ticket en Firestore:', error.message);
+        }
+      })();
+    }
+    
     return newTicket;
   };
 
