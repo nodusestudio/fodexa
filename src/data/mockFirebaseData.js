@@ -46,9 +46,11 @@ export const mockProducts = [
   { name: 'SALCHI NORMAL Grande', category: 'Salchicpapas', price: 21000, cost: 8400, description: 'Papas a la francesa, salchicha, queso fundido y salsas de la casa aparte. (Porción Grande)', stock: 100, status: 'active', image: null },
   
   // Entradas
-  { name: 'Papas Fritas Premium', category: 'Entradas', price: 8000, cost: 3200, description: 'Papas fritas crujientes con sal marina y especias', stock: 100, status: 'active', image: null },
-  { name: 'Aros de Cebolla Dorados', category: 'Entradas', price: 9000, cost: 3600, description: 'Aros de cebolla dorados y crujientes con salsa de ajo', stock: 100, status: 'active', image: null },
-  { name: 'Tabla de Queso y Embutidos', category: 'Entradas', price: 28000, cost: 11200, description: 'Tabla variada con queso fundido, jamón, salchicha y panes tostados', stock: 100, status: 'active', image: null },
+  { name: 'TEQUEÑOS', category: 'Entradas', price: 11000, cost: 4400, description: '5 tequeños rellenos de queso', stock: 100, status: 'active', image: null },
+  { name: 'EMPANADAS', category: 'Entradas', price: 9000, cost: 3600, description: '5 empanaditas sabores varios', stock: 100, status: 'active', image: null },
+  { name: 'PAPAS GRANDES', category: 'Entradas', price: 16000, cost: 6400, description: 'Papas a la francesa crocantes y salsas de la casa aparte.', stock: 100, status: 'active', image: null },
+  { name: 'PAPAS MEDIANAS', category: 'Entradas', price: 11000, cost: 4400, description: 'Papas a la francesa crocantes y salsas de la casa aparte.', stock: 100, status: 'active', image: null },
+  { name: 'PAPAS PEQUEÑAS', category: 'Entradas', price: 7000, cost: 2800, description: 'Papas a la francesa crocantes y salsas de la casa aparte.', stock: 100, status: 'active', image: null },
   
   // Combos Express
   { name: 'Combo Burger Simple', category: 'Combos Express', price: 19000, cost: 7600, description: 'Hamburguesa clásica + papas medianas + bebida 400ml', stock: 100, status: 'active', image: null },
