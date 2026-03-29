@@ -4,9 +4,10 @@ import { useOrder } from '../../context/OrderContext';
 import { useCart } from '../../context/CartContext';
 import PaymentModal from '../payments/PaymentModal';
 import CartItem from './CartItem';
-import { Trash2, CreditCard, ShoppingBag, Edit2 } from 'lucide-react';
+import { Trash2, CreditCard, ShoppingBag, Edit2, Table, Bike } from 'lucide-react';
 import { useSettings } from '../../context/SettingsContext';
 import { formatCurrency } from '../../utils/formatters';
+import OrderTypeEditor from '../orders/OrderTypeEditor';
 
 const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp, currentOrder, onPayOrder }) => {
 	const { deliveryData } = useOrder();
@@ -14,6 +15,7 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp, c
 	const { createOrder, clearCurrentOrder } = useOrder();
 	const [showPaymentModal, setShowPaymentModal] = useState(false);
 	const [showNoteModal, setShowNoteModal] = useState(false);
+	const [showOrderTypeEditor, setShowOrderTypeEditor] = useState(false);
 	const [selectedItemId, setSelectedItemId] = useState(null);
 	const [currentNotes, setCurrentNotes] = useState('');
 	const [currentPaymentOrder, setCurrentPaymentOrder] = useState(null);
@@ -195,6 +197,41 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp, c
 					)}
 				</div>
 
+				{/* Order Type Info */}
+				{orderType && (
+					<div className="px-3 md:px-4 py-2 bg-blue-50 dark:bg-blue-900/30 border-b border-blue-200 dark:border-blue-800 flex items-center justify-between">
+						<div className="flex items-center gap-2">
+							<span className="text-sm font-semibold text-blue-800 dark:text-blue-300 flex items-center gap-2">
+								{orderType === 'table' && (
+									<>
+										<Table className="w-4 h-4" />
+										Mesa #{selectedTable || '?'}
+									</>
+								)}
+								{orderType === 'delivery' && (
+									<>
+										<Bike className="w-4 h-4" />
+										Domicilio {deliveryData?.name && `- ${deliveryData.name}`}
+									</>
+								)}
+								{orderType === 'takeout' && (
+									<>
+										<ShoppingBag className="w-4 h-4" />
+										Para Llevar
+									</>
+								)}
+							</span>
+						</div>
+						<button
+							onClick={() => setShowOrderTypeEditor(true)}
+							className="p-1 hover:bg-blue-200 dark:hover:bg-blue-800 rounded transition-colors"
+							title="Cambiar tipo de pedido"
+						>
+							<Edit2 size={16} className="text-blue-600 dark:text-blue-400" />
+						</button>
+					</div>
+				)}
+
 				{/* Items - Scrollable */}
 				<div className="flex-1 overflow-y-auto p-1.5 md:p-2 space-y-1.5 md:space-y-2">
 					{!items || items.length === 0 ? (
@@ -258,10 +295,18 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp, c
 			<PaymentModal
 				isOpen={showPaymentModal}
 				onClose={() => setShowPaymentModal(false)}
-			orderData={currentPaymentOrder || {
+				orderData={currentPaymentOrder || {
 					type: orderType,
 					deliveryData: orderType === 'delivery' ? deliveryData : null
 				}}
+			/>
+
+			<OrderTypeEditor
+				isOpen={showOrderTypeEditor}
+				onClose={() => setShowOrderTypeEditor(false)}
+				currentOrderType={orderType}
+				selectedTable={selectedTable}
+				deliveryData={deliveryData}
 			/>
 
 			{/* Modal de editar notas */}
