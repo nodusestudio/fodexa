@@ -68,12 +68,23 @@ export const mockProducts = [
   { name: 'Combo Burger Premium', category: 'Combos de Burger', price: 48000, cost: 19200, description: 'Hamburguesa Premium Ranchera + papas premium + bebida grande + postre', stock: 100, status: 'active', image: null },
   
   // Bebidas
-  { name: 'Coca Cola 400ml', category: 'Bebidas', price: 5500, cost: 2200, description: 'Refresco gaseoso Coca Cola 400ml helado', stock: 100, status: 'active', image: null },
-  { name: 'Coca Cola 600ml', category: 'Bebidas', price: 7000, cost: 2800, description: 'Refresco gaseoso Coca Cola 600ml helado', stock: 100, status: 'active', image: null },
-  { name: 'Agua Embotellada 600ml', category: 'Bebidas', price: 3500, cost: 1400, description: 'Agua embotellada purificada 600ml fría', stock: 100, status: 'active', image: null },
-  { name: 'Jugo Natural Mango 400ml', category: 'Bebidas', price: 6000, cost: 2400, description: 'Jugo natural de mango fresco 400ml', stock: 100, status: 'active', image: null },
-  { name: 'Jugo Natural Fresa 400ml', category: 'Bebidas', price: 6000, cost: 2400, description: 'Jugo natural de fresa fresca 400ml', stock: 100, status: 'active', image: null },
-  { name: 'Cerveza Artesanal 355ml', category: 'Bebidas', price: 8000, cost: 3200, description: 'Cerveza artesanal 355ml fría', stock: 100, status: 'active', image: null },
+  // Postobon
+  { name: 'Postobon 250 ml', category: 'Bebidas', price: 3500, cost: 1400, description: 'Refresco Postobon 250ml con selector de sabor. Sabores: Naranja, Piña, Limón, Mora', stock: 100, status: 'active', image: null },
+  { name: 'Postobon 400 ml', category: 'Bebidas', price: 4500, cost: 1800, description: 'Refresco Postobon 400ml con selector de sabor. Sabores: Naranja, Piña, Limón, Mora', stock: 100, status: 'active', image: null },
+  { name: 'Postobon 1000 ml', category: 'Bebidas', price: 7000, cost: 2800, description: 'Refresco Postobon 1000ml con selector de sabor. Sabores: Naranja, Piña, Limón, Mora', stock: 100, status: 'active', image: null },
+  // Coca Cola
+  { name: 'Coca Cola 400 ml', category: 'Bebidas', price: 5500, cost: 2200, description: 'Refresco gaseoso Coca Cola 400ml helado', stock: 100, status: 'active', image: null },
+  { name: 'Coca Cola 1500 ml', category: 'Bebidas', price: 9000, cost: 3600, description: 'Refresco gaseoso Coca Cola 1500ml helado. Perfecto para compartir', stock: 100, status: 'active', image: null },
+  // Hit
+  { name: 'Hit 500 ml', category: 'Bebidas', price: 5000, cost: 2000, description: 'Bebida Hit 500ml con selector de sabor. Sabores variados disponibles', stock: 100, status: 'active', image: null },
+  { name: 'Hit 1000 ml', category: 'Bebidas', price: 8000, cost: 3200, description: 'Bebida Hit 1000ml con selector de sabor. Sabores variados disponibles', stock: 100, status: 'active', image: null },
+  // Agua
+  { name: 'Agua 300 ml', category: 'Bebidas', price: 2500, cost: 1000, description: 'Agua embotellada purificada 300ml fría', stock: 100, status: 'active', image: null },
+  { name: 'Agua 600 ml', category: 'Bebidas', price: 3500, cost: 1400, description: 'Agua embotellada purificada 600ml fría', stock: 100, status: 'active', image: null },
+  { name: 'Agua Sabor 400 ml', category: 'Bebidas', price: 5000, cost: 2000, description: 'Agua con sabor 400ml con selector de sabor. Sabores: Limón, Fresa, Naranja', stock: 100, status: 'active', image: null },
+  // Otras Bebidas
+  { name: 'Malta Polar 355 ml', category: 'Bebidas', price: 8000, cost: 3200, description: 'Malta Polar 355ml fría. Bebida energética deliciosa', stock: 100, status: 'active', image: null },
+  { name: 'Frescolita 355 ml', category: 'Bebidas', price: 8000, cost: 3200, description: 'Frescolita 355ml fría. Bebida refrescante venezolana', stock: 100, status: 'active', image: null },
   
   // Adicionales
   { name: 'Queso Extra Fundido', category: 'Adicionales', price: 2500, cost: 1000, description: 'Queso fundido adicional de alta calidad', stock: 100, status: 'active', image: null },
