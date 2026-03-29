@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useOrder } from '../../context/OrderContext';
 import { useCart } from '../../context/CartContext';
 import PaymentModal from '../payments/PaymentModal';
+import CartItem from './CartItem';
 import { Trash2, CreditCard, ShoppingBag, Edit2 } from 'lucide-react';
 import { useSettings } from '../../context/SettingsContext';
 import { formatCurrency } from '../../utils/formatters';
@@ -199,95 +200,12 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp, c
 					{!items || items.length === 0 ? (
 						<div className="text-center py-8">
 							<ShoppingBag className="text-gray-300 dark:text-gray-600 mx-auto mb-2" size={32} />
-						<p className="text-gray-500 dark:text-gray-400 text-sm">Sin productos</p>
+							<p className="text-gray-500 dark:text-gray-400 text-sm">Sin productos</p>
 						</div>
 					) : (
-						<div>
-							{items.map((item, index) => (
-								<div key={`${item.id}-${index}`} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-2 md:p-3 border border-gray-200 dark:border-gray-600">
-									<div className="flex justify-between items-start mb-1.5">
-									<div className="flex-1 min-w-0">
-										<h4 className="font-bold text-xs md:text-sm text-gray-800 dark:text-white truncate">{item.name}</h4>
-										<p className="text-xs md:text-sm text-blue-600 dark:text-blue-400">
-												${parseFloat(item.price).toLocaleString('es-CO')} c/u
-											</p>
-
-											{item.addons && item.addons.length > 0 && (
-											<div className="mt-1 space-y-0.5">
-												{item.addons.map((addon, idx) => (
-													<div key={idx} className="text-xs text-purple-600 dark:text-purple-400 pl-2 border-l-2 border-purple-300 dark:border-purple-600">
-															+ {addon.name} - ${parseFloat(addon.price).toLocaleString('es-CO')}
-														</div>
-													))}
-												</div>
-											)}
-
-											{item.notes && (
-											<div className="mt-1 flex items-center justify-between p-1.5 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 rounded text-xs text-blue-800 dark:text-blue-300">
-													<span>Note: {item.notes}</span>
-													<button
-														onClick={() => openNoteModal(item.id, item.notes)}
-														className="text-blue-500 hover:text-blue-700 ml-2 flex-shrink-0"
-														title="Editar nota"
-													>
-														<Edit2 size={14} />
-													</button>
-												</div>
-											)}
-											{!item.notes && (
-												<button
-													onClick={() => openNoteModal(item.id, '')}
-													className="mt-1 w-full py-1 text-xs text-gray-400 hover:text-blue-500 border border-dashed border-gray-300 dark:border-gray-600 rounded flex items-center justify-center gap-1.5 transition-colors"
-													title="Agregar nota"
-												>
-													<Edit2 size={14} />
-													Agregar nota
-												</button>
-											)}
-										</div>
-										<p className="font-bold text-xs md:text-sm text-gray-800 dark:text-white ml-2 flex-shrink-0">
-											${(parseFloat(item.price) * parseInt(item.quantity) + (item.addons?.reduce((sum, a) => sum + parseFloat(a.price), 0) || 0)).toLocaleString('es-CO')}
-										</p>
-									</div>
-
-								<div className="flex items-center justify-between mt-1.5 pt-1.5 border-t border-gray-200 dark:border-gray-600">
-									<div className="flex items-center gap-1">
-										<button
-											onClick={() => {
-												const newQty = parseInt(item.quantity) - 1;
-												if (newQty >= 1) {
-													updateQuantity(item.id, newQty);
-												}
-											}}
-											className="w-6 h-6 bg-white dark:bg-gray-800 rounded text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-center font-bold"
-										>
-											-
-										</button>
-										<span className="w-6 text-center font-bold text-xs text-gray-800 dark:text-white">
-												{item.quantity}
-											</span>
-											<button
-												onClick={() => {
-													const newQty = parseInt(item.quantity) + 1;
-													updateQuantity(item.id, newQty);
-												}}
-												className="w-6 h-6 bg-white dark:bg-gray-800 rounded text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-center font-bold"
-											>
-												+
-											</button>
-										</div>
-										<button
-											onClick={() => {
-												removeItem(item.id);
-											}}
-										className="text-red-500 hover:text-red-700 p-1"
-									>
-										<Trash2 size={16} />
-										</button>
-									</div>
-								</div>
-							))}
-						</div>
+						items.map((item, index) => (
+							<CartItem key={`${item.id}-${index}`} item={item} index={index} />
+						))
 					)}
 				</div>
 
