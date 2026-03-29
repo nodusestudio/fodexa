@@ -7,7 +7,7 @@ import { Trash2, CreditCard, ShoppingBag, Edit2 } from 'lucide-react';
 import { useSettings } from '../../context/SettingsContext';
 import { formatCurrency } from '../../utils/formatters';
 
-const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp }) => {
+const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp, currentOrder, onPayOrder }) => {
 	const { deliveryData } = useOrder();
 	const { items, clearCart, updateQuantity, removeItem } = useCart();
 	const { createOrder, clearCurrentOrder } = useOrder();
@@ -15,6 +15,7 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp })
 	const [showNoteModal, setShowNoteModal] = useState(false);
 	const [selectedItemId, setSelectedItemId] = useState(null);
 	const [currentNotes, setCurrentNotes] = useState('');
+	const [currentPaymentOrder, setCurrentPaymentOrder] = useState(null);
 	const { settings } = useSettings();
 
 	const currencyCode = settings?.currency?.code || 'COP';
@@ -135,12 +136,45 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp })
 		}
 	};
 
-	const handleProcessPayment = () => {
+	const handleProcessPayment = async () => {
 		if (!items || items.length === 0) {
 			alert('⚠️ Agregue productos al carrito');
 			return;
 		}
-		setShowPaymentModal(true);
+
+		try {
+			// 1️⃣ CREAR la orden primero
+			const orderData = {
+				type: orderType,
+				tableNumber: orderType === 'table' ? selectedTable : null,
+				deliveryData: orderType === 'delivery' ? deliveryData : null,
+				items: items,
+				subtotal: subtotal,
+				iva: iva,
+				total: total,
+				deliveryCost: deliveryCost,
+				status: 'pending',
+				taxesConfig: { enabled: taxEnabled, value: taxValue },
+				currencyCode: currencyCode,
+				timestamp: new Date(),
+			};
+
+			console.log('📝 Creando orden para pago:', orderData);
+			const savedOrder = await createOrder(orderData);
+			console.log('✅ Orden creada con ID:', savedOrder.id);
+
+			// 2️⃣ Guarda la orden en estado local para PaymentModal
+			setCurrentPaymentOrder(savedOrder);
+
+			// 3️⃣ Disparar evento con la orden creada (para que POS.js la capture)
+			onPayOrder && onPayOrder(savedOrder);
+
+			// 4️⃣ Abrir modal de pago
+			setShowPaymentModal(true);
+		} catch (error) {
+			console.error('❌ Error creando orden para pago:', error);
+			alert('❌ Error: No se pudo crear la orden');
+		}
 	};
 
 	return (
@@ -306,10 +340,7 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp })
 			<PaymentModal
 				isOpen={showPaymentModal}
 				onClose={() => setShowPaymentModal(false)}
-				orderData={{
-					items,
-					total,
-					deliveryCost,
+			orderData={currentPaymentOrder || {
 					type: orderType,
 					deliveryData: orderType === 'delivery' ? deliveryData : null
 				}}

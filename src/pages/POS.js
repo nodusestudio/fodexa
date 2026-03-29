@@ -51,19 +51,25 @@ const POS = () => {
         setTicketToPrint(order);
         setShowPrintModal(true);
       }
-      setView('board');
-      setLocalOrderType(null);
-      setShowTableSelector(false);
-      setShowCustomerSelector(false);
-      setShowProducts(false);
-      setShowCartDrawer(false);
+      
+      // Para domicilios pagados (status='waiting') o completados: volver al tablero
+      // Para otros pedidos: solo si están completados
+      if (order?.type === 'delivery' || order?.status === 'completed') {
+        setView('board');
+        setLocalOrderType(null);
+        setShowTableSelector(false);
+        setShowCustomerSelector(false);
+        setShowProducts(false);
+        setShowCartDrawer(false);
+        clearCart();
+      }
       clearCurrentOrder();
     };
     window.addEventListener('orderSaved', handleOrderSaved);
     return () => {
       window.removeEventListener('orderSaved', handleOrderSaved);
     };
-  }, [clearCurrentOrder]);
+  }, [clearCurrentOrder, clearCart]);
 
   const { deleteOrder, updateOrder } = useOrder();
 
@@ -121,9 +127,29 @@ const POS = () => {
 
   const handlePaymentComplete = (paymentData) => {
     if (currentOrder) {
-      updateOrder(currentOrder.id, { status: 'completed', payment: paymentData });
+      // No actualizar status aquí - PaymentModal ya lo hizo
+      // Solo actualizar si es un tipo que no sea delivery (que ya maneja su status en PaymentModal)
+      const updateData = { payment: paymentData };
+      
+      // Solo actualizar status para orders que NO son delivery
+      // Los delivery ya tienen status = 'waiting' desde PaymentModal
+      if (currentOrder.type !== 'delivery') {
+        updateData.status = 'completed';
+      }
+      
+      updateOrder(currentOrder.id, updateData);
+      
+      // Limpiar e ir al tablero
       setCurrentOrder(null);
       setShowPaymentModal(false);
+      clearCart();
+      setView('board');
+      setLocalOrderType(null);
+      setShowTableSelector(false);
+      setShowCustomerSelector(false);
+      setShowProducts(false);
+      setShowCartDrawer(false);
+      clearCurrentOrder();
     }
   };
 
@@ -245,6 +271,7 @@ const POS = () => {
               selectedTable={selectedTable}
               deliveryData={deliveryData}
               currentOrder={currentOrder}
+              onPayOrder={handlePayOrder}
             />
           </div>
 
@@ -284,6 +311,7 @@ const POS = () => {
                     selectedTable={selectedTable}
                     deliveryData={deliveryData}
                     currentOrder={currentOrder}
+                    onPayOrder={handlePayOrder}
                   />
                 </div>
               </div>

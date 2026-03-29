@@ -224,6 +224,8 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
         printReceipt(order);
       }
       onComplete && onComplete(finalPaymentMethods);
+      // Cerrar modal después de procesar pago
+      onClose();
     }, 1000);
   };
 
