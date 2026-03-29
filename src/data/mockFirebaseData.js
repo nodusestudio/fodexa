@@ -53,9 +53,9 @@ export const mockProducts = [
   { name: 'PAPAS PEQUEÑAS', category: 'Entradas', price: 7000, cost: 2800, description: 'Papas a la francesa crocantes y salsas de la casa aparte.', stock: 100, status: 'active', image: null },
   
   // Combos Express
-  { name: 'Combo Burger Simple', category: 'Combos Express', price: 19000, cost: 7600, description: 'Hamburguesa clásica + papas medianas + bebida 400ml', stock: 100, status: 'active', image: null },
-  { name: 'Combo Burger Doble', category: 'Combos Express', price: 35000, cost: 14000, description: '2 hamburguesas clásicas + papas grandes + bebida 600ml', stock: 100, status: 'active', image: null },
-  { name: 'Combo Premium Express', category: 'Combos Express', price: 42000, cost: 16800, description: 'Hamburguesa premium + papas grandes + bebida + postre', stock: 100, status: 'active', image: null },
+  { name: 'Combo Express Burger', category: 'Combos Express', price: 16000, cost: 6400, description: 'Incluye 1 hamburguesa clásica normal pequeña con carne, queso fundido, tocineta, ripio, vegetales y salsas de la casa, acompañada de 1 bebida de 250ml (selector de sabor)', stock: 100, status: 'active', image: null },
+  { name: 'Combo Express Salchi', category: 'Combos Express', price: 15000, cost: 6000, description: 'Incluye salchipapa clásica con papas a la francesa, salchicha, queso fundido y salsas venezolanas aparte, acompañada de 1 bebida de 250ml (selector de sabor)', stock: 100, status: 'active', image: null },
+  { name: 'Combo Express Perro', category: 'Combos Express', price: 14000, cost: 5600, description: 'Incluye 1 perro caliente con salchicha tipo ranchera, queso fundido, ripio crujiente y salsas venezolanas, acompañado de 1 bebida de 250ml (selector de sabor)', stock: 100, status: 'active', image: null },
   
   // Combos de Perros
   { name: 'Combo 1 Perro', category: 'Combos de Perros', price: 17000, cost: 6800, description: 'Incluye 1 perro caliente con salchicha tipo ranchera, queso fundido, ripio crujiente y salsas venezolanas + papas grandes + 2 bebidas de 250ml (selector de sabor)', stock: 100, status: 'active', image: null },
