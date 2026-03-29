@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useOrder } from '../../context/OrderContext';
 import { useCart } from '../../context/CartContext';
 import PaymentModal from '../payments/PaymentModal';
-import { Trash2, CreditCard, ShoppingBag } from 'lucide-react';
+import { Trash2, CreditCard, ShoppingBag, Edit2 } from 'lucide-react';
 import { useSettings } from '../../context/SettingsContext';
 import { formatCurrency } from '../../utils/formatters';
 
@@ -12,6 +12,9 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp })
 	const { items, clearCart, updateQuantity, removeItem } = useCart();
 	const { createOrder, clearCurrentOrder } = useOrder();
 	const [showPaymentModal, setShowPaymentModal] = useState(false);
+	const [showNoteModal, setShowNoteModal] = useState(false);
+	const [selectedItemId, setSelectedItemId] = useState(null);
+	const [currentNotes, setCurrentNotes] = useState('');
 	const { settings } = useSettings();
 
 	const currencyCode = settings?.currency?.code || 'COP';
@@ -53,9 +56,47 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp })
 
 	const { subtotal, iva, deliveryCost, total } = calculateTotals();
 
+	// Funciones para editar notas
+	const openNoteModal = (itemId, notes = '') => {
+		setSelectedItemId(itemId);
+		setCurrentNotes(notes || '');
+		setShowNoteModal(true);
+	};
+
+	const closenoteModal = () => {
+		setShowNoteModal(false);
+		setSelectedItemId(null);
+		setCurrentNotes('');
+	};
+
+	const handleSaveNotes = () => {
+		if (selectedItemId) {
+			const item = items.find(i => i.id === selectedItemId);
+			if (item) {
+				item.notes = currentNotes || null;
+			}
+		}
+		closenoteModal();
+	};
+
 	const handleSaveOrder = async () => {
 		if (!items || items.length === 0) {
 			alert('⚠️ Agregue productos al carrito');
+			return;
+		}
+
+		if (!orderType) {
+			alert('⚠️ Seleccione tipo de orden (Mesa, Para Llevar o Domicilio)');
+			return;
+		}
+
+		if (orderType === 'table' && !selectedTable) {
+			alert('⚠️ Seleccione una mesa');
+			return;
+		}
+
+		if (orderType === 'delivery' && !deliveryData?.name) {
+			alert('⚠️ Ingrese nombre del cliente para entrega');
 			return;
 		}
 
@@ -120,7 +161,7 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp })
 				</div>
 
 				{/* Items - Scrollable */}
-				<div className="flex-1 overflow-y-auto p-2 md:p-3 space-y-2 md:space-y-3">
+				<div className="flex-1 overflow-y-auto p-1.5 md:p-2 space-y-1.5 md:space-y-2">
 					{!items || items.length === 0 ? (
 						<div className="text-center py-8">
 							<ShoppingBag className="text-gray-300 dark:text-gray-600 mx-auto mb-2" size={32} />
@@ -129,18 +170,18 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp })
 					) : (
 						<div>
 							{items.map((item, index) => (
-								<div key={`${item.id}-${index}`} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 md:p-4 border border-gray-200 dark:border-gray-600">
-									<div className="flex justify-between items-start mb-2">
-										<div className="flex-1">
-											<h4 className="font-bold text-sm md:text-base text-gray-800 dark:text-white">{item.name}</h4>
-											<p className="text-sm text-blue-600 dark:text-blue-400">
+								<div key={`${item.id}-${index}`} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-2 md:p-3 border border-gray-200 dark:border-gray-600">
+									<div className="flex justify-between items-start mb-1.5">
+									<div className="flex-1 min-w-0">
+										<h4 className="font-bold text-xs md:text-sm text-gray-800 dark:text-white truncate">{item.name}</h4>
+										<p className="text-xs md:text-sm text-blue-600 dark:text-blue-400">
 												${parseFloat(item.price).toLocaleString('es-CO')} c/u
 											</p>
 
 											{item.addons && item.addons.length > 0 && (
-												<div className="mt-2 space-y-1">
-													{item.addons.map((addon, idx) => (
-														<div key={idx} className="text-xs text-purple-600 dark:text-purple-400 pl-3 border-l-2 border-purple-300 dark:border-purple-600">
+											<div className="mt-1 space-y-0.5">
+												{item.addons.map((addon, idx) => (
+													<div key={idx} className="text-xs text-purple-600 dark:text-purple-400 pl-2 border-l-2 border-purple-300 dark:border-purple-600">
 															+ {addon.name} - ${parseFloat(addon.price).toLocaleString('es-CO')}
 														</div>
 													))}
@@ -148,30 +189,47 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp })
 											)}
 
 											{item.notes && (
-												<div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 rounded text-xs text-blue-800 dark:text-blue-300">
-													Note: {item.notes}
+											<div className="mt-1 flex items-center justify-between p-1.5 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 rounded text-xs text-blue-800 dark:text-blue-300">
+													<span>Note: {item.notes}</span>
+													<button
+														onClick={() => openNoteModal(item.id, item.notes)}
+														className="text-blue-500 hover:text-blue-700 ml-2 flex-shrink-0"
+														title="Editar nota"
+													>
+														<Edit2 size={14} />
+													</button>
 												</div>
 											)}
+											{!item.notes && (
+												<button
+													onClick={() => openNoteModal(item.id, '')}
+													className="mt-1 w-full py-1 text-xs text-gray-400 hover:text-blue-500 border border-dashed border-gray-300 dark:border-gray-600 rounded flex items-center justify-center gap-1.5 transition-colors"
+													title="Agregar nota"
+												>
+													<Edit2 size={14} />
+													Agregar nota
+												</button>
+											)}
 										</div>
-										<p className="font-bold text-gray-800 dark:text-white ml-4">
+										<p className="font-bold text-xs md:text-sm text-gray-800 dark:text-white ml-2 flex-shrink-0">
 											${(parseFloat(item.price) * parseInt(item.quantity) + (item.addons?.reduce((sum, a) => sum + parseFloat(a.price), 0) || 0)).toLocaleString('es-CO')}
 										</p>
 									</div>
 
-									<div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
-										<div className="flex items-center gap-2">
-											<button
-												onClick={() => {
-													const newQty = parseInt(item.quantity) - 1;
-													if (newQty >= 1) {
-														updateQuantity(item.id, newQty);
-													}
-												}}
-												className="w-8 h-8 bg-white dark:bg-gray-800 rounded-lg flex items-center justify-center text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-											>
-												-
-											</button>
-											<span className="w-8 text-center font-bold text-gray-800 dark:text-white">
+								<div className="flex items-center justify-between mt-1.5 pt-1.5 border-t border-gray-200 dark:border-gray-600">
+									<div className="flex items-center gap-1">
+										<button
+											onClick={() => {
+												const newQty = parseInt(item.quantity) - 1;
+												if (newQty >= 1) {
+													updateQuantity(item.id, newQty);
+												}
+											}}
+											className="w-6 h-6 bg-white dark:bg-gray-800 rounded text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-center font-bold"
+										>
+											-
+										</button>
+										<span className="w-6 text-center font-bold text-xs text-gray-800 dark:text-white">
 												{item.quantity}
 											</span>
 											<button
@@ -179,7 +237,7 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp })
 													const newQty = parseInt(item.quantity) + 1;
 													updateQuantity(item.id, newQty);
 												}}
-												className="w-8 h-8 bg-white dark:bg-gray-800 rounded-lg flex items-center justify-center text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+												className="w-6 h-6 bg-white dark:bg-gray-800 rounded text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-center font-bold"
 											>
 												+
 											</button>
@@ -188,9 +246,9 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp })
 											onClick={() => {
 												removeItem(item.id);
 											}}
-											className="text-red-500 hover:text-red-700 p-2"
-										>
-											<Trash2 size={18} />
+										className="text-red-500 hover:text-red-700 p-1"
+									>
+										<Trash2 size={16} />
 										</button>
 									</div>
 								</div>
@@ -256,6 +314,39 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp })
 					deliveryData: orderType === 'delivery' ? deliveryData : null
 				}}
 			/>
+
+			{/* Modal de editar notas */}
+			{showNoteModal && (
+				<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+					<div className="bg-white dark:bg-gray-800 rounded-lg p-4 max-w-sm w-full shadow-xl">
+						<h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">
+							Editar nota
+						</h3>
+
+						<textarea
+							value={currentNotes}
+							onChange={(e) => setCurrentNotes(e.target.value)}
+							placeholder="Ej: Sin cebolla, sin picante, bien cocido..."
+							className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 resize-none h-24"
+						/>
+
+						<div className="flex gap-2 mt-4">
+							<button
+								onClick={closenoteModal}
+								className="flex-1 px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-white rounded-lg font-semibold hover:bg-gray-400 transition-colors"
+							>
+								Cancelar
+							</button>
+							<button
+								onClick={handleSaveNotes}
+								className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
+							>
+								Guardar
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
 		</>
 	);
 };

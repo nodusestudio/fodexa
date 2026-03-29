@@ -133,22 +133,32 @@ export const OrderProvider = ({ children }) => {
 
   // Actualiza un pedido existente y actualiza estado local
   const updateOrder = async (id, data) => {
-    if (!user) throw new Error('User not authenticated');
     try {
-      console.log('✏️ updateOrder llamado con ID:', id);
-      const orderRef = doc(db, 'orders', id);
-      await updateDoc(orderRef, {
-        ...data,
-        updatedAt: new Date(),
-      });
+      console.log('✏️ updateOrder llamado con ID:', id, 'Datos:', data);
       
-      // ✅ Actualizar en estado local también
+      // 1️⃣ ✅ Actualizar PRIMERO en estado local
       setOrders(prev => prev.map(order => 
         order.id === id ? { ...order, ...data, updatedAt: new Date() } : order
       ));
       console.log('✅ Pedido actualizado en estado local');
+      
+      // 2️⃣ Intentar actualizar en Firestore en background (si el usuario existe y es ID válido)
+      if (user?.uid && !id.startsWith('local_')) {
+        (async () => {
+          try {
+            const orderRef = doc(db, 'orders', id);
+            await updateDoc(orderRef, {
+              ...data,
+              updatedAt: new Date(),
+            });
+            console.log('📦 Orden también actualizada en Firestore');
+          } catch (firestoreError) {
+            console.warn('⚠️ Firestore falló pero orden actualizada localmente:', firestoreError.message);
+          }
+        })();
+      }
     } catch (error) {
-      console.error('Error updating order:', error);
+      console.error('❌ Error updating order:', error);
       throw error;
     }
   };

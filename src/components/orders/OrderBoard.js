@@ -1,23 +1,12 @@
 ﻿import React, { useState } from 'react';
 import { useOrder } from '../../context/OrderContext';
 import OrderCard from './OrderCard';
-import { Table, ShoppingBag, Bike, Plus, Utensils } from 'lucide-react';
+import { Table, ShoppingBag, Bike, Plus } from 'lucide-react';
 import KitchenTicketModal from './KitchenTicketModal';
 
 const OrderBoard = ({ onNewOrder, onEditOrder, onPayOrder, onDeleteOrder }) => {
-  const { orders = [] } = useOrder();
+  const { orders = [], updateOrder } = useOrder();
   console.log('🎯 OrderBoard - Órdenes del contexto:', orders);
-
-  // Solo mostrar pedidos que no han sido cobrados (status !== 'completed')
-  const tableOrders = (orders || []).filter(o => {
-    const matches = o.type === 'table' && o.status !== 'completed';
-    console.log(`📊 Evaluando orden ${o.id}:`, { type: o.type, status: o.status, matches });
-    return matches;
-  });
-  const takeoutOrders = (orders || []).filter(o => o.type === 'takeout' && o.status !== 'completed');
-  const deliveryOrders = (orders || []).filter(o => o.type === 'delivery' && o.status !== 'completed');
-
-  console.log('📌 Órdenes filtradas - Mesa:', tableOrders, 'Para Llevar:', takeoutOrders, 'Domicilio:', deliveryOrders);
 
   const [showKitchenTicket, setShowKitchenTicket] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -26,6 +15,35 @@ const OrderBoard = ({ onNewOrder, onEditOrder, onPayOrder, onDeleteOrder }) => {
     setSelectedOrder(order);
     setShowKitchenTicket(true);
   };
+
+  const handleUpdateStatus = async (orderId, newStatus) => {
+    try {
+      await updateOrder(orderId, { status: newStatus });
+      console.log(`✅ Orden ${orderId} actualizada a estado: ${newStatus}`);
+    } catch (error) {
+      console.error('❌ Error actualizando orden:', error);
+      alert('Error al actualizar el estado');
+    }
+  };
+
+  // Solo mostrar pedidos que no han sido cobrados (status !== 'completed')
+  const tableOrders = (orders || [])
+    .filter(o => {
+      const matches = o.type === 'table' && o.status !== 'completed';
+      console.log(`📊 Evaluando orden ${o.id}:`, { type: o.type, status: o.status, matches });
+      return matches;
+    })
+    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  
+  const takeoutOrders = (orders || [])
+    .filter(o => o.type === 'takeout' && o.status !== 'completed')
+    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  
+  const deliveryOrders = (orders || [])
+    .filter(o => o.type === 'delivery' && o.status !== 'completed')
+    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+  console.log('📌 Órdenes filtradas - Mesa:', tableOrders, 'Para Llevar:', takeoutOrders, 'Domicilio:', deliveryOrders);
 
   const Column = ({ title, Icon, orders, type, color }) => {
     console.log(`🔶 Column ${title} - Órdenes recibidas:`, orders);
@@ -60,14 +78,9 @@ const OrderBoard = ({ onNewOrder, onEditOrder, onPayOrder, onDeleteOrder }) => {
                 onEdit={onEditOrder} 
                 onPay={onPayOrder}
                 onDelete={onDeleteOrder}
+                onUpdateStatus={handleUpdateStatus}
+                onPrintKitchen={handlePrintKitchen}
               />
-              <button
-                onClick={() => handlePrintKitchen(order)}
-                className="w-full mt-2 bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors text-sm"
-              >
-                <Utensils size={18} />
-                🍳 Imprimir para Cocina
-              </button>
             </div>
             );
           })
