@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { formatCurrency } from '../../utils/formatters';
 import { useTickets } from '../../context/TicketContext';
 import { useCash } from '../../context/CashContext';
+import { useOrder } from '../../context/OrderContext';
 import { CreditCard, Banknote, Smartphone, X } from 'lucide-react';
 
 const paymentTypes = [
@@ -31,6 +32,7 @@ const paymentTypes = [
 function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
   const { createTicket } = useTickets();
   const { addMovement, isCashOpen } = useCash();
+  const { updateOrder } = useOrder();
   // Calcular subtotal en tiempo real (productos + addons)
   const calcSubtotal = () => {
     if (!orderData?.items) return 0;
@@ -149,40 +151,69 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
     return 0;
   };
 
-  const totalPaid = paymentMethods.reduce((sum, p) => sum + p.amount, 0);
+  // Calcular total pagado desde selectedTypes y amounts (nuevo sistema)
+  const totalPaid = selectedTypes.reduce((sum, key) => sum + (parseFloat(amounts[key]) || 0), 0);
 
   const handleCompletePayment = () => {
     if (totalPaid < total) {
       alert(`⚠️ Falta pagar: ${(total - totalPaid).toLocaleString()}`);
       return;
     }
+    
+    // Construir paymentMethods desde selectedTypes y amounts
+    const finalPaymentMethods = selectedTypes.map(key => {
+      const amount = parseFloat(amounts[key]) || 0;
+      return {
+        type: key === 'transfer' ? 'transfer' : key,
+        amount: amount,
+        change: key === 'cash' ? amount - total : 0
+      };
+    });
+
     // Crear orden con múltiples métodos de pago
     // Asegurar que los datos de cliente/delivery se pasen correctamente
     let deliveryData = null;
     if (orderData.type === 'delivery') {
       deliveryData = orderData.deliveryData || orderData.customer || orderData.delivery || null;
     }
+    
+    // Para domicilios pagados: status = 'waiting' (esperando domiciliario)
+    // Para otros: status = 'completed' (ya finalizado)
+    const orderStatus = orderData.type === 'delivery' ? 'waiting' : 'completed';
+    
     const order = {
       ...orderData,
       subtotal,
       total,
       iva,
       deliveryCost,
-      status: 'completed',
-      paymentMethods: paymentMethods,
-      paymentType: paymentMethods.length === 1 ? paymentMethods[0].type : 'mixed',
+      status: orderStatus,
+      paymentMethods: finalPaymentMethods,
+      paymentType: finalPaymentMethods.length === 1 ? finalPaymentMethods[0].type : 'mixed',
       deliveryData,
       customer: deliveryData, // for legacy/compatibility
     };
 
     // Registrar en caja
     if (isCashOpen) {
-      paymentMethods.forEach(method => {
+      finalPaymentMethods.forEach(method => {
         addMovement('sale', method.amount, `Venta ${method.type} - Ticket #${Date.now().toString().slice(-6)}`);
       });
     }
 
+    // Guardar ticket en local
     createTicket(order);
+    
+    // Actualizar orden en Firebase para persistir el estado y pago
+    if (orderData.id) {
+      updateOrder(orderData.id, {
+        status: orderStatus,
+        paymentMethods: finalPaymentMethods,
+        paymentType: orderStatus === 'waiting' ? undefined : finalPaymentMethods.length === 1 ? finalPaymentMethods[0].type : 'mixed',
+        deliveryData: orderData.type === 'delivery' ? deliveryData : undefined,
+      });
+    }
+    
     setSuccess(true);
     setTimeout(() => {
       setSuccess(false);
@@ -192,7 +223,7 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
       if (window.confirm('¿Desea imprimir el ticket?')) {
         printReceipt(order);
       }
-      onComplete && onComplete(paymentMethods);
+      onComplete && onComplete(finalPaymentMethods);
     }, 1000);
   };
 

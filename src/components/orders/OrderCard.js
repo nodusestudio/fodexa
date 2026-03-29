@@ -159,12 +159,53 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
     }
   };
 
+  // Calcular lo que el domiciliario debe pagar/recibir
+  const calculateDeliveryPayment = () => {
+    if (order.type !== 'delivery') return null;
+
+    const deliveryCost = order.deliveryCost || 0;
+    const paymentMethods = order.paymentMethods || [];
+    
+    // Calcular cuánto se pagó en efectivo
+    const cashPaid = paymentMethods
+      .filter(m => m.type === 'cash' || m.type === 'efectivo')
+      .reduce((sum, m) => sum + (m.amount || 0), 0);
+
+    // El domiciliario necesita recibir exactamente el costo del domicilio
+    const deliveryBalance = deliveryCost - cashPaid;
+
+    if (deliveryBalance > 0) {
+      return {
+        type: 'pagar',
+        amount: deliveryBalance,
+        message: `Pagar a domicilio: ${formatCurrency(deliveryBalance)}`
+      };
+    } else if (deliveryBalance < 0) {
+      return {
+        type: 'cobrar',
+        amount: Math.abs(deliveryBalance),
+        message: `Cobrar a domicilio: ${formatCurrency(Math.abs(deliveryBalance))}`
+      };
+    } else {
+      return {
+        type: 'nada',
+        amount: 0,
+        message: 'No cobrar nada'
+      };
+    }
+  };
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border-l-4 border-blue-500 p-4 shadow-md hover:shadow-lg transition-shadow">
       {/* Header */}
       <div className="flex justify-between items-start mb-3 gap-3">
         <div>
-          <h4 className="font-bold text-gray-800 dark:text-white text-lg">{getName()}</h4>
+          <div className="flex items-center gap-2">
+            <h4 className="font-bold text-gray-800 dark:text-white text-lg">{getName()}</h4>
+            {order.type === 'delivery' && order.deliveryData?.address && (
+              <span className="text-xs text-gray-500 dark:text-gray-400">{order.deliveryData.address}</span>
+            )}
+          </div>
           <div className="flex items-center gap-1 mt-1">
             <button
               onClick={handleStatusChange}
@@ -244,21 +285,21 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
         </div>
       </div>
 
-      {/* Info */}
-      <div className="mb-3 text-sm text-gray-600 dark:text-gray-300">
-        {order.type === 'delivery' && order.deliveryData && (
-          <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-            <div className="flex items-center gap-1 text-xs">
-              <User size={12} />
-              <span className="font-semibold">{order.deliveryData.name}</span>
-            </div>
-            <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-              <MapPin size={12} />
-              {order.deliveryData.address}
-            </div>
-          </div>
-        )}
-      </div>
+
+      {/* Delivery Payment Info */}
+      {order.type === 'delivery' && calculateDeliveryPayment() && (
+        <div className="mb-3 p-2 bg-blue-50 dark:bg-blue-900/30 rounded border-l-4 border-blue-500">
+          <p className={`text-xs font-bold ${
+            calculateDeliveryPayment().type === 'pagar' 
+              ? 'text-red-700 dark:text-red-400' 
+              : calculateDeliveryPayment().type === 'cobrar'
+              ? 'text-orange-700 dark:text-orange-400'
+              : 'text-green-700 dark:text-green-400'
+          }`}>
+            {calculateDeliveryPayment().message}
+          </p>
+        </div>
+      )}
 
       {/* Actions */}
       <div className="flex gap-2 items-center">
