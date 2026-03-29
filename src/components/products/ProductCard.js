@@ -20,6 +20,7 @@ const ProductCard = ({ product, onAddToCart }) => {
     'Combos de Burger',
     'Combos de Perros',
     'Combos Express',
+    'Combos Familiares',
   ];
 
   // DEBUG: Log product structure

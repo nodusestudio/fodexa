@@ -3,11 +3,15 @@ import React, { useState } from 'react';
 const BebidaSelectorCombo = ({ product, onConfirm, onCancel }) => {
   // Determinar cuántas bebidas llevar según el combo
   const isComboExpress = product.name.includes('Combo Express');
+  const isFamiliar = product.name.includes('Familiar');
   const isCombo1or2 = product.name.includes('Combo 1') || product.name.includes('Combo 2');
   
   let numBebidas, tamañoBebida;
   
-  if (isComboExpress) {
+  if (isFamiliar) {
+    numBebidas = 1; // Combos Familiares llevan 1 bebida
+    tamañoBebida = '1000ml'; // De 1000ml (litro)
+  } else if (isComboExpress) {
     numBebidas = 1; // Combos Express llevan 1 bebida
     tamañoBebida = '250ml'; // De 250ml
   } else if (isCombo1or2) {

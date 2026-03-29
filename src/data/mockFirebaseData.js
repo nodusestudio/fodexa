@@ -10,6 +10,7 @@ export const mockCategories = [
   { name: 'Combos Express', description: 'Combos rápidos y deliciosos para llevar', color: '#06B6D4', status: 'active' },
   { name: 'Combos de Perros', description: 'Combos de perros calientes con papas y bebida', color: '#8B5CF6', status: 'active' },
   { name: 'Combos de Burger', description: 'Combos de hamburguesas con papas y bebida', color: '#10B981', status: 'active' },
+  { name: 'Combos Familiares', description: 'Combos para compartir en familia o grupos', color: '#EC4899', status: 'active' },
   { name: 'Adicionales', description: 'Ingredientes y agregados extras para personalizar tu orden', color: '#A78BFA', status: 'active' },
   { name: 'Bebidas', description: 'Gaseosas, jugos naturales y agua embotellada', color: '#3B82F6', status: 'active' },
 ];
@@ -56,6 +57,10 @@ export const mockProducts = [
   { name: 'Combo Express Burger', category: 'Combos Express', price: 16000, cost: 6400, description: 'Incluye 1 hamburguesa clásica normal pequeña con carne, queso fundido, tocineta, ripio, vegetales y salsas de la casa, acompañada de 1 bebida de 250ml (selector de sabor)', stock: 100, status: 'active', image: null },
   { name: 'Combo Express Salchi', category: 'Combos Express', price: 15000, cost: 6000, description: 'Incluye salchipapa clásica con papas a la francesa, salchicha, queso fundido y salsas venezolanas aparte, acompañada de 1 bebida de 250ml (selector de sabor)', stock: 100, status: 'active', image: null },
   { name: 'Combo Express Perro', category: 'Combos Express', price: 14000, cost: 5600, description: 'Incluye 1 perro caliente con salchicha tipo ranchera, queso fundido, ripio crujiente y salsas venezolanas, acompañado de 1 bebida de 250ml (selector de sabor)', stock: 100, status: 'active', image: null },
+  
+  // Combos Familiares
+  { name: 'Familiar #4 ⭐ (Ideal para Compartir)', category: 'Combos Familiares', price: 44000, cost: 17600, description: 'Incluye: 1 Burger Clásica Pequeña + 1 Perro Caliente Normal + 1 Salchipapa Normal Pequeño + 1 Sandwich Tipo Cubano + 1 Bebida Familiar de litro (selector de sabor)', stock: 100, status: 'active', image: null },
+  { name: 'Familiar #3', category: 'Combos Familiares', price: 48000, cost: 19200, description: 'Incluye: 2 Burger Clásica Pequeña + 2 Perro Caliente Normal + 1 Bebida Familiar de litro (selector de sabor)', stock: 100, status: 'active', image: null },
   
   // Combos de Perros
   { name: 'Combo 1 Perro', category: 'Combos de Perros', price: 17000, cost: 6800, description: 'Incluye 1 perro caliente con salchicha tipo ranchera, queso fundido, ripio crujiente y salsas venezolanas + papas grandes + 2 bebidas de 250ml (selector de sabor)', stock: 100, status: 'active', image: null },
