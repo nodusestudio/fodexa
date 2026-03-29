@@ -167,12 +167,12 @@ const POS = () => {
       )}
 
       {(view === 'creating' || view === 'editing') && (
-        <div className="flex flex-col md:flex-row h-full overflow-hidden relative">
+        <div className="flex flex-col md:flex-row h-full overflow-hidden relative gap-0 md:gap-2 lg:gap-3">
           {/* Main Content - Full width mobile, flex-1 desktop */}
-          <div className="flex-1 flex flex-col overflow-hidden min-w-0 p-3 md:p-4">
+          <div className="flex-1 flex flex-col overflow-hidden min-w-0 p-2 sm:p-3 md:p-4 lg:p-6">
             <button 
               onClick={handleBackToBoard}
-              className="mb-3 md:mb-4 px-3 py-2 text-sm md:text-base text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg flex items-center gap-2 transition-colors"
+              className="mb-2 sm:mb-3 md:mb-4 px-3 py-2 text-xs sm:text-sm md:text-base text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg flex items-center gap-2 transition-colors"
             >
               ← Volver al tablero
             </button>
@@ -204,20 +204,20 @@ const POS = () => {
 
             {showProducts && (
               <>
-                <div className="flex flex-col sm:flex-row gap-2 md:gap-4 mb-3 md:mb-4">
+                <div className="flex flex-col sm:flex-row gap-2 md:gap-3 lg:gap-4 mb-2 sm:mb-3 md:mb-4 lg:mb-4">
                   <div className="flex-1 min-w-0 relative">
                     <input
                       type="text"
                       placeholder="Buscar producto..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-3 md:pl-4 pr-3 md:pr-4 py-2 text-sm md:text-base border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white"
+                      className="w-full pl-3 md:pl-4 pr-3 md:pr-4 py-2 text-xs sm:text-sm md:text-base border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white"
                     />
                   </div>
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    className="px-2 md:px-4 py-2 text-sm md:text-base border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white"
+                    className="px-2 md:px-3 lg:px-4 py-2 text-xs sm:text-sm md:text-base border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white"
                   >
                     <option value="all">Todas las categorías</option>
                     {dynamicCategories.map(cat => (
