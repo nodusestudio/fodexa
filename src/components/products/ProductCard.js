@@ -1,10 +1,13 @@
 ﻿import React, { useState } from 'react';
 import { formatCurrency } from '../../utils/formatters';
 import ComboSelector from './ComboSelector';
+import BebidaSelectorCombo from './BebidaSelectorCombo';
 
 const ProductCard = ({ product, onAddToCart }) => {
   const [showComboSelector, setShowComboSelector] = useState(false);
+  const [showBebidaSelector, setShowBebidaSelector] = useState(false);
 
+  // Productos normales que pueden agregar un combo (papas + bebida)
   const COMBO_CATEGORIES = [
     'Burger Clásicas',
     'Burger Premium',
@@ -12,22 +15,35 @@ const ProductCard = ({ product, onAddToCart }) => {
     'Perros Calientes',
   ];
 
+  // Productos que SON combos directos (ya incluyen bebida)
+  const COMBO_PRODUCT_CATEGORIES = [
+    'Combos de Burger',
+    'Combos de Perros',
+    'Combos Express',
+  ];
+
   // DEBUG: Log product structure
   console.log('ProductCard DEBUG - Product:', product);
   console.log('ProductCard DEBUG - product.category:', product.category);
 
   const shouldShowComboSelector = COMBO_CATEGORIES.includes(product.category);
+  const shouldShowBebidaSelector = COMBO_PRODUCT_CATEGORIES.includes(product.category);
 
   const handleAdd = () => {
-    if (shouldShowComboSelector) {
+    if (shouldShowBebidaSelector) {
+      // Es un combo directo, mostrar selector de bebida
+      setShowBebidaSelector(true);
+    } else if (shouldShowComboSelector) {
+      // Es un producto normal, mostrar ComboSelector para agregar combo
       setShowComboSelector(true);
     } else if (onAddToCart) {
+      // Es un producto sin combo
       onAddToCart({
         id: product.id,
         name: product.name,
         price: product.price,
         quantity: 1,
-        category: product.category, // Pasamos la categoría
+        category: product.category,
       });
     }
   };
@@ -36,9 +52,16 @@ const ProductCard = ({ product, onAddToCart }) => {
     if (onAddToCart) {
       onAddToCart({
         ...cartItem,
-        category: product.category, // Pasamos la categoría
+        category: product.category,
       });
       setShowComboSelector(false);
+    }
+  };
+
+  const handleBebidaConfirm = (cartItem) => {
+    if (onAddToCart) {
+      onAddToCart(cartItem);
+      setShowBebidaSelector(false);
     }
   };
 
@@ -49,6 +72,13 @@ const ProductCard = ({ product, onAddToCart }) => {
           product={product}
           onConfirm={handleComboConfirm}
           onCancel={() => setShowComboSelector(false)}
+        />
+      )}
+      {showBebidaSelector && (
+        <BebidaSelectorCombo
+          product={product}
+          onConfirm={handleBebidaConfirm}
+          onCancel={() => setShowBebidaSelector(false)}
         />
       )}
       <div className="rounded-lg shadow-md hover:shadow-lg transition-all p-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col h-full">
