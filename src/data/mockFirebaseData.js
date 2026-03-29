@@ -29,8 +29,10 @@ export const mockProducts = [
   { name: 'Clásica Normal Grande (2 Carnes)', category: 'Burger Clásicas', price: 24000, cost: 9600, description: 'Hamburguesa grande con doble carne, queso fundido, tocineta crocante, ripio, vegetales frescos y salsas', stock: 100, status: 'active', image: null },
   
   // Pepitos Venezolanos
-  { name: 'Pepito de Carne Premium', category: 'Pepitos Venezolanos', price: 18000, cost: 7200, description: 'Pan blanco tostado relleno de carne tierna, queso fundido, tocineta, vegetales frescos y salsas artesanales', stock: 100, status: 'active', image: null },
-  { name: 'Pepito Mixto', category: 'Pepitos Venezolanos', price: 20000, cost: 8000, description: 'Pan blanco con carne y salchicha jugosa, queso fundido, tocineta, vegetales y salsas deliciosas', stock: 100, status: 'active', image: null },
+  { name: 'Plus ⭐', category: 'Pepitos Venezolanos', price: 36000, cost: 14400, description: 'Pepito ultra cargado con cuatro carnes jugosas, tocineta crocante, queso fundido, ripio crujiente, vegetales frescos y salsas de la casa. Para el que quiere todo', stock: 100, status: 'active', image: null },
+  { name: 'Ranchero', category: 'Pepitos Venezolanos', price: 34000, cost: 13600, description: 'Explosión de carnes con salchicha, queso fundido, ripio crujiente y maíz dulce, acompañado de vegetales frescos y salsas venezolanas. Abundante y callejero.', stock: 100, status: 'active', image: null },
+  { name: 'Urbano', category: 'Pepitos Venezolanos', price: 30000, cost: 12000, description: 'Pepito cargado con una poderosa combinación de carnes, queso fundido, ripio crujiente, aguacate fresco, vegetales y salsas que elevan el sabor a otro nivel.', stock: 100, status: 'active', image: null },
+  { name: 'Mix', category: 'Pepitos Venezolanos', price: 29000, cost: 11600, description: 'Mezcla irresistible de carnes bien jugosas, con queso fundido, papas a la francesa, huevo, vegetales frescos y salsas de la casa. El clásico completo que nunca falla.', stock: 100, status: 'active', image: null },
   
   // Perros Calientes
   { name: 'Perro Clásico Simple', category: 'Perros Calientes', price: 12000, cost: 4800, description: 'Salchicha premium en pan tostado con salsas caseras, mostaza y vegetales', stock: 100, status: 'active', image: null },
