@@ -40,9 +40,10 @@ export const mockProducts = [
   { name: 'Normal', category: 'Perros Calientes', price: 12000, cost: 4800, description: 'Salchicha americana, queso fundido, ripio crujiente, vegetales frescos y salsas clásicas.', stock: 100, status: 'active', image: null },
   
   // Salchicpapas
-  { name: 'Salchicpapas Individual', category: 'Salchicpapas', price: 13500, cost: 5400, description: 'Salchichas con papas fritas crujientes y salsas variadas', stock: 100, status: 'active', image: null },
-  { name: 'Salchicpapas Doble', category: 'Salchicpapas', price: 21000, cost: 8400, description: 'Doble porción de salchichas con papas fritas y queso fundido derretido', stock: 100, status: 'active', image: null },
-  { name: 'Salchicpapas Especial', category: 'Salchicpapas', price: 25000, cost: 10000, description: 'Salchichas premium con papas fritas, queso fundido, tocineta y salsas caseras', stock: 100, status: 'active', image: null },
+  { name: 'SALCHI SUPER ⭐ Pequeña', category: 'Salchicpapas', price: 19000, cost: 7600, description: 'Papas a la francesa cargadas con salchicha, chorizo jugoso, queso fundido, huevos de codorniz, plátano maduro, maíz y salsas venezolanas.', stock: 100, status: 'active', image: null },
+  { name: 'SALCHI SUPER ⭐ Grande', category: 'Salchicpapas', price: 34000, cost: 13600, description: 'Papas a la francesa cargadas con salchicha, chorizo jugoso, queso fundido, huevos de codorniz, plátano maduro, maíz y salsas venezolanas. (Ideal para Compartir)', stock: 100, status: 'active', image: null },
+  { name: 'SALCHI NORMAL Pequeña', category: 'Salchicpapas', price: 14000, cost: 5600, description: 'Papas a la francesa, salchicha, queso fundido y salsas de la casa aparte.', stock: 100, status: 'active', image: null },
+  { name: 'SALCHI NORMAL Grande', category: 'Salchicpapas', price: 21000, cost: 8400, description: 'Papas a la francesa, salchicha, queso fundido y salsas de la casa aparte. (Porción Grande)', stock: 100, status: 'active', image: null },
   
   // Entradas
   { name: 'Papas Fritas Premium', category: 'Entradas', price: 8000, cost: 3200, description: 'Papas fritas crujientes con sal marina y especias', stock: 100, status: 'active', image: null },
