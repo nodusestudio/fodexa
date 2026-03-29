@@ -75,6 +75,13 @@ const CartItem = ({ item, index }) => {
               </div>
             )}
 
+            {/* Bebidas seleccionadas (para combos) */}
+            {item.bebidas && item.bebidas.length > 0 && (
+              <div className="mb-1 text-xs text-green-600 dark:text-green-400">
+                🥤 {item.bebidas.map(b => `${b.name} (${b.tamano})`).join(' + ')}
+              </div>
+            )}
+
             {/* Nota inline si existe */}
             {item.notes && !showNotes && (
               <div className="mb-1 text-xs text-blue-700 dark:text-blue-300 truncate">
