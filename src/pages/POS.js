@@ -52,17 +52,14 @@ const POS = () => {
         setShowPrintModal(true);
       }
       
-      // Para domicilios pagados (status='waiting') o completados: volver al tablero
-      // Para otros pedidos: solo si están completados
-      if (order?.type === 'delivery' || order?.status === 'completed') {
-        setView('board');
-        setLocalOrderType(null);
-        setShowTableSelector(false);
-        setShowCustomerSelector(false);
-        setShowProducts(false);
-        setShowCartDrawer(false);
-        clearCart();
-      }
+      // Siempre volver al tablero después de guardar cualquier orden
+      setView('board');
+      setLocalOrderType(null);
+      setShowTableSelector(false);
+      setShowCustomerSelector(false);
+      setShowProducts(false);
+      setShowCartDrawer(false);
+      clearCart();
       clearCurrentOrder();
     };
     window.addEventListener('orderSaved', handleOrderSaved);

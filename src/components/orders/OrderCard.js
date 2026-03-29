@@ -8,6 +8,7 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
   const [elapsedTime, setElapsedTime] = useState(0);
   const [alarmTriggered, setAlarmTriggered] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   
   // Estados para domicilio
   const [deliveryStartTime, setDeliveryStartTime] = useState(null);
@@ -196,135 +197,159 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg border-l-4 border-blue-500 p-4 shadow-md hover:shadow-lg transition-shadow">
-      {/* Header */}
-      <div className="flex justify-between items-start mb-3 gap-3">
-        <div>
+    <div className="bg-white dark:bg-gray-800 rounded-lg border-l-4 border-blue-500 p-4 shadow-md hover:shadow-lg transition-shadow" onClick={() => setIsExpanded(!isExpanded)}>
+      {/* HEADER COMPACTO - Siempre visible */}
+      <div className="flex justify-between items-start gap-2 cursor-pointer">
+        <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <h4 className="font-bold text-gray-800 dark:text-white text-lg">{getName()}</h4>
-            {order.type === 'delivery' && order.deliveryData?.address && (
-              <span className="text-xs text-gray-500 dark:text-gray-400">{order.deliveryData.address}</span>
-            )}
+            <h4 className="font-bold text-gray-800 dark:text-white truncate">{getName()}</h4>
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              {isExpanded ? '▼' : '▶'}
+            </span>
           </div>
-          <div className="flex items-center gap-1 mt-1">
+          <div className="flex items-center gap-1 mt-1 flex-wrap">
             <button
-              onClick={handleStatusChange}
-              className={`text-xs px-2 py-1 rounded font-bold cursor-pointer transition-all shadow-md flex items-center justify-center gap-1 ${
+              onClick={(e) => {
+                e.stopPropagation();
+                handleStatusChange();
+              }}
+              className={`text-xs px-2 py-1 rounded font-bold cursor-pointer transition-all shadow-md flex items-center justify-center gap-1 flex-shrink-0 ${
                 order.status === 'pending' ? 'bg-yellow-400 dark:bg-yellow-600 text-yellow-900 dark:text-yellow-100' :
                 order.status === 'preparing' ? 'bg-orange-400 dark:bg-orange-600 text-orange-900 dark:text-orange-100 animate-pulse' :
                 order.status === 'ready' ? 'bg-green-400 dark:bg-green-600 text-green-900 dark:text-green-100' :
                 order.status === 'waiting' ? 'bg-purple-400 dark:bg-purple-600 text-purple-900 dark:text-purple-100 animate-pulse' :
                 'bg-gray-400 dark:bg-gray-600 text-gray-900 dark:text-gray-100'
               }`}>
-              {order.status === 'pending' ? '▶ INICIAR' : 
-               order.status === 'preparing' ? `⏱️ ${elapsedTime} min` : 
-               order.status === 'waiting' ? `⏰ ${deliveryElapsedTime} min` :
-               order.status === 'ready' ? '✅ LISTO' : 
-               '💰 COMPLETADO'}
-              {alarmTriggered && order.status === 'preparing' && ' 🔔'}
-              {deliveryAlarmTriggered && order.status === 'waiting' && ' 🔔'}
+              {order.status === 'pending' ? '▶' : 
+               order.status === 'preparing' ? `⏱️ ${elapsedTime}m` : 
+               order.status === 'waiting' ? `⏰ ${deliveryElapsedTime}m` :
+               order.status === 'ready' ? '✅' : 
+               '💰'}
+              {(alarmTriggered || deliveryAlarmTriggered) && ' 🔔'}
             </button>
-            <button
-              onClick={() => onPrintKitchen && onPrintKitchen(order)}
-              className="text-xs px-2 py-1 rounded font-bold cursor-pointer transition-all shadow-md bg-orange-500 dark:bg-orange-700 text-white dark:text-white flex items-center justify-center gap-1"
-              title="Imprimir para Cocina"
-            >
-              🍳
-            </button>
-            {order.type === 'delivery' && (
-              <button
-                onClick={() => {
-                  if (order.status === 'ready') {
-                    handleDelivery();
-                  } else if (order.status === 'waiting') {
-                    handleDeliveryCompleted();
-                  }
-                }}
-                className={`text-xs px-2 py-1 rounded font-bold transition-all shadow-md flex items-center justify-center gap-1 ${
-                  order.status === 'ready'
-                    ? 'bg-purple-500 dark:bg-purple-700 text-white dark:text-white cursor-pointer'
-                    : order.status === 'waiting'
-                    ? 'bg-purple-600 dark:bg-purple-800 text-white dark:text-white cursor-pointer animate-pulse'
-                    : 'bg-gray-300 dark:bg-gray-500 text-gray-500 dark:text-gray-400 cursor-not-allowed'
-                }`}
-                title={order.status === 'ready' ? 'Pedir Domiciliario' : order.status === 'waiting' ? 'Marcar como Entregado' : ''}
-              >
-                {order.status === 'ready' ? '🚚 DOMI' : order.status === 'waiting' ? '⏳ ESPERANDO' : '✅ ENTREGADO'}
-              </button>
-            )}
           </div>
         </div>
         <div className="text-right flex-shrink-0">
           <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{formatCurrency(order.total || 0)}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">{(order.items?.length || 0)} items</p>
         </div>
       </div>
 
-      {/* Items List */}
-      <div className="mb-3 p-2 bg-gray-50 dark:bg-gray-700 rounded">
-        <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">📦 Productos ({(order.items?.length || 0)}):</p>
-        <div className="space-y-1 max-h-[150px] overflow-y-auto">
-          {order.items && order.items.length > 0 ? (
-            order.items.map((item, i) => (
-              <div key={i} className="text-xs text-gray-600 dark:text-gray-400 pl-2 border-l-2 border-blue-300">
-                <div className="flex justify-between">
-                  <span>• {item.quantity}x {item.name}</span>
-                  <span className="font-semibold">{formatCurrency(item.price * item.quantity)}</span>
-                </div>
-                {item.addons && item.addons.length > 0 && (
-                  <div className="pl-2 text-xs text-gray-500">
-                    {item.addons.map((addon, j) => (
-                      <div key={j}>+ {addon.name}</div>
-                    ))}
+      {/* DETALLES EXPANDIBLES */}
+      {isExpanded && (
+        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 space-y-3" onClick={(e) => e.stopPropagation()}>
+          
+          {/* Items List */}
+          <div>
+            <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">📦 Productos:</p>
+            <div className="space-y-1 max-h-[150px] overflow-y-auto">
+              {order.items && order.items.length > 0 ? (
+                order.items.map((item, i) => (
+                  <div key={i} className="text-xs text-gray-600 dark:text-gray-400 pl-2 border-l-2 border-blue-300">
+                    <div className="flex justify-between">
+                      <span>• {item.quantity}x {item.name}</span>
+                      <span className="font-semibold">{formatCurrency(item.price * item.quantity)}</span>
+                    </div>
+                    {item.addons && item.addons.length > 0 && (
+                      <div className="pl-2 text-xs text-gray-500">
+                        {item.addons.map((addon, j) => (
+                          <div key={j}>+ {addon.name}</div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            ))
-          ) : (
-            <p className="text-xs text-gray-500">Sin items</p>
+                ))
+              ) : (
+                <p className="text-xs text-gray-500">Sin items</p>
+              )}
+            </div>
+          </div>
+
+          {/* Delivery Info */}
+          {order.type === 'delivery' && order.deliveryData && (
+            <div className="p-2 bg-orange-50 dark:bg-orange-900/30 rounded text-xs">
+              <p><strong>Dirección:</strong> {order.deliveryData.address}</p>
+              <p><strong>🚚 Costo:</strong> {formatCurrency(order.deliveryCost || 0)}</p>
+              {calculateDeliveryPayment() && (
+                <p className={`font-bold mt-1 ${
+                  calculateDeliveryPayment().type === 'pagar' 
+                    ? 'text-red-700 dark:text-red-400' 
+                    : calculateDeliveryPayment().type === 'cobrar'
+                    ? 'text-orange-700 dark:text-orange-400'
+                    : 'text-green-700 dark:text-green-400'
+                }`}>
+                  {calculateDeliveryPayment().message}
+                </p>
+              )}
+            </div>
           )}
-        </div>
-      </div>
 
-
-      {/* Delivery Payment Info */}
-      {order.type === 'delivery' && calculateDeliveryPayment() && (
-        <div className="mb-3 p-2 bg-blue-50 dark:bg-blue-900/30 rounded border-l-4 border-blue-500">
-          <p className={`text-xs font-bold ${
-            calculateDeliveryPayment().type === 'pagar' 
-              ? 'text-red-700 dark:text-red-400' 
-              : calculateDeliveryPayment().type === 'cobrar'
-              ? 'text-orange-700 dark:text-orange-400'
-              : 'text-green-700 dark:text-green-400'
-          }`}>
-            {calculateDeliveryPayment().message}
-          </p>
+          {/* Botones de Acción */}
+          <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex gap-1 flex-wrap">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPrintKitchen && onPrintKitchen(order);
+                }}
+                className="flex-1 min-w-[60px] text-xs px-2 py-1.5 rounded font-bold cursor-pointer bg-orange-500 hover:bg-orange-600 text-white transition-all shadow-md"
+                title="Imprimir para Cocina"
+              >
+                🍳 Cocina
+              </button>
+              {order.type === 'delivery' && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (order.status === 'ready') {
+                      handleDelivery();
+                    } else if (order.status === 'waiting') {
+                      handleDeliveryCompleted();
+                    }
+                  }}
+                  className={`flex-1 min-w-[60px] text-xs px-2 py-1.5 rounded font-bold transition-all shadow-md ${
+                    order.status === 'ready'
+                      ? 'bg-purple-500 hover:bg-purple-600 text-white cursor-pointer'
+                      : order.status === 'waiting'
+                      ? 'bg-purple-600 hover:bg-purple-700 text-white cursor-pointer animate-pulse'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
+                  🚚 Domi
+                </button>
+              )}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit && onEdit(order);
+                }}
+                className="flex-1 min-w-[60px] text-xs px-2 py-1.5 rounded font-bold cursor-pointer bg-blue-500 hover:bg-blue-600 text-white transition-all shadow-md"
+              >
+                ✏️ Editar
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPay && onPay(order);
+                }}
+                className="flex-1 min-w-[60px] text-xs px-2 py-1.5 rounded font-bold cursor-pointer bg-green-500 hover:bg-green-600 text-white transition-all shadow-md"
+              >
+                💳 Cobrar
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete && onDelete(order);
+                }}
+                className="min-w-[40px] text-xs px-1.5 py-1.5 rounded font-bold cursor-pointer bg-red-500 hover:bg-red-600 text-white transition-all shadow-md"
+                title="Eliminar"
+              >
+                🗑️
+              </button>
+            </div>
+          </div>
         </div>
       )}
-
-      {/* Actions */}
-      <div className="flex gap-2 items-center">
-        <button
-          onClick={() => onEdit && onEdit(order)}
-          className="flex-1 bg-blue-500 hover:bg-blue-600 text-white text-xs px-2 py-2 rounded font-bold cursor-pointer hover:scale-105 active:scale-95 transition-all shadow-md flex items-center justify-center gap-1"
-        >
-          <Edit2 size={14} />
-          Editar
-        </button>
-        <button
-          onClick={() => onPay && onPay(order)}
-          className="flex-1 bg-green-500 hover:bg-green-600 text-white text-xs px-2 py-2 rounded font-bold cursor-pointer hover:scale-105 active:scale-95 transition-all shadow-md flex items-center justify-center gap-1"
-        >
-          <CreditCard size={14} />
-          Cobrar
-        </button>
-        <button
-          onClick={() => onDelete && onDelete(order)}
-          className="bg-red-500 hover:bg-red-600 text-white text-xs px-2 py-1 rounded font-bold cursor-pointer hover:scale-105 active:scale-95 transition-all shadow-md flex items-center justify-center w-10"
-          title="Eliminar"
-        >
-          <Trash2 size={14} />
-        </button>
-      </div>
 
       {/* Modal de Advertencia - Domicilio Retrasado */}
       {showDeliveryWarningModal && order.status === 'waiting' && (
