@@ -32,7 +32,7 @@ function extractCustomersFromRows(rows) {
 }
 
 const CustomerImport = ({ onImportResult }) => {
-  const { addCustomer } = useCustomers();
+  const { importCustomersBatch } = useCustomers();
   const fileInput = useRef();
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -95,35 +95,22 @@ const CustomerImport = ({ onImportResult }) => {
       
       setStatusMessage(`Guardando ${customers.length} clientes en la nube...`);
       
-      // Importar en lotes para evitar congelar la app
-      const BATCH_SIZE = 50;  // Importar 50 a la vez
-      let count = 0;
-      
-      for (let i = 0; i < customers.length; i += BATCH_SIZE) {
-        const batch = customers.slice(i, i + BATCH_SIZE);
-        
-        // Esperar que terminen todos en este lote antes de enviar el siguiente
-        await Promise.all(batch.map(customer => addCustomer(customer)));
-        
-        count += batch.length;
-        const progressPercent = Math.round((count / customers.length) * 100);
-        
-        setProgress(progressPercent);
-        
-        // Dar feedback al usuario cada lote
-        setStatusMessage(`Importado ${count}/${customers.length} clientes...`);
+      // Usar writeBatch para importar de forma eficiente (sin congelar la app)
+      await importCustomersBatch(customers, (progress) => {
+        setProgress(progress.percent);
+        setStatusMessage(`Importado ${progress.count}/${progress.total} clientes...`);
         onImportResult && onImportResult({ 
           type: 'progress', 
-          message: `Importando... ${count}/${customers.length}` 
+          message: `Importando... ${progress.count}/${progress.total}` 
         });
-      }
+      });
       
       setStatusMessage('✅ ¡Importación completada!');
       setProgress(100);
       
       onImportResult && onImportResult({ 
         type: 'success', 
-        message: `✅ ¡Éxito! ${count} clientes guardados en la nube.` 
+        message: `✅ ¡Éxito! ${customers.length} clientes guardados en la nube.` 
       });
       
       // Limpiar después de 2 segundos

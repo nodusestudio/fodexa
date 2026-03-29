@@ -8,7 +8,8 @@ import {
   doc, 
   query, 
   where, 
-  onSnapshot 
+  onSnapshot,
+  writeBatch
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
@@ -74,6 +75,63 @@ export const CustomerProvider = ({ children }) => {
       console.error('❌ Error al guardar cliente:', error);
       alert('Error al guardar cliente: ' + error.message);
       return null;
+    }
+  };
+
+  // 📦 Importar múltiples clientes en lotes (writeBatch)
+  const importCustomersBatch = async (customersArray, onProgress) => {
+    if (!user) {
+      throw new Error('Debes estar autenticado');
+    }
+
+    if (!customersArray || customersArray.length === 0) {
+      throw new Error('No hay clientes para importar');
+    }
+
+    try {
+      const BATCH_SIZE = 500; // writeBatch permite 500 escrituras por transacción
+      let totalImported = 0;
+
+      for (let i = 0; i < customersArray.length; i += BATCH_SIZE) {
+        const batchData = customersArray.slice(i, i + BATCH_SIZE);
+        const batch = writeBatch(db);
+
+        batchData.forEach(customerData => {
+          const customersCollection = collection(db, `users/${user.uid}/customers`);
+          const newDocRef = doc(customersCollection); // Generar ID automático
+
+          batch.set(newDocRef, {
+            ...customerData,
+            userId: user.uid,
+            createdAt: new Date(),
+          });
+        });
+
+        // Ejecutar la transacción
+        await batch.commit();
+        totalImported += batchData.length;
+
+        // Notificar progreso
+        if (onProgress) {
+          const progress = Math.round((totalImported / customersArray.length) * 100);
+          onProgress({
+            count: totalImported,
+            total: customersArray.length,
+            percent: progress,
+          });
+        }
+
+        console.log(`✅ Lote importado: ${totalImported}/${customersArray.length}`);
+
+        // Pequeña pausa para no bloquear el navegador
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      console.log(`✅ ¡Importación completada! ${totalImported} clientes guardados.`);
+      return { success: true, imported: totalImported };
+    } catch (error) {
+      console.error('❌ Error al importar clientes:', error);
+      throw error;
     }
   };
 
@@ -248,6 +306,7 @@ export const CustomerProvider = ({ children }) => {
     loading,
     getUserCustomers: () => customers, // Ya Firestore filtra por usuario
     addCustomer,
+    importCustomersBatch,
     updateCustomer,
     deleteCustomer,
     getCustomerById,
