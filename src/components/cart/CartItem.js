@@ -9,20 +9,6 @@ const CartItem = ({ item, index }) => {
   const [localNotes, setLocalNotes] = useState(item.notes || '');
   const [showComboEditor, setShowComboEditor] = useState(false);
 
-  const COMBO_CATEGORIES = [
-    'Burger Clásicas',
-    'Burger Premium',
-    'Pepitos Venezolanos',
-    'Perros Calientes',
-  ];
-  
-  // DEBUG: Log item structure to see what's being received
-  console.log('CartItem DEBUG - Item:', item);
-  console.log('CartItem DEBUG - item.category:', item.category);
-  console.log('CartItem DEBUG - canEditCombo will be:', COMBO_CATEGORIES.includes(item.category));
-  
-  const canEditCombo = COMBO_CATEGORIES.includes(item.category);
-
   const price = parseFloat(item.price) || 0;
   const quantity = parseInt(item.quantity) || 1;
   const addonsTotal = item.addons?.reduce((sum, addon) => sum + (parseFloat(addon.price) || 0), 0) || 0;
@@ -147,20 +133,18 @@ const CartItem = ({ item, index }) => {
                   {item.notes ? 'Editar nota' : 'Agregar nota'}
                 </button>
 
-                {/* Botón de editar combo */}
-                {canEditCombo && (
-                  <button
-                    onClick={() => setShowComboEditor(true)}
-                    className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${
-                      item.addons?.some(a => a.id === 'combo-papas-bebida')
-                        ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400'
-                        : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
-                    }`}
-                  >
-                    <Edit2 size={14} />
-                    {item.addons?.some(a => a.id === 'combo-papas-bebida') ? 'Editar combo' : 'Agregar combo'}
-                  </button>
-                )}
+              {/* Botón de editar combo */}
+              <button
+                onClick={() => setShowComboEditor(true)}
+                className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${
+                  item.addons?.some(a => a.id === 'combo-papas-bebida')
+                    ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400'
+                    : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
+                }`}
+              >
+                <Edit2 size={14} />
+                {item.addons?.some(a => a.id === 'combo-papas-bebida') ? 'Editar combo' : 'Agregar combo'}
+              </button>
               </div>
 
               {/* Contador de cantidad */}
