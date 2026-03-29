@@ -83,7 +83,7 @@ export const OrderProvider = ({ children }) => {
       });
       
       const subtotal = itemsWithAddons.reduce((sum, item) => sum + item.itemTotal, 0);
-      const iva = data.taxesConfig?.enabled ? subtotal * (parseFloat(data.taxesConfig?.value || 0) / 100) : (subtotal * 0.16);
+      const iva = data.taxesConfig?.enabled ? subtotal * (parseFloat(data.taxesConfig?.value || 0) / 100) : 0;
       const deliveryCost = data.type === 'delivery' ? (parseFloat(data.deliveryData?.cost) || 0) : 0;
       const total = subtotal + iva + deliveryCost;
       

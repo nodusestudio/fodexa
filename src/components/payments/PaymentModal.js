@@ -268,7 +268,9 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
       }
     });
     text += `\n*SUBTOTAL:* $${order.subtotal?.toLocaleString() || ''}\n`;
-    text += `*IVA (16%):* $${order.iva?.toLocaleString() || ''}\n`;
+    if (order.iva > 0) {
+      text += `*Impuesto:* $${order.iva?.toLocaleString() || ''}\n`;
+    }
     if (order.deliveryCost > 0) {
       text += `*DOMICILIO:* $${order.deliveryCost.toLocaleString()}\n`;
     }

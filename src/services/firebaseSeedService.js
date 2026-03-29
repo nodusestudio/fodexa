@@ -84,7 +84,7 @@ export const seedOrders = async (userId) => {
       });
       
       const subtotal = itemsWithAddons.reduce((sum, item) => sum + item.itemTotal, 0);
-      const iva = subtotal * 0.16;
+      const iva = 0; // IVA no se aplica en seed data
       const deliveryCost = order.type === 'delivery' ? (order.deliveryData?.cost || 0) : 0;
       const total = subtotal + iva + deliveryCost;
       
