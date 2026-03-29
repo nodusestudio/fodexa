@@ -124,7 +124,7 @@ ROAL Burger
 Comida rápida con acento venezolano 🇻🇪🔥`;
     
     copyToClipboard(finalMessage);
-    onUpdateStatus(order.id, 'ready');
+    onUpdateStatus(order.id, 'completed');
     setShowDeliveryWarningModal(false);
   };
 
