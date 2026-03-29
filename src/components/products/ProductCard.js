@@ -23,13 +23,17 @@ const ProductCard = ({ product, onAddToCart }) => {
         name: product.name,
         price: product.price,
         quantity: 1,
+        category: product.category, // Pasamos la categoría
       });
     }
   };
 
   const handleComboConfirm = (cartItem) => {
     if (onAddToCart) {
-      onAddToCart(cartItem);
+      onAddToCart({
+        ...cartItem,
+        category: product.category, // Pasamos la categoría
+      });
       setShowComboSelector(false);
     }
   };
