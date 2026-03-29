@@ -58,9 +58,10 @@ export const mockProducts = [
   { name: 'Combo Premium Express', category: 'Combos Express', price: 42000, cost: 16800, description: 'Hamburguesa premium + papas grandes + bebida + postre', stock: 100, status: 'active', image: null },
   
   // Combos de Perros
-  { name: 'Combo 1 Perro', category: 'Combos de Perros', price: 17000, cost: 6800, description: 'Perro caliente + papas medianas + bebida 400ml', stock: 100, status: 'active', image: null },
-  { name: 'Combo 2 Perros', category: 'Combos de Perros', price: 25000, cost: 10000, description: '2 perros calientes + papas grandes + bebida 600ml', stock: 100, status: 'active', image: null },
-  { name: 'Combo 3 Perros', category: 'Combos de Perros', price: 38000, cost: 15200, description: '3 perros calientes especiales + papas grandes + bebida grande + salsa extra', stock: 100, status: 'active', image: null },
+  { name: 'Combo 1 Perro', category: 'Combos de Perros', price: 17000, cost: 6800, description: 'Incluye 1 perro caliente con salchicha tipo ranchera, queso fundido, ripio crujiente y salsas venezolanas + papas grandes + 2 bebidas de 250ml (selector de sabor)', stock: 100, status: 'active', image: null },
+  { name: 'Combo 2 Perros ⭐', category: 'Combos de Perros', price: 25000, cost: 10000, description: 'Incluye 2 perros calientes con salchicha tipo ranchera, queso fundido, ripio crujiente y salsas venezolanas + papas grandes + 2 bebidas de 250ml (selector de sabor)', stock: 100, status: 'active', image: null },
+  { name: 'Combo 3 Perros', category: 'Combos de Perros', price: 38000, cost: 15200, description: 'Incluye 3 perros calientes con salchicha tipo ranchera, queso fundido, ripio crujiente y salsas venezolanas + papas grandes + 1 bebida de litro (selector de sabor)', stock: 100, status: 'active', image: null },
+  { name: 'Combo 4 Perros', category: 'Combos de Perros', price: 49000, cost: 19600, description: 'Incluye 4 perros calientes con salchicha tipo ranchera, queso fundido, ripio crujiente y salsas venezolanas + papas grandes + 1 bebida de litro (selector de sabor)', stock: 100, status: 'active', image: null },
   
   // Combos de Burger
   // BURGER CLÁSICA NORMAL
