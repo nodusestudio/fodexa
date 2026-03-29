@@ -9,6 +9,9 @@ const CartItem = ({ item, index }) => {
   const [localNotes, setLocalNotes] = useState(item.notes || '');
   const [showComboEditor, setShowComboEditor] = useState(false);
 
+  // Debug: Verificar que CartItem se está renderizando
+  console.log('🔵 CartItem renderiza:', item.name, 'Item:', item);
+
   const price = parseFloat(item.price) || 0;
   const quantity = parseInt(item.quantity) || 1;
   const addonsTotal = item.addons?.reduce((sum, addon) => sum + (parseFloat(addon.price) || 0), 0) || 0;
