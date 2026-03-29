@@ -21,6 +21,7 @@ const ProductCard = ({ product, onAddToCart }) => {
     'Combos de Perros',
     'Combos Express',
     'Combos Familiares',
+    'Combos Temporada',
   ];
 
   // DEBUG: Log product structure

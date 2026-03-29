@@ -4,11 +4,19 @@ const BebidaSelectorCombo = ({ product, onConfirm, onCancel }) => {
   // Determinar cuántas bebidas llevar según el combo
   const isComboExpress = product.name.includes('Combo Express');
   const isFamiliar = product.name.includes('Familiar');
+  const isCasaTemporada = product.name.includes('Combo de la Casa');
+  const isEmparejado = product.name.includes('Combo Emparejado');
   const isCombo1or2 = product.name.includes('Combo 1') || product.name.includes('Combo 2');
   
   let numBebidas, tamañoBebida;
   
-  if (isFamiliar) {
+  if (isCasaTemporada) {
+    numBebidas = 1; // Combo de la Casa lleva 1 bebida
+    tamañoBebida = '1000ml'; // De 1000ml (litro)
+  } else if (isEmparejado) {
+    numBebidas = 2; // Combo Emparejado lleva 2 bebidas
+    tamañoBebida = '250ml'; // De 250ml c/u
+  } else if (isFamiliar) {
     numBebidas = 1; // Combos Familiares llevan 1 bebida
     tamañoBebida = '1000ml'; // De 1000ml (litro)
   } else if (isComboExpress) {
