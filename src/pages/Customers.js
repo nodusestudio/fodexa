@@ -16,6 +16,9 @@ const Customers = () => {
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [showDetail, setShowDetail] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const PAGE_SIZE = 50;
 
   // Filtrar clientes
   const filteredCustomers = useMemo(() => {
@@ -30,6 +33,20 @@ const Customers = () => {
     
     return result;
   }, [customers, searchQuery, filterClassification, tickets, getCustomerStats, searchCustomers]);
+
+  // Reiniciar a página 1 cuando cambia la búsqueda o filtro
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterClassification]);
+
+  // Paginar los resultados filtrados
+  const paginatedCustomers = useMemo(() => {
+    const startIndex = (currentPage - 1) * PAGE_SIZE;
+    const endIndex = startIndex + PAGE_SIZE;
+    return filteredCustomers.slice(startIndex, endIndex);
+  }, [filteredCustomers, currentPage, PAGE_SIZE]);
+
+  const totalPages = Math.ceil(filteredCustomers.length / PAGE_SIZE);
 
   // Estadísticas generales
   const totalCustomers = customers.length;
@@ -185,14 +202,14 @@ const Customers = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {filteredCustomers.length === 0 ? (
+                {paginatedCustomers.length === 0 ? (
                   <tr>
                     <td colSpan="7" className="px-2 sm:px-6 py-8 sm:py-12 text-center text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                       Sin resultados
                     </td>
                   </tr>
                 ) : (
-                  filteredCustomers.map(customer => {
+                  paginatedCustomers.map(customer => {
                     const stats = getCustomerStats(customer.id, tickets);
                     return (
                       <tr key={customer.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
@@ -265,6 +282,60 @@ const Customers = () => {
           </div>
         </div>
       </div>
+
+      {/* Controles de Paginación */}
+      {totalPages > 1 && (
+        <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-3 sm:px-6 py-3 sm:py-4">
+          <div className="flex items-center justify-between">
+            <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+              Mostrando {((currentPage - 1) * PAGE_SIZE) + 1}-{Math.min(currentPage * PAGE_SIZE, filteredCustomers.length)} de {filteredCustomers.length}
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-2 text-xs sm:text-sm border border-gray-300 dark:border-gray-600 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                ← Anterior
+              </button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`px-2 sm:px-3 py-2 text-xs sm:text-sm rounded-lg transition-colors ${
+                        currentPage === pageNum
+                          ? 'bg-blue-600 text-white'
+                          : 'border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-2 text-xs sm:text-sm border border-gray-300 dark:border-gray-600 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                Siguiente →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modales */}
       {showForm && (
