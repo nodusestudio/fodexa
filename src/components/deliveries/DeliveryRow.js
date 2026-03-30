@@ -126,30 +126,30 @@ const DeliveryRow = ({ ticket, onUpdateField, onMarkDelivered, onPrintGuide, loa
     <>
       {/* Fila principal - compacta tipo tabla */}
       <div className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-        <div className="flex items-center gap-1 p-2 text-xs bg-white dark:bg-gray-800 overflow-x-auto">
+        <div className="flex items-center gap-3 px-4 py-3 text-xs bg-white dark:bg-gray-800 overflow-x-auto">
           
-          {/* Ticket # */}
-          <div className="flex-shrink-0 font-mono font-bold text-blue-600 dark:text-blue-400">
+          {/* Ticket # - 80px */}
+          <div className="w-20 flex-shrink-0 font-mono font-bold text-blue-600 dark:text-blue-400 text-center">
             #{ticket.ticketNumber}
           </div>
 
-          {/* Cliente */}
-          <div className="flex-1 min-w-0 px-1">
+          {/* Cliente - 160px */}
+          <div className="w-40 flex-shrink-0 min-w-0">
             <InlineEdit field="deliveryData.name" value={deliveryData.name} placeholder="Cliente" />
           </div>
 
-          {/* Teléfono */}
-          <div className="flex-shrink-0 px-1 whitespace-nowrap">
+          {/* Teléfono - 128px */}
+          <div className="w-32 flex-shrink-0 whitespace-nowrap">
             <InlineEdit field="deliveryData.phone" value={deliveryData.phone} placeholder="Teléfono" />
           </div>
 
-          {/* Dirección */}
-          <div className="flex-1 min-w-0 px-1">
+          {/* Dirección - 192px */}
+          <div className="w-48 flex-shrink-0 min-w-0">
             <InlineEdit field="deliveryData.address" value={deliveryData.address} placeholder="Dirección" />
           </div>
 
-          {/* Estado - con botón copiar */}
-          <div className="flex-shrink-0 px-1 whitespace-nowrap flex items-center gap-0.5">
+          {/* Estado - 160px */}
+          <div className="w-40 flex-shrink-0 whitespace-nowrap flex items-center gap-2">
             <select
               value={localStatus}
               onChange={(e) => {
@@ -165,9 +165,9 @@ const DeliveryRow = ({ ticket, onUpdateField, onMarkDelivered, onPrintGuide, loa
                 });
               }}
               disabled={loading}
-              className={`px-1.5 py-1 border border-gray-300 dark:border-gray-600 rounded text-xs font-semibold whitespace-nowrap ${statusColors[localStatus]} dark:text-white focus:ring-1 focus:ring-blue-500 disabled:opacity-50 cursor-pointer`}
+              className={`flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-xs font-semibold ${statusColors[localStatus]} dark:text-white focus:ring-1 focus:ring-blue-500 disabled:opacity-50 cursor-pointer`}
             >
-              <option value="solicitar-domi">🚨 Solicitar Domi</option>
+              <option value="solicitar-domi">🚨 Solicitar</option>
               <option value="en-camino">🛵 En Camino</option>
             </select>
             
@@ -179,7 +179,7 @@ const DeliveryRow = ({ ticket, onUpdateField, onMarkDelivered, onPrintGuide, loa
                   console.log('📋 Copiando:', statusMessages[localStatus]);
                   copyToClipboard(statusMessages[localStatus]);
                 }}
-                className={`p-0.5 rounded transition-all flex-shrink-0 ${
+                className={`p-1 rounded transition-all flex-shrink-0 ${
                   copiedMessage 
                     ? 'bg-green-500 text-white' 
                     : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-blue-400 hover:text-white'
@@ -191,8 +191,8 @@ const DeliveryRow = ({ ticket, onUpdateField, onMarkDelivered, onPrintGuide, loa
             )}
           </div>
 
-          {/* Cobrar / Pagar - o Pendiente de Pago */}
-          <div className={`flex-shrink-0 px-2 text-center rounded py-1 font-semibold text-xs whitespace-nowrap ${
+          {/* Cobrar / Pagar - 176px */}
+          <div className={`w-44 flex-shrink-0 px-2 text-center rounded py-1 font-semibold text-xs whitespace-nowrap ${
             isPendingPayment 
               ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400'
               : resultado.color
@@ -212,8 +212,8 @@ const DeliveryRow = ({ ticket, onUpdateField, onMarkDelivered, onPrintGuide, loa
             </div>
           </div>
 
-          {/* Acciones */}
-          <div className="flex-shrink-0 px-1 flex items-center gap-0.5 justify-center">
+          {/* Acciones - 90px */}
+          <div className="w-24 flex-shrink-0 flex items-center justify-center gap-1">
             {localStatus === 'en-camino' && (
               <button
                 onClick={() => onMarkDelivered(ticket.id)}

@@ -230,14 +230,14 @@ const Deliveries = () => {
           <div>
             {/* Header de Tabla */}
             <div className="sticky top-0 bg-gray-100 dark:bg-gray-700 border-b border-gray-300 dark:border-gray-600 z-10">
-              <div className="flex items-center gap-1 p-2 text-xs font-bold text-gray-700 dark:text-gray-300 overflow-x-auto">
-                <div className="flex-shrink-0">TICKET</div>
-                <div className="flex-1 min-w-0 px-1">CLIENTE</div>
-                <div className="flex-shrink-0 px-1 whitespace-nowrap">TELÉFONO</div>
-                <div className="flex-1 min-w-0 px-1">DIRECCIÓN</div>
-                <div className="flex-shrink-0 px-1 whitespace-nowrap">ESTADO</div>
-                <div className="flex-shrink-0 px-2 whitespace-nowrap">COBRAR/PAGAR</div>
-                <div className="flex-shrink-0 px-1">ACCIONES</div>
+              <div className="flex items-center gap-3 px-4 py-3 text-xs font-bold text-gray-700 dark:text-gray-300 overflow-x-auto">
+                <div className="w-20 flex-shrink-0 text-center">TICKET</div>
+                <div className="w-40 flex-shrink-0">CLIENTE</div>
+                <div className="w-32 flex-shrink-0">TELÉFONO</div>
+                <div className="w-48 flex-shrink-0">DIRECCIÓN</div>
+                <div className="w-40 flex-shrink-0">ESTADO</div>
+                <div className="w-44 flex-shrink-0 text-center">COBRAR/PAGAR</div>
+                <div className="w-24 flex-shrink-0 text-center">ACCIONES</div>
               </div>
             </div>
 
