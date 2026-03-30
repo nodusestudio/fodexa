@@ -30,7 +30,7 @@ const paymentTypes = [
 
 // NUEVA LÓGICA DE PAGO INTELIGENTE Y POST-PAGO
 function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
-  const { createTicket } = useTickets();
+  const { createTicket, updateTicket } = useTickets();
   const { addMovement, isCashOpen } = useCash();
   const { updateOrder } = useOrder();
   // Calcular subtotal en tiempo real (productos + addons)
@@ -204,14 +204,43 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
     // Guardar ticket en local
     createTicket(order);
     
+    // Calcular montos pagados por tipo
+    const pago_efectivo = finalPaymentMethods
+      .filter(m => m.type === 'cash')
+      .reduce((sum, m) => sum + m.amount, 0);
+    
+    const pago_digital = finalPaymentMethods
+      .filter(m => m.type === 'card' || m.type === 'transfer')
+      .reduce((sum, m) => sum + m.amount, 0);
+    
     // Actualizar orden en Firebase para persistir el estado y pago
     if (orderData.id) {
+      const paymentType = finalPaymentMethods.length === 1 ? finalPaymentMethods[0].type : 'mixed';
+      
       updateOrder(orderData.id, {
         status: orderStatus,
         paymentMethods: finalPaymentMethods,
-        paymentType: orderStatus === 'waiting' ? undefined : finalPaymentMethods.length === 1 ? finalPaymentMethods[0].type : 'mixed',
+        paymentType: orderStatus === 'waiting' ? undefined : paymentType,
         deliveryData: orderData.type === 'delivery' ? deliveryData : undefined,
+        pago_efectivo,
+        pago_digital,
       });
+      
+      // ✅ Si es domicilio, también actualizar el ticket con datos de pago
+      if (orderData.type === 'delivery') {
+        updateTicket(orderData.id, {
+          paymentMethods: finalPaymentMethods,
+          paymentType,
+          pago_efectivo,
+          pago_digital,
+          status: orderStatus,
+        });
+        console.log('✅ Ticket de domicilio actualizado con datos de pago:', {
+          paymentType,
+          pago_efectivo,
+          pago_digital,
+        });
+      }
     }
     
     setSuccess(true);
