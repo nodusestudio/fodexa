@@ -1,21 +1,9 @@
 ﻿import React, { useState } from 'react';
 import { Search, User, Phone, MapPin, Plus, X } from 'lucide-react';
-
-// DATOS DE EJEMPLO DE CLIENTES
-const sampleCustomers = [
-  { id: 1, name: 'Juan Perez', phone: '300 123 4567', address: 'Calle 123 #45-67, Bogota', email: 'juan@email.com' },
-  { id: 2, name: 'Maria Garcia', phone: '310 987 6543', address: 'Carrera 45 #12-34, Medellin', email: 'maria@email.com' },
-  { id: 3, name: 'Carlos Lopez', phone: '315 456 7890', address: 'Transversal 78 #90-12, Cali', email: 'carlos@email.com' },
-  { id: 4, name: 'Ana Martinez', phone: '318 234 5678', address: 'Diagonal 23 #56-78, Barranquilla', email: 'ana@email.com' },
-  { id: 5, name: 'Luis Rodriguez', phone: '304 876 5432', address: 'Calle 67 #89-01, Cartagena', email: 'luis@email.com' },
-  { id: 6, name: 'Carmen Diaz', phone: '311 345 6789', address: 'Avenida 12 #34-56, Bucaramanga', email: 'carmen@email.com' },
-  { id: 7, name: 'Roberto Silva', phone: '320 567 8901', address: 'Carrera 89 #12-34, Pereira', email: 'roberto@email.com' },
-  { id: 8, name: 'Patricia Morales', phone: '313 678 9012', address: 'Calle 45 #67-89, Manizales', email: 'patricia@email.com' },
-  { id: 9, name: 'Fernando Castro', phone: '316 789 0123', address: 'Transversal 34 #56-78, Ibague', email: 'fernando@email.com' },
-  { id: 10, name: 'Lucia Ramirez', phone: '302 890 1234', address: 'Diagonal 56 #78-90, Pasto', email: 'lucia@email.com' },
-];
+import { useCustomers } from '../../context/CustomerContext';
 
 const CustomerSelector = ({ onSelectCustomer }) => {
+  const { customers = [], addCustomer } = useCustomers();
   const [searchQuery, setSearchQuery] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [newCustomer, setNewCustomer] = useState({
@@ -25,7 +13,8 @@ const CustomerSelector = ({ onSelectCustomer }) => {
     email: ''
   });
 
-  const filteredCustomers = sampleCustomers.filter(customer => {
+  // Filtrar clientes de la base de datos
+  const filteredCustomers = customers.filter(customer => {
     try {
       const nameMatch = customer.name 
         ? String(customer.name).toLowerCase().includes((searchQuery || '').toLowerCase())
@@ -33,7 +22,10 @@ const CustomerSelector = ({ onSelectCustomer }) => {
       const phoneMatch = customer.phone 
         ? String(customer.phone).includes(searchQuery || '')
         : false;
-      return nameMatch || phoneMatch;
+      const addressMatch = customer.address
+        ? String(customer.address).toLowerCase().includes((searchQuery || '').toLowerCase())
+        : false;
+      return nameMatch || phoneMatch || addressMatch;
     } catch (error) {
       console.warn('⚠️ Error filtrando cliente en selector:', customer, error);
       return false;
@@ -50,7 +42,7 @@ const CustomerSelector = ({ onSelectCustomer }) => {
     setShowForm(true);
   };
 
-  const handleSaveNewCustomer = () => {
+  const handleSaveNewCustomer = async () => {
     if (!newCustomer.name || !newCustomer.phone || !newCustomer.address) {
       alert('⚠️ Por favor completa los campos obligatorios (nombre, telefono y direccion)');
       return;
@@ -59,12 +51,25 @@ const CustomerSelector = ({ onSelectCustomer }) => {
       ...newCustomer,
       id: Date.now()
     };
-    if (onSelectCustomer) {
-      onSelectCustomer(customerWithId);
+    
+    try {
+      // Guardar en base de datos
+      if (addCustomer) {
+        await addCustomer(customerWithId);
+        console.log('✅ Cliente guardado en la base de datos:', customerWithId);
+      }
+      
+      // Seleccionar el cliente
+      if (onSelectCustomer) {
+        onSelectCustomer(customerWithId);
+      }
+      setShowForm(false);
+      setNewCustomer({ name: '', phone: '', address: '', email: '' });
+      alert('✅ Cliente creado exitosamente');
+    } catch (error) {
+      console.error('❌ Error al crear cliente:', error);
+      alert('❌ Error al crear el cliente');
     }
-    setShowForm(false);
-    setNewCustomer({ name: '', phone: '', address: '', email: '' });
-    alert('✅ Cliente creado exitosamente');
   };
 
   const handleCancelForm = () => {
@@ -99,8 +104,11 @@ const CustomerSelector = ({ onSelectCustomer }) => {
 
         <div className="space-y-2 max-h-64 overflow-y-auto mb-4">
           {filteredCustomers.length === 0 ? (
-            <p className="text-gray-500 dark:text-gray-400 text-center py-4">
-              No se encontraron clientes
+            <p className="text-gray-500 dark:text-gray-400 text-center py-4 text-sm">
+              {customers.length === 0 
+                ? '📭 No hay clientes cargados. Crea uno nuevo o importa desde la sección Clientes.'
+                : '🔍 No se encontraron clientes con esos criterios'
+              }
             </p>
           ) : (
             filteredCustomers.map(customer => (

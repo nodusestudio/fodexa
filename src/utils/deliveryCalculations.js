@@ -1,10 +1,10 @@
 /**
  * Calcula el monto a cobrar o pagar al domiciliario
  * 
- * LÓGICA:
- * - El domiciliario recibe pago_efectivo
- * - El domiciliario debe dar a empresa: pago_efectivo - costo_domicilio
- * - Si hay dinero faltante en efectivo: empresa paga la comisión al domiciliario
+ * LÓGICA CORRECTA:
+ * - Si pago_efectivo > 0: El domiciliario PAGA el PEDIDO a la empresa (efectivo)
+ * - Si pago_efectivo = 0 (Tarjeta/Digital): La empresa PAGA el costo domi al domiciliario
+ * - El costo del domicilio es aparte, solo entra en juego si es tarjeta
  * 
  * @param {number} pago_efectivo - Dinero en efectivo que da el cliente
  * @param {number} costo_domicilio - Costo del domicilio (comisión del repartidor)
@@ -16,32 +16,30 @@ export const calcularCobraoPagar = (pago_efectivo = 0, costo_domicilio = 0, tota
   const costoDomi = parseFloat(costo_domicilio) || 0;
   const totalPedido = parseFloat(total_pedido) || 0;
 
-  // Lo que el domiciliario debe dar a la empresa
-  // = Lo que recibió en efectivo - Su comisión
-  const montoParaEmpresa = montoEfectivo - costoDomi;
-
-  if (montoEfectivo === 0) {
-    // Sin efectivo: empresa PAGA al domiciliario su comisión
+  // CASO 1: Pago en EFECTIVO
+  if (montoEfectivo > 0) {
+    // El domiciliario PAGA el PEDIDO a la empresa
     return {
-      monto: costoDomi,
-      tipo: 'pagar',
-      mensaje: `La empresa paga al domiciliario`,
-      color: 'text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-400',
-    };
-  }
-
-  if (montoParaEmpresa > 0) {
-    // Domiciliario PAGA a empresa (tiene dinero sobrante)
-    return {
-      monto: montoParaEmpresa,
+      monto: totalPedido,
       tipo: 'cobrar',
-      mensaje: `Domiciliario paga a la empresa`,
+      mensaje: `Domiciliario paga el pedido a la empresa`,
       color: 'text-green-600 bg-green-50 dark:bg-green-900/30 dark:text-green-400',
     };
   }
 
-  if (montoParaEmpresa === 0) {
-    // Exacto: sin movimiento
+  // CASO 2: Pago en TARJETA/DIGITAL (sin efectivo)
+  if (montoEfectivo === 0 && costoDomi > 0) {
+    // La empresa PAGA el costo del domicilio al domiciliario
+    return {
+      monto: costoDomi,
+      tipo: 'pagar',
+      mensaje: `La empresa paga el costo del domicilio`,
+      color: 'text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-400',
+    };
+  }
+
+  // CASO 3: Sin movimiento (sin efectivo y sin costo domi)
+  if (montoEfectivo === 0 && costoDomi === 0) {
     return {
       monto: 0,
       tipo: 'sin-movimiento',
