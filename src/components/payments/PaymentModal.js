@@ -201,8 +201,8 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
       });
     }
 
-    // Guardar ticket en local
-    createTicket(order);
+    // Guardar ticket en local y obtener su ID
+    const newTicket = createTicket(order);
     
     // Calcular montos pagados por tipo
     const pago_efectivo = finalPaymentMethods
@@ -217,28 +217,39 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
     if (orderData.id) {
       const paymentType = finalPaymentMethods.length === 1 ? finalPaymentMethods[0].type : 'mixed';
       
+      console.log('💾 [ORDEN] Guardando orden con:', {
+        type: orderData.type,
+        pago_efectivo,
+        pago_digital,
+        paymentType,
+        finalPaymentMethods,
+      });
+      
       updateOrder(orderData.id, {
         status: orderStatus,
         paymentMethods: finalPaymentMethods,
-        paymentType: orderStatus === 'waiting' ? undefined : paymentType,
+        paymentType: paymentType, // Siempre guardar el tipo de pago
         deliveryData: orderData.type === 'delivery' ? deliveryData : undefined,
         pago_efectivo,
         pago_digital,
       });
       
-      // ✅ Si es domicilio, también actualizar el ticket con datos de pago
-      if (orderData.type === 'delivery') {
-        updateTicket(orderData.id, {
+      // ✅ Si es domicilio, actualizar el TICKET con datos de pago usando su ID correcto
+      if (orderData.type === 'delivery' && newTicket?.id) {
+        console.log('💾 [TICKET] Actualizando ticket con ID:', newTicket.id);
+        updateTicket(newTicket.id, {
           paymentMethods: finalPaymentMethods,
-          paymentType,
+          paymentType: paymentType,
           pago_efectivo,
           pago_digital,
           status: orderStatus,
         });
-        console.log('✅ Ticket de domicilio actualizado con datos de pago:', {
+        console.log('✅ Ticket de domicilio actualizado:', {
+          ticketId: newTicket.id,
           paymentType,
           pago_efectivo,
           pago_digital,
+          finalPaymentMethods,
         });
       }
     }
