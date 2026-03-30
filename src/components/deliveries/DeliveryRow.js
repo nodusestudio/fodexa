@@ -149,7 +149,7 @@ const DeliveryRow = ({ ticket, onUpdateField, onMarkDelivered, onPrintGuide, loa
           </div>
 
           {/* Estado - con botón copiar */}
-          <div className="flex-shrink-0 flex items-center gap-1 px-1">
+          <div className="flex-shrink-0 px-1 whitespace-nowrap flex items-center gap-0.5">
             <select
               value={localStatus}
               onChange={(e) => {
@@ -165,7 +165,7 @@ const DeliveryRow = ({ ticket, onUpdateField, onMarkDelivered, onPrintGuide, loa
                 });
               }}
               disabled={loading}
-              className={`px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-xs font-semibold whitespace-nowrap ${statusColors[localStatus]} dark:text-white focus:ring-1 focus:ring-blue-500 disabled:opacity-50 cursor-pointer`}
+              className={`px-1.5 py-1 border border-gray-300 dark:border-gray-600 rounded text-xs font-semibold whitespace-nowrap ${statusColors[localStatus]} dark:text-white focus:ring-1 focus:ring-blue-500 disabled:opacity-50 cursor-pointer`}
             >
               <option value="solicitar-domi">🚨 Solicitar Domi</option>
               <option value="en-camino">🛵 En Camino</option>
@@ -179,7 +179,7 @@ const DeliveryRow = ({ ticket, onUpdateField, onMarkDelivered, onPrintGuide, loa
                   console.log('📋 Copiando:', statusMessages[localStatus]);
                   copyToClipboard(statusMessages[localStatus]);
                 }}
-                className={`p-1 rounded transition-all flex-shrink-0 ${
+                className={`p-0.5 rounded transition-all flex-shrink-0 ${
                   copiedMessage 
                     ? 'bg-green-500 text-white' 
                     : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-blue-400 hover:text-white'
@@ -213,7 +213,7 @@ const DeliveryRow = ({ ticket, onUpdateField, onMarkDelivered, onPrintGuide, loa
           </div>
 
           {/* Acciones */}
-          <div className="flex-shrink-0 flex items-center gap-1 px-1 justify-center">
+          <div className="flex-shrink-0 px-1 flex items-center gap-0.5 justify-center">
             {localStatus === 'en-camino' && (
               <button
                 onClick={() => onMarkDelivered(ticket.id)}
