@@ -25,6 +25,9 @@ const DeliveryRow = ({ ticket, onUpdateField, onMarkDelivered, onPrintGuide, loa
   const total_pedido = parseFloat(ticket.subtotal) || 0; // Solo productos sin domicilio
   const total_con_domicilio = parseFloat(ticket.total) || 0; // Total incluyendo domicilio
 
+  // Detectar si el pedido está pendiente de pago (sin datos de pago)
+  const isPendingPayment = pago_efectivo === 0 && pago_digital === 0;
+
   // Calcular Cobrar/Pagar
   const resultado = calcularCobraoPagar(pago_efectivo, costo_domicilio, total_pedido);
   
@@ -188,11 +191,24 @@ const DeliveryRow = ({ ticket, onUpdateField, onMarkDelivered, onPrintGuide, loa
             )}
           </div>
 
-          {/* Cobrar / Pagar */}
-          <div className={`flex-shrink-0 px-2 text-center rounded py-1 font-semibold text-xs whitespace-nowrap ${resultado.color}`}>
+          {/* Cobrar / Pagar - o Pendiente de Pago */}
+          <div className={`flex-shrink-0 px-2 text-center rounded py-1 font-semibold text-xs whitespace-nowrap ${
+            isPendingPayment 
+              ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400'
+              : resultado.color
+          }`}>
             <div className="leading-tight">
-              <div className="text-xs font-medium line-clamp-1">{resultado.mensaje}</div>
-              <div className="font-bold">${resultado.monto.toLocaleString('es-CO', { maximumFractionDigits: 0 })}</div>
+              {isPendingPayment ? (
+                <>
+                  <div className="text-xs font-medium">⏳ PENDIENTE</div>
+                  <div className="font-bold">DE PAGO</div>
+                </>
+              ) : (
+                <>
+                  <div className="text-xs font-medium line-clamp-1">{resultado.mensaje}</div>
+                  <div className="font-bold">${resultado.monto.toLocaleString('es-CO', { maximumFractionDigits: 0 })}</div>
+                </>
+              )}
             </div>
           </div>
 
