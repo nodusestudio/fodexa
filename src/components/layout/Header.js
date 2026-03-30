@@ -6,7 +6,10 @@ import { useAuth } from '../../context/AuthContext';
 
 function formatDateEs(date) {
   return date.toLocaleDateString('es-ES', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
   });
 }
 
@@ -15,12 +18,11 @@ function Header({ sidebarOpen, toggleSidebar }) {
   const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const menuRef = useRef(null);
-  
+
   const displayName = user?.displayName || user?.email?.split('@')[0] || 'Cajero Demo';
   const userEmail = user?.email || 'usuario@demo.com';
   const today = new Date();
 
-  // Cerrar menú al hacer click fuera
   useEffect(() => {
     function handleClickOutside(event) {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
@@ -46,7 +48,6 @@ function Header({ sidebarOpen, toggleSidebar }) {
   return (
     <header className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800 px-3 sm:px-6 py-3 sm:py-4 transition-colors">
       <div className="flex justify-between items-center gap-3 sm:gap-6">
-        {/* Mobile Menu Button */}
         <button
           onClick={toggleSidebar}
           className="md:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
@@ -55,18 +56,26 @@ function Header({ sidebarOpen, toggleSidebar }) {
         </button>
 
         <div className="min-w-0 flex-1">
-          <h2 className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white truncate">Bienvenido</h2>
-          <p className="text-gray-500 dark:text-gray-300 text-xs sm:text-sm hidden sm:block">{formatDateEs(today)}</p>
+          <h2 className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white truncate">
+            Bienvenido
+          </h2>
+          <p className="text-gray-500 dark:text-gray-300 text-xs sm:text-sm hidden sm:block">
+            {formatDateEs(today)}
+          </p>
         </div>
+
         <div className="flex items-center gap-2 sm:gap-6 flex-shrink-0">
           <button className="relative p-1.5 sm:p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
             <Bell className="w-5 sm:w-6 h-5 sm:h-6 text-gray-700 dark:text-gray-200" />
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">3</span>
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
+              3
+            </span>
           </button>
+
           <DarkModeToggle />
+
           <div className="w-px h-6 sm:h-8 bg-gray-200 dark:bg-gray-700 hidden sm:block" />
-          
-          {/* User Menu */}
+
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
@@ -76,12 +85,13 @@ function Header({ sidebarOpen, toggleSidebar }) {
                 <User className="w-6 h-6 text-white" />
               </div>
               <div className="text-left min-w-0">
-                <div className="font-semibold text-gray-900 dark:text-white text-sm truncate">{displayName}</div>
+                <div className="font-semibold text-gray-900 dark:text-white text-sm truncate">
+                  {displayName}
+                </div>
                 <div className="text-xs text-gray-500 dark:text-gray-400 truncate">Cajero</div>
               </div>
             </button>
 
-            {/* Mobile User Info + Logout */}
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
               className="sm:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors relative"
@@ -91,13 +101,18 @@ function Header({ sidebarOpen, toggleSidebar }) {
               </div>
             </button>
 
-            {/* Dropdown Menu */}
             {showUserMenu && (
               <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
                 <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                  <div className="font-bold text-gray-900 dark:text-white text-base">{displayName}</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 break-words mt-1">{userEmail}</div>
-                  <div className="text-xs text-gray-400 dark:text-gray-500 mt-2 font-semibold">Rol: Cajero</div>
+                  <div className="font-bold text-gray-900 dark:text-white text-base">
+                    {displayName}
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 break-words mt-1">
+                    {userEmail}
+                  </div>
+                  <div className="text-xs text-gray-400 dark:text-gray-500 mt-2 font-semibold">
+                    Rol: Cajero
+                  </div>
                 </div>
                 <button
                   onClick={handleLogout}
@@ -108,6 +123,7 @@ function Header({ sidebarOpen, toggleSidebar }) {
                 </button>
               </div>
             )}
+          </div>
         </div>
       </div>
     </header>
