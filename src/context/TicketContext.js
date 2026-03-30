@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useSettings } from './SettingsContext';
 import { useAuth } from './AuthContext';
-import { collection, addDoc, onSnapshot, query, where, orderBy } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, where, orderBy, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
 const TicketContext = createContext();
@@ -146,6 +146,9 @@ export const TicketProvider = ({ children }) => {
       total,
       paymentType: orderData.paymentType || 'pending',
       status: 'completed',
+      // Inicializar pagos (se actualizan después)
+      pago_efectivo: orderData.pago_efectivo || 0,
+      pago_digital: orderData.pago_digital || 0,
       createdAt: new Date(),
     };
     
@@ -179,6 +182,32 @@ export const TicketProvider = ({ children }) => {
     });
   };
 
+  const updateTicket = async (ticketId, updates) => {
+    try {
+      // Actualizar en estado local primero
+      setTickets(prev => prev.map(t => 
+        t.id === ticketId ? { ...t, ...updates, updatedAt: new Date() } : t
+      ));
+      
+      // Actualizar en Firestore si el usuario está autenticado
+      if (user?.uid) {
+        const ticketRef = doc(db, `users/${user.uid}/tickets`, ticketId);
+        await updateDoc(ticketRef, {
+          ...updates,
+          updatedAt: new Date(),
+        });
+        console.log('✅ Ticket actualizado en Firestore:', ticketId, updates);
+      } else {
+        console.warn('⚠️ Usuario no autenticado. Cambios solo locales.');
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('❌ Error actualizando ticket en Firebase:', error.message);
+      throw error;
+    }
+  };
+
   const updateCompanyData = (data) => {
     setCompanyData(prev => ({ ...prev, ...data }));
   };
@@ -192,6 +221,7 @@ export const TicketProvider = ({ children }) => {
     getTicketByNumber,
     getAllTickets,
     getTicketsByDate,
+    updateTicket,
   };
 
   return (

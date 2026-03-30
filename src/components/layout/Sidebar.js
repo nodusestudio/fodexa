@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { ShoppingCart, LayoutDashboard, FileText, Settings, DollarSign, Users, X, ChevronDown } from 'lucide-react';
+import { ShoppingCart, LayoutDashboard, FileText, Settings, DollarSign, Users, X, ChevronDown, Truck } from 'lucide-react';
 
 const navItems = [
   { to: '/', icon: ShoppingCart, label: 'Punto de Venta' },
+  { to: 'deliveries', icon: Truck, label: 'Domicilios' },
   { to: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: 'reports', icon: FileText, label: 'Reportes' },
   { to: 'tickets', icon: FileText, label: 'Tickets' },

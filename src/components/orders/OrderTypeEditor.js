@@ -208,7 +208,7 @@ const OrderTypeEditor = ({ isOpen, onClose,currentOrderType, selectedTable, deli
                 <span>�</span> Seleccionar Cliente
               </h3>
 
-              {!showCustomerSearch ? (
+              {!showCustomerSearch && !showNewCustomerForm ? (
                 <>
                   {tempDeliveryData.name ? (
                     <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
@@ -219,13 +219,71 @@ const OrderTypeEditor = ({ isOpen, onClose,currentOrderType, selectedTable, deli
                   ) : (
                     <p className="text-gray-500 dark:text-gray-400 p-3">No hay cliente seleccionado</p>
                   )}
-                  <button
-                    onClick={() => setShowCustomerSearch(true)}
-                    className="w-full py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
-                  >
-                    {tempDeliveryData.name ? '📝 Cambiar Cliente' : '🔍 Buscar Cliente'}
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setShowCustomerSearch(true)}
+                      className="flex-1 py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
+                    >
+                      {tempDeliveryData.name ? '📝 Cambiar Cliente' : '🔍 Buscar Cliente'}
+                    </button>
+                    <button
+                      onClick={() => setShowNewCustomerForm(true)}
+                      className="flex-1 py-2 px-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors"
+                    >
+                      ➕ Nuevo Cliente
+                    </button>
+                  </div>
                 </>
+              ) : showNewCustomerForm ? (
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-2">📝 Crear Nuevo Cliente</h4>
+                  <input
+                    type="text"
+                    value={newCustomerData.name}
+                    onChange={(e) => setNewCustomerData({ ...newCustomerData, name: e.target.value })}
+                    placeholder="Nombre completo"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 mb-2 text-sm"
+                    autoFocus
+                  />
+                  <input
+                    type="tel"
+                    value={newCustomerData.phone}
+                    onChange={(e) => setNewCustomerData({ ...newCustomerData, phone: e.target.value })}
+                    placeholder="Teléfono"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 mb-2 text-sm"
+                  />
+                  <input
+                    type="text"
+                    value={newCustomerData.address}
+                    onChange={(e) => setNewCustomerData({ ...newCustomerData, address: e.target.value })}
+                    placeholder="Dirección"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 mb-2 text-sm"
+                  />
+                  <input
+                    type="email"
+                    value={newCustomerData.email}
+                    onChange={(e) => setNewCustomerData({ ...newCustomerData, email: e.target.value })}
+                    placeholder="Email (opcional)"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 mb-2 text-sm"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleCreateNewCustomer}
+                      className="flex-1 py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors text-sm"
+                    >
+                      ✅ Guardar Cliente
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowNewCustomerForm(false);
+                        setNewCustomerData({ name: '', phone: '', address: '', email: '' });
+                      }}
+                      className="flex-1 py-2 px-3 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-semibold transition-colors text-sm"
+                    >
+                      ❌ Cancelar
+                    </button>
+                  </div>
+                </div>
               ) : (
                 <div className="space-y-3 max-h-96 overflow-y-auto">
                   <input
@@ -255,45 +313,11 @@ const OrderTypeEditor = ({ isOpen, onClose,currentOrderType, selectedTable, deli
                   </div>
 
                   <button
-                    onClick={() => setShowNewCustomerForm(!showNewCustomerForm)}
-                    className="w-full py-2 px-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors text-sm"
+                    onClick={() => setShowCustomerSearch(false)}
+                    className="w-full py-2 px-3 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-semibold transition-colors text-sm"
                   >
-                    ➕ {showNewCustomerForm ? 'Cancelar' : 'Nuevo Cliente'}
+                    ← Atrás
                   </button>
-
-                  {showNewCustomerForm && (
-                    <div className="border-t border-gray-300 dark:border-gray-600 pt-3 mt-3">
-                      <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-2 text-sm">📝 Crear Nuevo Cliente</h4>
-                      <input
-                        type="text"
-                        value={newCustomerData.name}
-                        onChange={(e) => setNewCustomerData({ ...newCustomerData, name: e.target.value })}
-                        placeholder="Nombre completo"
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 mb-2 text-sm"
-                        autoFocus
-                      />
-                      <input
-                        type="tel"
-                        value={newCustomerData.phone}
-                        onChange={(e) => setNewCustomerData({ ...newCustomerData, phone: e.target.value })}
-                        placeholder="Teléfono"
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 mb-2 text-sm"
-                      />
-                      <input
-                        type="text"
-                        value={newCustomerData.address}
-                        onChange={(e) => setNewCustomerData({ ...newCustomerData, address: e.target.value })}
-                        placeholder="Dirección"
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 mb-2 text-sm"
-                      />
-                      <button
-                        onClick={handleCreateNewCustomer}
-                        className="w-full py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors text-sm"
-                      >
-                        ✅ Guardar Cliente
-                      </button>
-                    </div>
-                  )}
                 </div>
               )}
             </div>

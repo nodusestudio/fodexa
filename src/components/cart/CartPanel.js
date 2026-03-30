@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useOrder } from '../../context/OrderContext';
 import { useCart } from '../../context/CartContext';
+import { useTickets } from '../../context/TicketContext';
 import PaymentModal from '../payments/PaymentModal';
 import CartItem from './CartItem';
 import { Trash2, CreditCard, ShoppingBag, Edit2, Table, Bike, ArrowLeft } from 'lucide-react';
@@ -13,6 +14,7 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp, c
 	const { deliveryData } = useOrder();
 	const { items, clearCart, updateQuantity, removeItem } = useCart();
 	const { createOrder, clearCurrentOrder } = useOrder();
+	const { createTicket } = useTickets();
 	const [showPaymentModal, setShowPaymentModal] = useState(false);
 	const [showNoteModal, setShowNoteModal] = useState(false);
 	const [showOrderTypeEditor, setShowOrderTypeEditor] = useState(false);
@@ -123,6 +125,23 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp, c
 			console.log('📝 Creando orden:', orderData);
 			const savedOrder = await createOrder(orderData);
 			console.log('✅ Orden guardada:', savedOrder);
+			
+			// ✅ Si es domicilio, crear TAMBIÉN el ticket para que aparezca en la sección de Domicilios
+			if (orderType === 'delivery') {
+				const ticketData = {
+					...savedOrder,
+					id: savedOrder.id,
+					type: 'delivery',
+					ticketNumber: savedOrder.ticketNumber || `DOM-${Date.now().toString().slice(-6)}`,
+					deliveryStatus: 'solicitar-domi',
+					createdAt: new Date().toISOString(),
+					deliveryData: deliveryData,
+					customer: deliveryData,
+				};
+				console.log('📦 Creando ticket automáticamente:', ticketData);
+				createTicket(ticketData);
+			}
+			
 			clearCart();
 			clearCurrentOrder();
 			

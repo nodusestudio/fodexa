@@ -22,6 +22,7 @@ const POS = () => {
   const [currentOrder, setCurrentOrder] = useState(null);
   const [showTableSelector, setShowTableSelector] = useState(false);
   const [showCustomerSelector, setShowCustomerSelector] = useState(false);
+  const [showOrderInfo, setShowOrderInfo] = useState(false);
   const [showProducts, setShowProducts] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -45,9 +46,9 @@ const POS = () => {
 
   useEffect(() => {
     const handleOrderSaved = (e) => {
-      // Solo mostrar ticket si es un PAGO (status: completed)
+      // Mostrar ticket para imprimir (para cualquier tipo de orden)
       const order = e.detail;
-      if (order && order.status === 'completed') {
+      if (order) {
         setTicketToPrint(order);
         setShowPrintModal(true);
       }
@@ -57,6 +58,7 @@ const POS = () => {
       setLocalOrderType(null);
       setShowTableSelector(false);
       setShowCustomerSelector(false);
+      setShowOrderInfo(false);
       setShowProducts(false);
       setShowCartDrawer(false);
       clearCart();
@@ -68,9 +70,23 @@ const POS = () => {
     };
   }, [clearCurrentOrder, clearCart]);
 
+  // Crear ticket cuando se guarda domicilio sin pago
+  useEffect(() => {
+    const handleCreateDeliveryTicket = (e) => {
+      const { createTicket } = require('../context/TicketContext');
+      console.log('📦 Creando ticket de domicilio automáticamente');
+      // Este evento se dispara desde CartPanel cuando se guarda un domicilio
+    };
+    window.addEventListener('createDeliveryTicket', handleCreateDeliveryTicket);
+    return () => {
+      window.removeEventListener('createDeliveryTicket', handleCreateDeliveryTicket);
+    };
+  }, []);
+
   const { deleteOrder, updateOrder } = useOrder();
 
   const handleNewOrder = (type) => {
+    console.log('📝 handleNewOrder llamado con type:', type);
     setView('creating');
     setLocalOrderType(type);
     setOrderType(type);
@@ -83,6 +99,7 @@ const POS = () => {
       setShowCustomerSelector(false);
       setShowProducts(false);
     } else if (type === 'delivery') {
+      console.log('🚚 Abriendo selector de clientes para delivery');
       setShowCustomerSelector(true);
       setShowTableSelector(false);
       setShowProducts(false);
@@ -163,9 +180,10 @@ const POS = () => {
   };
 
   const handleCustomerSelect = (customer) => {
+    console.log('✅ Cliente seleccionado:', customer.name);
     setDeliveryData({ ...deliveryData, ...customer });
-    setShowCustomerSelector(false);
-    setShowProducts(true);
+    setShowCustomerSelector(false);  // ← Cierra el selector automáticamente
+    setShowOrderInfo(true);  // ← Muestra OrderInfo para ingresar costo
   };
 
   const handleBackToBoard = () => {
@@ -173,9 +191,15 @@ const POS = () => {
     setLocalOrderType(null);
     setShowTableSelector(false);
     setShowCustomerSelector(false);
+    setShowOrderInfo(false);
     setShowProducts(false);
     setShowCartDrawer(false);
     clearCurrentOrder();
+  };
+
+  const handleDeliveryInfoConfirm = () => {
+    setShowOrderInfo(false);
+    setShowProducts(true);
   };
 
   return (
@@ -216,7 +240,29 @@ const POS = () => {
               />
             )}
 
-            {localOrderType && !showTableSelector && !showCustomerSelector && (
+            {/* Mostrar OrderInfo SOLO si es delivery y se seleccionó cliente */}
+            {localOrderType === 'delivery' && !showTableSelector && !showCustomerSelector && showOrderInfo && (
+              <OrderInfo 
+                orderType={localOrderType} 
+                tableNumber={selectedTable} 
+                deliveryData={deliveryData} 
+                onClear={handleBackToBoard}
+                onConfirm={handleDeliveryInfoConfirm}
+              />
+            )}
+
+            {/* Para ordenes de mesa, mostrar OrderInfo si no se selecciona mesa aún */}
+            {localOrderType === 'table' && !showTableSelector && !showCustomerSelector && (
+              <OrderInfo 
+                orderType={localOrderType} 
+                tableNumber={selectedTable} 
+                deliveryData={deliveryData} 
+                onClear={handleBackToBoard}
+              />
+            )}
+
+            {/* Para ordenes takeout, mostrar OrderInfo */}
+            {localOrderType === 'takeout' && !showTableSelector && !showCustomerSelector && (
               <OrderInfo 
                 orderType={localOrderType} 
                 tableNumber={selectedTable} 

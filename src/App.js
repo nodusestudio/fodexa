@@ -11,6 +11,7 @@ import Customers from './pages/Customers';
 import CustomerReports from './pages/CustomerReports';
 import Articles from './pages/articles/Articles';
 import Tickets from './pages/Tickets';
+import Deliveries from './pages/Deliveries';
 import Cash from './pages/Cash';
 import CashHistory from './pages/CashHistory';
 import ImportMenu from './pages/ImportMenu';
@@ -58,6 +59,7 @@ function App() {
                               <Route index element={<POS />} />
                               <Route path="dashboard" element={<Dashboard />} />
                               <Route path="reports" element={<Reports />} />
+                              <Route path="deliveries" element={<Deliveries />} />
                               <Route path="customers" element={<Customers />} />
                               <Route path="customers/reports" element={<CustomerReports />} />
                               <Route path="articles/*" element={<Articles />} />

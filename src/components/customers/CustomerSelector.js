@@ -75,7 +75,16 @@ const CustomerSelector = ({ onSelectCustomer }) => {
   return (
     <>
       <div className="mb-6">
-        <h3 className="text-base md:text-lg font-bold text-gray-800 dark:text-white mb-4">👥 Buscar Cliente</h3>
+        <div className="flex items-center justify-between mb-4 gap-3">
+          <h3 className="text-base md:text-lg font-bold text-gray-800 dark:text-white flex-1">👥 Buscar Cliente</h3>
+          <button
+            onClick={handleCreateNew}
+            className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg font-semibold flex items-center gap-2 transition-colors whitespace-nowrap"
+          >
+            <Plus size={18} />
+            <span className="hidden sm:inline">Nuevo</span>
+          </button>
+        </div>
         
         <div className="relative mb-4">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
@@ -118,14 +127,6 @@ const CustomerSelector = ({ onSelectCustomer }) => {
             ))
           )}
         </div>
-
-        <button
-          onClick={handleCreateNew}
-          className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
-        >
-          <Plus size={20} />
-          Nuevo Cliente
-        </button>
       </div>
 
       {/* Modal para nuevo cliente */}

@@ -103,14 +103,20 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
 
   const handleDelivery = () => {
     // Inicia el seguimiento de domicilio - solo si está en estado ready
-    if (order.status !== 'ready') return;
+    if (order.status !== 'ready') {
+      console.warn('⚠️ No puedes solicitar domicilio en estado:', order.status);
+      return;
+    }
     
+    console.log('📲 Solicitando domiciliario para:', order.deliveryData?.address);
     const message = `me mandas un domiciliario por favor, va para ${order.deliveryData?.address || 'la dirección'}`;
     copyToClipboard(message);
+    
     // Cambiar estado a "waiting" (esperando domiciliario)
     onUpdateStatus(order.id, 'waiting');
     setDeliveryStartTime(new Date());
     lastDeliveryAlarmMinuteRef.current = -1; // Reset ref para nueva alarma
+    console.log('✅ Estado cambiado a "waiting" - Timer iniciado');
   };
 
   const handleDeliveryCompleted = () => {
@@ -204,13 +210,17 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg border-l-4 border-blue-500 p-4 shadow-md hover:shadow-lg transition-shadow" onClick={() => setIsExpanded(!isExpanded)}>
+    <div className={`rounded-lg border-l-4 p-4 shadow-md hover:shadow-lg transition-all ${
+      order.status === 'completed' 
+        ? 'bg-gray-300 dark:bg-gray-700 border-gray-400 dark:border-gray-600 opacity-75 text-gray-600 dark:text-gray-400' 
+        : 'bg-white dark:bg-gray-800 border-blue-500'
+    }`} onClick={() => setIsExpanded(!isExpanded)}>
       {/* HEADER COMPACTO - Siempre visible */}
       <div className="flex justify-between items-start gap-2 cursor-pointer">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <h4 className="font-bold text-gray-800 dark:text-white truncate">{getName()}</h4>
-            <span className="text-xs text-gray-500 dark:text-gray-400">
+            <h4 className={`font-bold truncate ${order.status === 'completed' ? 'text-gray-600 dark:text-gray-500' : 'text-gray-800 dark:text-white'}`}>{getName()}</h4>
+            <span className={`text-xs ${order.status === 'completed' ? 'text-gray-500 dark:text-gray-600' : 'text-gray-500 dark:text-gray-400'}`}>
               {isExpanded ? '▼' : '▶'}
             </span>
           </div>
@@ -237,28 +247,28 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
           </div>
         </div>
         <div className="text-right flex-shrink-0">
-          <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{formatCurrency(order.total || 0)}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">{(order.items?.length || 0)} items</p>
+          <p className={`text-lg font-bold ${order.status === 'completed' ? 'text-gray-500 dark:text-gray-600' : 'text-blue-600 dark:text-blue-400'}`}>{formatCurrency(order.total || 0)}</p>
+          <p className={`text-xs ${order.status === 'completed' ? 'text-gray-400 dark:text-gray-700' : 'text-gray-500 dark:text-gray-400'}`}>{(order.items?.length || 0)} items</p>
         </div>
       </div>
 
       {/* DETALLES EXPANDIBLES */}
       {isExpanded && (
-        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 space-y-3" onClick={(e) => e.stopPropagation()}>
+        <div className={`mt-4 pt-4 border-t space-y-3 ${order.status === 'completed' ? 'border-gray-400 dark:border-gray-600' : 'border-gray-200 dark:border-gray-700'}`} onClick={(e) => e.stopPropagation()}>
           
           {/* Items List */}
           <div>
-            <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">📦 Productos:</p>
+            <p className={`text-sm font-semibold mb-2 ${order.status === 'completed' ? 'text-gray-600 dark:text-gray-500' : 'text-gray-700 dark:text-gray-300'}`}>📦 Productos:</p>
             <div className="space-y-1 max-h-[150px] overflow-y-auto">
               {order.items && order.items.length > 0 ? (
                 order.items.map((item, i) => (
-                  <div key={i} className="text-xs text-gray-600 dark:text-gray-400 pl-2 border-l-2 border-blue-300">
+                  <div key={i} className={`text-xs pl-2 border-l-2 ${order.status === 'completed' ? 'text-gray-500 dark:text-gray-600 border-gray-400 dark:border-gray-600' : 'text-gray-600 dark:text-gray-400 border-blue-300'}`}>
                     <div className="flex justify-between">
                       <span>• {item.quantity}x {item.name}</span>
                       <span className="font-semibold">{formatCurrency(item.price * item.quantity)}</span>
                     </div>
                     {item.addons && item.addons.length > 0 && (
-                      <div className="pl-2 text-xs text-gray-500">
+                      <div className="pl-2 text-xs opacity-75">
                         {item.addons.map((addon, j) => (
                           <div key={j}>+ {addon.name}</div>
                         ))}
@@ -267,19 +277,21 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
                   </div>
                 ))
               ) : (
-                <p className="text-xs text-gray-500">Sin items</p>
+                <p className="text-xs opacity-50">Sin items</p>
               )}
             </div>
           </div>
 
           {/* Delivery Info */}
           {order.type === 'delivery' && order.deliveryData && (
-            <div className="p-2 bg-orange-50 dark:bg-orange-900/30 rounded text-xs">
+            <div className={`p-2 rounded text-xs ${order.status === 'completed' ? 'bg-gray-400 dark:bg-gray-700 text-gray-700 dark:text-gray-600' : 'bg-orange-50 dark:bg-orange-900/30'}`}>
               <p><strong>Dirección:</strong> {order.deliveryData.address}</p>
               <p><strong>🚚 Costo:</strong> {formatCurrency(order.deliveryCost || 0)}</p>
               {calculateDeliveryPayment() && (
                 <p className={`font-bold mt-1 ${
-                  calculateDeliveryPayment().type === 'pagar' 
+                  order.status === 'completed'
+                    ? 'opacity-50' 
+                    : calculateDeliveryPayment().type === 'pagar' 
                     ? 'text-red-700 dark:text-red-400' 
                     : calculateDeliveryPayment().type === 'cobrar'
                     ? 'text-orange-700 dark:text-orange-400'
@@ -292,63 +304,110 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
           )}
 
           {/* Botones de Acción */}
-          <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+          <div className={`pt-3 border-t ${order.status === 'completed' ? 'border-gray-400 dark:border-gray-600' : 'border-gray-200 dark:border-gray-700'}`}>
             <div className="flex gap-1 flex-wrap">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onPrintKitchen && onPrintKitchen(order);
                 }}
-                className="flex-1 min-w-[60px] text-xs px-2 py-1.5 rounded font-bold cursor-pointer bg-orange-500 hover:bg-orange-600 text-white transition-all shadow-md"
+                disabled={order.status === 'completed'}
+                className={`flex-1 min-w-[60px] text-xs px-2 py-1.5 rounded font-bold cursor-pointer transition-all shadow-md ${
+                  order.status === 'completed' 
+                    ? 'bg-gray-400 dark:bg-gray-600 text-gray-600 dark:text-gray-500 cursor-not-allowed opacity-50' 
+                    : 'bg-orange-500 hover:bg-orange-600 text-white'
+                }`}
                 title="Imprimir para Cocina"
               >
                 🍳 Cocina
               </button>
               {order.type === 'delivery' && (
                 <button
+                  type="button"
                   onClick={(e) => {
                     e.stopPropagation();
+                    if (order.status === 'completed') {
+                      alert('Este pedido ya ha sido marcado como entregado');
+                      return;
+                    }
+                    console.log('🚚 Click en botón Domi - Status:', order.status, 'Tipo:', order.type);
+                    
                     if (order.status === 'ready') {
+                      console.log('✅ Estado READY - Solicitando domiciliario');
                       handleDelivery();
                     } else if (order.status === 'waiting') {
+                      console.log('⏳ Estado WAITING - Marcando salida');
                       handleDeliveryCompleted();
+                    } else {
+                      console.warn('⚠️ Estado no válido para domi:', order.status);
+                      alert(`❌ El pedido debe estar LISTO (Ready) o EN ESPERA (Waiting) para solicitar domicilio. Estado actual: ${order.status}`);
                     }
                   }}
-                  className={`flex-1 min-w-[60px] text-xs px-2 py-1.5 rounded font-bold transition-all shadow-md ${
-                    order.status === 'ready'
-                      ? 'bg-purple-500 hover:bg-purple-600 text-white cursor-pointer'
+                  disabled={order.status === 'completed'}
+                  className={`flex-1 min-w-[80px] text-xs px-2 py-1.5 rounded font-bold transition-all shadow-md whitespace-nowrap ${
+                    order.status === 'completed'
+                      ? 'bg-gray-400 dark:bg-gray-600 text-gray-600 dark:text-gray-500 cursor-not-allowed'
+                      : order.status === 'ready'
+                      ? 'bg-green-500 hover:bg-green-600 text-white cursor-pointer'
                       : order.status === 'waiting'
-                      ? 'bg-purple-600 hover:bg-purple-700 text-white cursor-pointer animate-pulse'
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer animate-pulse'
+                      : 'bg-gray-400 hover:bg-gray-500 text-gray-700 cursor-not-allowed'
                   }`}
                 >
-                  🚚 Domi
+                  {order.status === 'ready' ? '📲 Solicitar Domi' : order.status === 'waiting' ? '✅ Salida Domi' : '🚚 Domi'}
                 </button>
               )}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
+                  if (order.status === 'completed') {
+                    alert('No se puede editar un pedido ya entregado');
+                    return;
+                  }
                   onEdit && onEdit(order);
                 }}
-                className="flex-1 min-w-[60px] text-xs px-2 py-1.5 rounded font-bold cursor-pointer bg-blue-500 hover:bg-blue-600 text-white transition-all shadow-md"
+                disabled={order.status === 'completed'}
+                className={`flex-1 min-w-[60px] text-xs px-2 py-1.5 rounded font-bold transition-all shadow-md ${
+                  order.status === 'completed'
+                    ? 'bg-gray-400 dark:bg-gray-600 text-gray-600 dark:text-gray-500 cursor-not-allowed opacity-50'
+                    : 'bg-blue-500 hover:bg-blue-600 text-white cursor-pointer'
+                }`}
               >
                 ✏️ Editar
               </button>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
+                  if (order.status === 'completed') {
+                    alert('Este pedido ya ha sido pagado');
+                    return;
+                  }
                   onPay && onPay(order);
                 }}
-                className="flex-1 min-w-[60px] text-xs px-2 py-1.5 rounded font-bold cursor-pointer bg-green-500 hover:bg-green-600 text-white transition-all shadow-md"
+                disabled={order.status === 'completed'}
+                className={`flex-1 min-w-[60px] text-xs px-2 py-1.5 rounded font-bold transition-all shadow-md ${
+                  order.status === 'completed'
+                    ? 'bg-gray-400 dark:bg-gray-600 text-gray-600 dark:text-gray-500 cursor-not-allowed opacity-50'
+                    : 'bg-green-500 hover:bg-green-600 text-white cursor-pointer'
+                }`}
               >
                 💳 Cobrar
               </button>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
+                  if (order.status === 'completed') {
+                    alert('No se puede eliminar un pedido ya entregado');
+                    return;
+                  }
                   onDelete && onDelete(order);
                 }}
-                className="min-w-[40px] text-xs px-1.5 py-1.5 rounded font-bold cursor-pointer bg-red-500 hover:bg-red-600 text-white transition-all shadow-md"
+                disabled={order.status === 'completed'}
+                className={`min-w-[40px] text-xs px-1.5 py-1.5 rounded font-bold transition-all shadow-md ${
+                  order.status === 'completed'
+                    ? 'bg-gray-400 dark:bg-gray-600 text-gray-600 dark:text-gray-500 cursor-not-allowed opacity-50'
+                    : 'bg-red-500 hover:bg-red-600 text-white cursor-pointer'
+                }`}
                 title="Eliminar"
               >
                 🗑️

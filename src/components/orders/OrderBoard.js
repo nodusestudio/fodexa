@@ -39,13 +39,18 @@ const OrderBoard = ({ onNewOrder, onEditOrder, onPayOrder, onDeleteOrder }) => {
     .filter(o => o.type === 'takeout' && o.status !== 'completed')
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   
+  // Incluir TODOS los deliveries (nunca se elimina, solo se marca como inactivo)
   const deliveryOrders = (orders || [])
-    .filter(o => o.type === 'delivery' && o.status !== 'completed')
+    .filter(o => o.type === 'delivery')
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-  console.log('📌 Órdenes filtradas - Mesa:', tableOrders, 'Para Llevar:', takeoutOrders, 'Domicilio:', deliveryOrders);
+  // Calcular suma de TODOS los costos de delivery (incluyendo completados)
+  const deliveryTotal = deliveryOrders
+    .reduce((sum, o) => sum + (o.deliveryCost || 0), 0);
 
-  const Column = ({ title, Icon, orders, type, color }) => {
+  console.log('📌 Órdenes filtradas - Mesa:', tableOrders, 'Para Llevar:', takeoutOrders, 'Domicilio:', deliveryOrders, 'Total delivery:', deliveryTotal);
+
+  const Column = ({ title, Icon, orders, type, color, totalCost }) => {
     console.log(`🔶 Column ${title} - Órdenes recibidas:`, orders);
     return (
     <div className="bg-gray-100 dark:bg-gray-900 rounded-lg sm:rounded-xl p-3 sm:p-4 min-h-[300px] sm:min-h-[400px] transition-colors">
@@ -55,11 +60,19 @@ const OrderBoard = ({ onNewOrder, onEditOrder, onPayOrder, onDeleteOrder }) => {
           <div className="min-w-0">
             <h3 className="font-bold text-base sm:text-lg truncate">{title}</h3>
             <span className="text-xs sm:text-sm">{(orders || []).length} pedidos</span>
+            {totalCost !== undefined && (
+              <span className="text-xs sm:text-sm block mt-1">Total: ${totalCost.toFixed(0)}</span>
+            )}
           </div>
         </div>
         <button 
-          onClick={() => onNewOrder && onNewOrder(type)}
-          className="bg-white dark:bg-gray-800 text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 font-semibold px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg flex items-center gap-1 sm:gap-2 transition-colors flex-shrink-0"
+          type="button"
+          onClick={() => {
+            if (onNewOrder) {
+              onNewOrder(type);
+            }
+          }}
+          className="bg-white dark:bg-gray-800 text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 font-semibold px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg flex items-center gap-1 sm:gap-2 transition-colors flex-shrink-0 cursor-pointer"
         >
           <Plus size={18} className="sm:w-5 sm:h-5" />
           <span className="hidden sm:inline text-sm">Nuevo</span>
@@ -95,7 +108,7 @@ const OrderBoard = ({ onNewOrder, onEditOrder, onPayOrder, onDeleteOrder }) => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
         <Column title="Mesa" Icon={Table} orders={tableOrders} type="table" color="bg-blue-600" />
         <Column title="Para Llevar" Icon={ShoppingBag} orders={takeoutOrders} type="takeout" color="bg-green-600" />
-        <Column title="Domicilio" Icon={Bike} orders={deliveryOrders} type="delivery" color="bg-orange-600" />
+        <Column title="Domicilio" Icon={Bike} orders={deliveryOrders} type="delivery" color="bg-orange-600" totalCost={deliveryTotal} />
       </div>
       {showKitchenTicket && selectedOrder && (
         <KitchenTicketModal

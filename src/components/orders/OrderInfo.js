@@ -4,12 +4,12 @@ import { useSettings } from '../../context/SettingsContext';
 import { useOrder } from '../../context/OrderContext';
 import { Bike, Phone, MapPin, X } from 'lucide-react';
 
-const OrderInfo = ({ orderType, tableNumber, deliveryData, onClear }) => {
+const OrderInfo = ({ orderType, tableNumber, deliveryData, onClear, onConfirm }) => {
   const { setDeliveryData } = useOrder();
   const { settings } = useSettings();
   // Estado local para el input de costo
   const [localCost, setLocalCost] = useState(deliveryData?.cost || 0);
-  // Presets dinÃ¡micos desde configuraciÃ³n
+  // Presets dinámicos desde configuración
   const deliveryPresets = useMemo(() => settings?.delivery?.presets || [30, 40, 50], [settings?.delivery?.presets]);
 
   // Sincronizar localCost cuando deliveryData.cost cambie desde fuera
@@ -21,6 +21,12 @@ const OrderInfo = ({ orderType, tableNumber, deliveryData, onClear }) => {
   const updateDeliveryCost = (cost) => {
     setLocalCost(cost);
     setDeliveryData({ cost });
+  };
+
+  const handleProceed = () => {
+    if (localCost > 0 && onConfirm) {
+      onConfirm();
+    }
   };
 
   return (
@@ -119,6 +125,18 @@ const OrderInfo = ({ orderType, tableNumber, deliveryData, onClear }) => {
                 ${Number(localCost).toFixed(2)}
               </span>
             )}
+          </div>
+        )}
+
+        {/* Botón de continuar para delivery */}
+        {orderType === 'delivery' && localCost > 0 && onConfirm && (
+          <div className="flex gap-2 mt-4">
+            <button
+              onClick={handleProceed}
+              className="flex-1 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-semibold transition-colors"
+            >
+              ✅ Continuar comprando
+            </button>
           </div>
         )}
       </div>
