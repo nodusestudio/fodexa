@@ -1,6 +1,8 @@
-import React from 'react';
-import { Bell, User, Menu } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Bell, User, Menu, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import DarkModeToggle from '../layout/DarkModeToggle';
+import { useAuth } from '../../context/AuthContext';
 
 function formatDateEs(date) {
   return date.toLocaleDateString('es-ES', {
@@ -9,12 +11,36 @@ function formatDateEs(date) {
 }
 
 function Header({ sidebarOpen, toggleSidebar }) {
-  const user = {
-    name: 'Cajero Demo',
-    role: 'Cajero',
-    avatar: null,
-  };
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const menuRef = useRef(null);
+  
+  const displayName = user?.email?.split('@')[0] || 'Usuario';
   const today = new Date();
+
+  // Cerrar menú al hacer click fuera
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setShowUserMenu(false);
+      }
+    }
+
+    if (showUserMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showUserMenu]);
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (err) {
+      console.error('Error al cerrar sesión:', err);
+    }
+  };
 
   return (
     <header className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800 px-3 sm:px-6 py-3 sm:py-4 transition-colors">
@@ -38,18 +64,47 @@ function Header({ sidebarOpen, toggleSidebar }) {
           </button>
           <DarkModeToggle />
           <div className="w-px h-6 sm:h-8 bg-gray-200 dark:bg-gray-700 hidden sm:block" />
-          <div className="hidden sm:flex items-center gap-3">
-            {user.avatar ? (
-              <img src={user.avatar} alt="avatar" className="w-10 h-10 rounded-full object-cover" />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-primary-400 flex items-center justify-center">
+          
+          {/* User Menu */}
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="hidden sm:flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-800 px-3 py-2 rounded-lg transition-colors"
+            >
+              <div className="w-10 h-10 rounded-full bg-primary-400 flex items-center justify-center flex-shrink-0">
                 <User className="w-6 h-6 text-white" />
               </div>
+              <div className="text-left">
+                <div className="font-semibold text-gray-900 dark:text-white text-sm">{displayName}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-300">Cajero</div>
+              </div>
+            </button>
+
+            {/* Dropdown Menu */}
+            {showUserMenu && (
+              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+                <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                  <div className="font-semibold text-gray-900 dark:text-white">{displayName}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</div>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600 dark:text-red-400 transition-colors font-medium"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Cerrar Sesión
+                </button>
+              </div>
             )}
-            <div>
-              <div className="font-semibold text-gray-900 dark:text-white">{user.name}</div>
-              <div className="text-xs text-gray-500 dark:text-gray-300">{user.role}</div>
-            </div>
+
+            {/* Mobile Logout Button */}
+            <button
+              onClick={handleLogout}
+              className="sm:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+              title="Cerrar sesión"
+            >
+              <LogOut className="w-5 h-5 text-gray-700 dark:text-gray-200" />
+            </button>
           </div>
         </div>
       </div>
