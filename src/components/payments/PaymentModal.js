@@ -194,17 +194,7 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
       customer: deliveryData, // for legacy/compatibility
     };
 
-    // Registrar en caja
-    if (isCashOpen) {
-      finalPaymentMethods.forEach(method => {
-        addMovement('sale', method.amount, `Venta ${method.type} - Ticket #${Date.now().toString().slice(-6)}`);
-      });
-    }
-
-    // Guardar ticket en local y obtener su ID
-    const newTicket = createTicket(order);
-    
-    // Calcular montos pagados por tipo
+    // Calcular montos pagados por tipo ANTES de crear ticket
     const pago_efectivo = finalPaymentMethods
       .filter(m => m.type === 'cash')
       .reduce((sum, m) => sum + m.amount, 0);
@@ -213,7 +203,29 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
       .filter(m => m.type === 'card' || m.type === 'transfer')
       .reduce((sum, m) => sum + m.amount, 0);
     
-    // Actualizar orden en Firebase para persistir el estado y pago
+    // Agregar datos de pago al order ANTES de crear ticket
+    const orderWithPayment = {
+      ...order,
+      pago_efectivo,
+      pago_digital,
+    };
+    
+    // Registrar en caja
+    if (isCashOpen) {
+      finalPaymentMethods.forEach(method => {
+        addMovement('sale', method.amount, `Venta ${method.type} - Ticket #${Date.now().toString().slice(-6)}`);
+      });
+    }
+
+    // Guardar ticket en local CON datos de pago incluidos desde el inicio
+    console.log('💾 [TICKET] Creando ticket con datos de pago:', {
+      pago_efectivo,
+      pago_digital,
+      type: orderData.type,
+    });
+    const newTicket = createTicket(orderWithPayment);
+    
+    // Actualizar orden en Firebase para persistir el estado
     if (orderData.id) {
       const paymentType = finalPaymentMethods.length === 1 ? finalPaymentMethods[0].type : 'mixed';
       
@@ -222,37 +234,24 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
         pago_efectivo,
         pago_digital,
         paymentType,
-        finalPaymentMethods,
       });
       
       updateOrder(orderData.id, {
         status: orderStatus,
         paymentMethods: finalPaymentMethods,
-        paymentType: paymentType, // Siempre guardar el tipo de pago
+        paymentType: paymentType,
         deliveryData: orderData.type === 'delivery' ? deliveryData : undefined,
         pago_efectivo,
         pago_digital,
       });
-      
-      // ✅ Si es domicilio, actualizar el TICKET con datos de pago usando su ID correcto
-      if (orderData.type === 'delivery' && newTicket?.id) {
-        console.log('💾 [TICKET] Actualizando ticket con ID:', newTicket.id);
-        updateTicket(newTicket.id, {
-          paymentMethods: finalPaymentMethods,
-          paymentType: paymentType,
-          pago_efectivo,
-          pago_digital,
-          status: orderStatus,
-        });
-        console.log('✅ Ticket de domicilio actualizado:', {
-          ticketId: newTicket.id,
-          paymentType,
-          pago_efectivo,
-          pago_digital,
-          finalPaymentMethods,
-        });
-      }
     }
+    
+    console.log('✅ Ticket + Orden actualizados:', {
+      ticketId: newTicket?.id,
+      pago_efectivo,
+      pago_digital,
+      type: orderData.type,
+    });
     
     setSuccess(true);
     setTimeout(() => {
