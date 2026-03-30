@@ -20,11 +20,13 @@ const Customers = () => {
 
   const PAGE_SIZE = 50;
 
-  // Filtrar clientes
+  // Filtrar clientes - con validación de array
   const filteredCustomers = useMemo(() => {
-    let result = searchQuery ? searchCustomers(searchQuery) : customers;
+    let result = Array.isArray(customers) && customers.length > 0 
+      ? (searchQuery ? searchCustomers(searchQuery) : customers)
+      : [];
     
-    if (filterClassification !== 'all') {
+    if (result && result.length > 0 && filterClassification !== 'all') {
       result = result.filter(customer => {
         const stats = getCustomerStats(customer.id, tickets);
         return stats.classification.level.toLowerCase() === filterClassification.toLowerCase();
@@ -284,7 +286,7 @@ const Customers = () => {
       </div>
 
       {/* Controles de Paginación */}
-      {totalPages > 1 && (
+      {filteredCustomers && filteredCustomers.length > PAGE_SIZE && (
         <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-3 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
