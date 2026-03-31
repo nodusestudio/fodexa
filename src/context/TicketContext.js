@@ -210,14 +210,17 @@ export const TicketProvider = ({ children }) => {
 
   const deleteTicket = async (ticketId) => {
     try {
+      // Convertir ID a string para asegurar compatibilidad
+      const stringId = String(ticketId);
+      
       // Eliminar del estado local primero
-      setTickets(prev => prev.filter(t => t.id !== ticketId));
+      setTickets(prev => prev.filter(t => String(t.id) !== stringId));
       
       // Eliminar de Firestore si el usuario está autenticado
       if (user?.uid) {
-        const ticketRef = doc(db, `users/${user.uid}/tickets`, ticketId);
+        const ticketRef = doc(db, `users/${user.uid}/tickets`, stringId);
         await deleteDoc(ticketRef);
-        console.log('✅ Ticket eliminado de Firestore:', ticketId);
+        console.log('✅ Ticket eliminado de Firestore:', stringId);
       } else {
         console.warn('⚠️ Usuario no autenticado. Cambios solo locales.');
       }
