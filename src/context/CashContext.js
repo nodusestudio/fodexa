@@ -36,18 +36,29 @@ export const CashProvider = ({ children }) => {
   }, [user]);
 
   // Abrir caja
-  const openCash = (initialAmount, notes) => {
+  const openCash = (cashData) => {
+    // Aceptar objeto con los nuevos parámetros
+    const initialAmount = typeof cashData === 'number' ? cashData : (cashData?.initialAmount || 0);
+    const notes = typeof cashData === 'string' ? cashData : (cashData?.notes || '');
+    const fundAmount = cashData?.fundAmount || 0;
+    const breakdown = cashData?.breakdown || {};
+    const openedAt = cashData?.openedAt || new Date();
+
     const session = {
       id: Date.now(),
-      openDate: new Date(),
+      openDate: openedAt,
+      openDateLocal: openedAt.toLocaleString('es-CO'),
       openUser: 'Cajero Demo',
       initialAmount: parseFloat(initialAmount) || 0,
+      fundAmount: parseFloat(fundAmount) || 0,
+      breakdown: breakdown,
       notes: notes || '',
       status: 'open',
+      expenses: [], // Array de egresos
     };
     setCashSession(session);
-    console.log('📂 Caja abierta - ID:', session.id, 'Monto inicial: $', session.initialAmount);
-    addMovement('opening', initialAmount, 'Apertura de caja');
+    console.log('📂 Caja abierta - ID:', session.id, 'Capital:', session.initialAmount, 'Fondo:', session.fundAmount);
+    addMovement('opening', initialAmount, 'Apertura de ca ja');
     return session;
   };
 

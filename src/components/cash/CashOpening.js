@@ -5,8 +5,10 @@ import { DollarSign, X } from 'lucide-react';
 const CashOpening = ({ onClose }) => {
   const { openCash } = useCash();
   const [initialAmount, setInitialAmount] = useState('');
+  const [fundAmount, setFundAmount] = useState('');
   const [notes, setNotes] = useState('');
   const [breakdown, setBreakdown] = useState({
+    100000: 0,
     50000: 0,
     20000: 0,
     10000: 0,
@@ -16,6 +18,7 @@ const CashOpening = ({ onClose }) => {
     500: 0,
     200: 0,
     100: 0,
+    50: 0,
   });
 
   const calculateTotal = () => {
@@ -35,16 +38,29 @@ const CashOpening = ({ onClose }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    if (!initialAmount || parseFloat(initialAmount) < 0) {
+    if (!initialAmount && !fundAmount) {
+      alert('⚠️ Ingresa un monto inicial o de fondo válido');
+      return;
+    }
+
+    const totalBreakdown = calculateTotal();
+    if (parseFloat(initialAmount) < 0) {
       alert('⚠️ Ingresa un monto inicial válido');
       return;
     }
 
-    openCash(initialAmount, notes);
+    openCash({
+      initialAmount: parseFloat(initialAmount) || 0,
+      fundAmount: parseFloat(fundAmount) || 0,
+      breakdown,
+      notes,
+      openedAt: new Date(),
+    });
     onClose();
   };
 
   const denominations = [
+    { value: 100000, label: '$100.000', color: 'bg-purple-600' },
     { value: 50000, label: '$50.000', color: 'bg-red-500' },
     { value: 20000, label: '$20.000', color: 'bg-blue-500' },
     { value: 10000, label: '$10.000', color: 'bg-orange-500' },
@@ -54,6 +70,7 @@ const CashOpening = ({ onClose }) => {
     { value: 500, label: '$500', color: 'bg-yellow-500' },
     { value: 200, label: '$200', color: 'bg-pink-500' },
     { value: 100, label: '$100', color: 'bg-indigo-500' },
+    { value: 50, label: '$50', color: 'bg-teal-500' },
   ];
 
   return (
@@ -102,7 +119,7 @@ const CashOpening = ({ onClose }) => {
           <div className="bg-green-50 dark:bg-green-900 dark:bg-opacity-20 rounded-lg p-4">
             <div className="flex justify-between items-center">
               <span className="text-lg font-semibold text-green-800 dark:text-green-300">
-                Total Inicial:
+                Total Caja:
               </span>
               <span className="text-3xl font-bold text-green-600 dark:text-green-400">
                 ${calculateTotal().toLocaleString()}
@@ -113,7 +130,7 @@ const CashOpening = ({ onClose }) => {
           {/* Input manual */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Monto Inicial (si no usas desglose)
+              Monto Caja (si no usas desglose)
             </label>
             <input
               type="number"
@@ -124,6 +141,28 @@ const CashOpening = ({ onClose }) => {
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-green-500"
               placeholder="0.00"
             />
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              💡 Este monto es el capital de caja del día y abrirá en $0
+            </p>
+          </div>
+
+          {/* Fondo */}
+          <div className="bg-blue-50 dark:bg-blue-900 dark:bg-opacity-20 rounded-lg p-4">
+            <label className="block text-sm font-medium text-blue-700 dark:text-blue-300 mb-2">
+              💰 Fondo de Caja (Separado del movimiento del día)
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={fundAmount}
+              onChange={(e) => setFundAmount(e.target.value)}
+              className="w-full px-4 py-2 border border-blue-300 dark:border-blue-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500"
+              placeholder="0.00"
+            />
+            <p className="text-xs text-blue-600 dark:text-blue-300 mt-2">
+              ℹ️ El fondo de caja NO se cuenta en el cierre ni en los cálculos del día
+            </p>
           </div>
 
           {/* Observaciones */}
@@ -138,6 +177,19 @@ const CashOpening = ({ onClose }) => {
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-green-500"
               placeholder="Ej: Cambio inicial para el día..."
             />
+          </div>
+
+          {/* Resumen */}
+          <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-4 space-y-2">
+            <p className="text-sm text-gray-600 dark:text-gray-300">
+              <strong>Capital de Caja:</strong> ${(parseFloat(initialAmount) || 0).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-300">
+              <strong>Fondo de Caja:</strong> ${(parseFloat(fundAmount) || 0).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
+            </p>
+            <p className="text-sm font-semibold text-gray-800 dark:text-white border-t border-gray-300 dark:border-gray-600 pt-2">
+              <strong>Total en Físico:</strong> ${((parseFloat(initialAmount) || 0) + (parseFloat(fundAmount) || 0)).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
+            </p>
           </div>
 
           {/* Botones */}
