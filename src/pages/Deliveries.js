@@ -65,26 +65,26 @@ const DeliveryRowDesktop = ({ ticket, onUpdateField, onMarkDelivered, onPrintGui
       </div>
 
       {/* CLIENTE - col-span-2 (17%) */}
-      <div className="col-span-2 truncate">
+      <div className="col-span-2 truncate text-center">
         <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{deliveryData.name || 'N/A'}</p>
       </div>
 
       {/* TELÉFONO - col-span-2 (17%) */}
-      <div className="col-span-2 truncate">
+      <div className="col-span-2 truncate text-center">
         <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{deliveryData.phone || 'N/A'}</p>
       </div>
 
-      {/* DIRECCIÓN - col-span-3 (25%) */}
-      <div className="col-span-3 truncate">
+      {/* DIRECCIÓN - col-span-2 (17%) */}
+      <div className="col-span-2 truncate text-center">
         <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{deliveryData.address || 'N/A'}</p>
       </div>
 
       {/* ESTADO - col-span-2 (17%) */}
-      <div className="col-span-2">
+      <div className="col-span-2 flex justify-center">
         <select
           value={status}
           onChange={(e) => onUpdateField(ticket.id, 'deliveryStatus', e.target.value)}
-          className={`w-full px-3 py-1 rounded text-xs font-medium border-0 cursor-pointer ${statusInfo.color} ${statusInfo.textColor}`}
+          className={`w-full px-3 py-1 rounded text-xs font-medium border-0 cursor-pointer ${statusInfo.color} ${statusInfo.textColor} text-center`}
         >
           <option value="solicitar-domi">🚨 Solicitar Domi</option>
           <option value="en-camino">🛵 En camino</option>
@@ -94,7 +94,7 @@ const DeliveryRowDesktop = ({ ticket, onUpdateField, onMarkDelivered, onPrintGui
       </div>
 
       {/* TOTAL/COBRAR-PAGAR - col-span-2 (17%) */}
-      <div className={`col-span-2 rounded px-3 py-2 ${paymentInfo.color}`}>
+      <div className={`col-span-2 rounded px-3 py-2 ${paymentInfo.color} text-center`}>
         <p className={`text-xs font-semibold ${paymentInfo.textColor}`}>
           {paymentInfo.label}
         </p>
@@ -104,7 +104,7 @@ const DeliveryRowDesktop = ({ ticket, onUpdateField, onMarkDelivered, onPrintGui
       </div>
 
       {/* ACCIONES - col-span-1 (8%) */}
-      <div className="col-span-1 flex items-center justify-end gap-2">
+      <div className="col-span-1 flex items-center justify-center gap-2">
         <button
           onClick={() => onPrintGuide(ticket)}
           className="p-2 text-gray-600 dark:text-gray-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded transition-colors"
@@ -513,12 +513,12 @@ const Deliveries = () => {
               <div className="sticky top-0 bg-gray-100 dark:bg-gray-700 border-b border-gray-300 dark:border-gray-600 z-10">
                 <div className="grid grid-cols-12 gap-3 px-6 py-3 text-xs font-bold text-gray-700 dark:text-gray-300">
                   <div className="col-span-1 text-center">TICKET</div>
-                  <div className="col-span-2">CLIENTE</div>
-                  <div className="col-span-2">TELÉFONO</div>
-                  <div className="col-span-3">DIRECCIÓN</div>
-                  <div className="col-span-2">ESTADO</div>
-                  <div className="col-span-2">COBRAR/PAGAR</div>
-                  <div className="col-span-1 text-right">ACCIONES</div>
+                  <div className="col-span-2 text-center">CLIENTE</div>
+                  <div className="col-span-2 text-center">TELÉFONO</div>
+                  <div className="col-span-2 text-center">DIRECCIÓN</div>
+                  <div className="col-span-2 text-center">ESTADO</div>
+                  <div className="col-span-2 text-center">COBRAR/PAGAR</div>
+                  <div className="col-span-1 text-center">ACCIONES</div>
                 </div>
               </div>
 
