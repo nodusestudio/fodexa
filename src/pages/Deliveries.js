@@ -64,8 +64,8 @@ const DeliveryRowDesktop = ({ ticket, onUpdateField, onMarkDelivered, onPrintGui
         <p className="text-sm font-semibold text-gray-900 dark:text-white">{ticket.ticketNumber}</p>
       </div>
 
-      {/* CLIENTE - col-span-2 (17%) */}
-      <div className="col-span-2 truncate text-center">
+      {/* CLIENTE - col-span-1 (8%) */}
+      <div className="col-span-1 truncate text-center">
         <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{deliveryData.name || 'N/A'}</p>
       </div>
 
@@ -103,8 +103,8 @@ const DeliveryRowDesktop = ({ ticket, onUpdateField, onMarkDelivered, onPrintGui
         </p>
       </div>
 
-      {/* ACCIONES - col-span-1 (8%) */}
-      <div className="col-span-1 flex items-center justify-center gap-2">
+      {/* ACCIONES - col-span-2 (17%) */}
+      <div className="col-span-2 flex items-center justify-center gap-2">
         <button
           onClick={() => onPrintGuide(ticket)}
           className="p-2 text-gray-600 dark:text-gray-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded transition-colors"
@@ -513,12 +513,12 @@ const Deliveries = () => {
               <div className="sticky top-0 bg-gray-100 dark:bg-gray-700 border-b border-gray-300 dark:border-gray-600 z-10">
                 <div className="grid grid-cols-12 gap-3 px-6 py-3 text-xs font-bold text-gray-700 dark:text-gray-300">
                   <div className="col-span-1 text-center">TICKET</div>
-                  <div className="col-span-2 text-center">CLIENTE</div>
+                  <div className="col-span-1 text-center">CLIENTE</div>
                   <div className="col-span-2 text-center">TELÉFONO</div>
                   <div className="col-span-2 text-center">DIRECCIÓN</div>
                   <div className="col-span-2 text-center">ESTADO</div>
                   <div className="col-span-2 text-center">COBRAR/PAGAR</div>
-                  <div className="col-span-1 text-center">ACCIONES</div>
+                  <div className="col-span-2 text-center">ACCIONES</div>
                 </div>
               </div>
 
