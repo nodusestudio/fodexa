@@ -8,7 +8,11 @@ const Ledger = () => {
     const today = new Date();
     return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
   });
-  const [expandedView, setExpandedView] = useState('week'); // 'week' or 'month'
+  const [selectedDay, setSelectedDay] = useState(() => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  });
+  const [expandedView, setExpandedView] = useState('week'); // 'week', 'month', or 'daily'
   const [showPaymentBreakdown, setShowPaymentBreakdown] = useState(true);
 
   // Generar todas las sesiones con datos de ejemplo si no hay datos reales
@@ -27,6 +31,13 @@ const Ledger = () => {
         const sales = Math.floor(Math.random() * 2000) + 500;
         const expenses = Math.floor(sales * 0.15);
         
+        // Desglose detallado por método de pago
+        const cashAmount = Math.floor(sales * 0.5);
+        const bankAmount = Math.floor(sales * 0.25);
+        const nequiAmount = Math.floor(sales * 0.15);
+        const boldAmount = Math.floor(sales * 0.07);
+        const aliadoAmount = sales - cashAmount - bankAmount - nequiAmount - boldAmount;
+
         mockSessions.push({
           id: `mock_${i}`,
           openDate: date,
@@ -36,9 +47,17 @@ const Ledger = () => {
           expenses: expenses,
           difference: Math.floor(Math.random() * 10000) - 5000,
           paymentBreakdown: {
-            cash: Math.floor(sales * 0.5),
-            card: Math.floor(sales * 0.4),
-            transfer: Math.floor(sales * 0.1),
+            cash: cashAmount,
+            card: bankAmount,
+            transfer: nequiAmount,
+          },
+          // Desglose detallado para vista diaria
+          paymentMethods: {
+            efectivo: { ingresos: cashAmount, egresos: Math.floor(expenses * 0.3) },
+            bancolombia: { ingresos: bankAmount, egresos: Math.floor(expenses * 0.25) },
+            nequi: { ingresos: nequiAmount, egresos: Math.floor(expenses * 0.2) },
+            bold: { ingresos: boldAmount, egresos: Math.floor(expenses * 0.15) },
+            aliado: { ingresos: aliadoAmount, egresos: Math.floor(expenses * 0.1) },
           },
           status: 'closed',
         });
@@ -64,14 +83,30 @@ const Ledger = () => {
     return { start, end };
   }, [selectedMonth]);
 
+  // Rango de fechas para día seleccionado
+  const dailyDateRange = useMemo(() => {
+    const [year, month, day] = selectedDay.split('-');
+    const start = new Date(year, parseInt(month) - 1, parseInt(day), 0, 0, 0);
+    const end = new Date(year, parseInt(month) - 1, parseInt(day), 23, 59, 59);
+    return { start, end };
+  }, [selectedDay]);
+
   // Filtrar sesiones según la vista
   const filteredSessions = useMemo(() => {
-    const dateRange = expandedView === 'week' ? weekDateRange : monthDateRange;
+    let dateRange;
+    if (expandedView === 'week') {
+      dateRange = weekDateRange;
+    } else if (expandedView === 'month') {
+      dateRange = monthDateRange;
+    } else if (expandedView === 'daily') {
+      dateRange = dailyDateRange;
+    }
+    
     return allSessions.filter(session => {
       const closeDate = new Date(session.closeDate);
       return closeDate >= dateRange.start && closeDate <= dateRange.end;
     });
-  }, [allSessions, expandedView, weekDateRange, monthDateRange]);
+  }, [allSessions, expandedView, weekDateRange, monthDateRange, dailyDateRange]);
 
   // Calcular resumen
   const summary = useMemo(() => {
@@ -159,6 +194,16 @@ const Ledger = () => {
           >
             📆 Mes Completo
           </button>
+          <button
+            onClick={() => setExpandedView('daily')}
+            className={`px-4 py-3 font-medium border-b-2 transition-colors ${
+              expandedView === 'daily'
+                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+            }`}
+          >
+            📋 Diario
+          </button>
         </div>
 
         {/* Mes Selector - Solo visible en vista mensual */}
@@ -182,68 +227,82 @@ const Ledger = () => {
           </div>
         )}
 
-        {/* Saldo Prominente */}
-        <div className="bg-gradient-to-br from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-900 rounded-2xl p-8 text-white mb-8 shadow-xl">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-blue-100 text-sm font-medium mb-2">💰 Saldo Total</p>
-              <h2 className="text-5xl font-bold">${summary.balance.toLocaleString('es-CO')}</h2>
-              <p className="text-blue-100 text-sm mt-3">
+        {/* Día Selector - Solo visible en vista diaria */}
+        {expandedView === 'daily' && (
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-2">
+              <Calendar size={18} className="text-gray-600 dark:text-gray-400" />
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Seleccionar Día</label>
+            </div>
+            <input
+              type="date"
+              value={selectedDay}
+              onChange={(e) => setSelectedDay(e.target.value)}
+              className="w-full md:w-64 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-medium"
+            />
+          </div>
+        )}
+
+        {/* Saldo Prominente - Compacto */}
+        <div className="bg-gradient-to-br from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-900 rounded-xl p-5 text-white mb-5 shadow-lg">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1">
+              <p className="text-blue-100 text-xs font-medium mb-1">💰 Saldo Total</p>
+              <h2 className="text-4xl md:text-5xl font-bold">${summary.balance.toLocaleString('es-CO')}</h2>
+              <p className="text-blue-100 text-xs mt-2">
                 {expandedView === 'week' ? 'Últimos 7 días' : `${new Date(selectedMonth + '-01').toLocaleDateString('es-CO', { month: 'long', year: 'numeric' })}`}
               </p>
             </div>
-            <div className="bg-blue-500 bg-opacity-30 p-4 rounded-xl">
-              <DollarSign size={40} />
+            <div className="bg-blue-500 bg-opacity-30 p-3 rounded-lg flex-shrink-0">
+              <DollarSign size={32} />
             </div>
           </div>
         </div>
 
-        {/* Métricas */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        {/* Métricas - Compactas */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
           {/* Ventas */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">📈 Ventas Totales</p>
-              <TrendingUp size={20} className="text-green-600 dark:text-green-400" />
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-gray-600 dark:text-gray-400 text-xs font-medium">📈 Ventas</p>
+              <TrendingUp size={16} className="text-green-600 dark:text-green-400" />
             </div>
-            <h3 className="text-3xl font-bold text-green-600 dark:text-green-400">
+            <h3 className="text-2xl font-bold text-green-600 dark:text-green-400">
               ${summary.totalSales.toLocaleString('es-CO')}
             </h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               {summary.sessionCount} {summary.sessionCount === 1 ? 'sesión' : 'sesiones'}
             </p>
           </div>
 
           {/* Egresos */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">📤 Egresos Totales</p>
-              <Filter size={20} className="text-orange-600 dark:text-orange-400" />
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-gray-600 dark:text-gray-400 text-xs font-medium">📤 Egresos</p>
+              <Filter size={16} className="text-orange-600 dark:text-orange-400" />
             </div>
-            <h3 className="text-3xl font-bold text-orange-600 dark:text-orange-400">
+            <h3 className="text-2xl font-bold text-orange-600 dark:text-orange-400">
               -${summary.totalExpenses.toLocaleString('es-CO')}
             </h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               {(summary.totalExpenses / summary.totalSales * 100).toFixed(1)}% de ventas
             </p>
           </div>
 
           {/* Diferencia */}
-          <div className={`rounded-xl p-6 shadow-sm border ${
+          <div className={`rounded-lg p-4 shadow-sm border ${
             summary.totalDifference >= 0
               ? 'bg-green-50 dark:bg-green-900 dark:bg-opacity-20 border-green-200 dark:border-green-800'
               : 'bg-red-50 dark:bg-red-900 dark:bg-opacity-20 border-red-200 dark:border-red-800'
           }`}>
-            <div className="flex items-center justify-between mb-2">
-              <p className={`text-sm font-medium ${
-                summary.totalDifference >= 0
-                  ? 'text-green-700 dark:text-green-300'
-                  : 'text-red-700 dark:text-red-300'
-              }`}>
-                {summary.totalDifference >= 0 ? '✅ Diferencia' : '⚠️ Faltante'}
-              </p>
-            </div>
-            <h3 className={`text-3xl font-bold ${
+            <p className={`text-xs font-medium mb-1 ${
+              summary.totalDifference >= 0
+                ? 'text-green-700 dark:text-green-300'
+                : 'text-red-700 dark:text-red-300'
+            }`}>
+              {summary.totalDifference >= 0 ? '✅ Diferencia' : '⚠️ Faltante'}
+            </p>
+            <h3 className={`text-2xl font-bold ${
               summary.totalDifference >= 0
                 ? 'text-green-600 dark:text-green-400'
                 : 'text-red-600 dark:text-red-400'
@@ -253,96 +312,187 @@ const Ledger = () => {
           </div>
         </div>
 
-        {/* Breakdown por Método de Pago */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white">💳 Breakdown por Método de Pago</h3>
+        {/* Breakdown por Método de Pago - Compacto */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">💳 Métodos de Pago</h3>
             <button
               onClick={() => setShowPaymentBreakdown(!showPaymentBreakdown)}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
             >
-              <ChevronDown size={20} className={`transform transition-transform ${showPaymentBreakdown ? '' : '-rotate-90'}`} />
+              <ChevronDown size={18} className={`transform transition-transform ${showPaymentBreakdown ? '' : '-rotate-90'}`} />
             </button>
           </div>
 
           {showPaymentBreakdown && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {/* Efectivo */}
-              <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900 dark:from-opacity-20 dark:to-green-900 dark:to-opacity-10 rounded-lg p-4 border border-green-200 dark:border-green-800">
-                <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">💵 Efectivo</p>
-                <h4 className="text-2xl font-bold text-green-700 dark:text-green-400">
+              <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900 dark:from-opacity-20 dark:to-green-900 dark:to-opacity-10 rounded-lg p-3 border border-green-200 dark:border-green-800">
+                <p className="text-gray-600 dark:text-gray-400 text-xs mb-1">💵 Efectivo</p>
+                <h4 className="text-xl font-bold text-green-700 dark:text-green-400">
                   ${summary.paymentBreakdown.cash.toLocaleString('es-CO')}
                 </h4>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                  {summary.totalSales > 0 ? ((summary.paymentBreakdown.cash / summary.totalSales * 100).toFixed(1)) : 0}% de ventas
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  {summary.totalSales > 0 ? ((summary.paymentBreakdown.cash / summary.totalSales * 100).toFixed(1)) : 0}%
                 </p>
               </div>
 
               {/* Tarjeta */}
-              <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:from-opacity-20 dark:to-blue-900 dark:to-opacity-10 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
-                <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">💳 Tarjeta</p>
-                <h4 className="text-2xl font-bold text-blue-700 dark:text-blue-400">
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:from-opacity-20 dark:to-blue-900 dark:to-opacity-10 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
+                <p className="text-gray-600 dark:text-gray-400 text-xs mb-1">💳 Tarjeta</p>
+                <h4 className="text-xl font-bold text-blue-700 dark:text-blue-400">
                   ${summary.paymentBreakdown.card.toLocaleString('es-CO')}
                 </h4>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                  {summary.totalSales > 0 ? ((summary.paymentBreakdown.card / summary.totalSales * 100).toFixed(1)) : 0}% de ventas
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  {summary.totalSales > 0 ? ((summary.paymentBreakdown.card / summary.totalSales * 100).toFixed(1)) : 0}%
                 </p>
               </div>
 
               {/* Transferencia */}
-              <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900 dark:from-opacity-20 dark:to-purple-900 dark:to-opacity-10 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
-                <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">💸 Transferencia</p>
-                <h4 className="text-2xl font-bold text-purple-700 dark:text-purple-400">
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900 dark:from-opacity-20 dark:to-purple-900 dark:to-opacity-10 rounded-lg p-3 border border-purple-200 dark:border-purple-800">
+                <p className="text-gray-600 dark:text-gray-400 text-xs mb-1">💸 Transferencia</p>
+                <h4 className="text-xl font-bold text-purple-700 dark:text-purple-400">
                   ${summary.paymentBreakdown.transfer.toLocaleString('es-CO')}
                 </h4>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                  {summary.totalSales > 0 ? ((summary.paymentBreakdown.transfer / summary.totalSales * 100).toFixed(1)) : 0}% de ventas
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  {summary.totalSales > 0 ? ((summary.paymentBreakdown.transfer / summary.totalSales * 100).toFixed(1)) : 0}%
                 </p>
               </div>
             </div>
           )}
         </div>
 
-        {/* Detalle de Sesiones */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white">📋 Detalle de Sesiones</h3>
+        {/* Tabla de Ventas Diarias - Solo en vista diaria */}
+        {expandedView === 'daily' && filteredSessions.length > 0 && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden mb-6">
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead className="bg-gray-900 dark:bg-gray-950 border-b-2 border-gray-200 dark:border-gray-700 sticky top-0">
+                  <tr>
+                    <th className="px-3 py-3 text-left text-white font-bold">CONCEPTO</th>
+                    <th className="px-3 py-3 text-center text-white font-bold">💵 EFECTIVO</th>
+                    <th className="px-3 py-3 text-center text-white font-bold">🏦 BANCOLOMBIA</th>
+                    <th className="px-3 py-3 text-center text-white font-bold">📱 NEQUI</th>
+                    <th className="px-3 py-3 text-center text-white font-bold">⚡ BOLD</th>
+                    <th className="px-3 py-3 text-center text-white font-bold">🔗 ALIADO</th>
+                    <th className="px-3 py-3 text-center text-white font-bold">💰 TOTAL</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {/* Fila de Ingresos */}
+                  <tr className="bg-green-50 dark:bg-green-900 dark:bg-opacity-20 border-b border-gray-200 dark:border-gray-700">
+                    <td className="px-3 py-2 font-bold text-green-700 dark:text-green-300">↓ INGRESOS</td>
+                    <td className="px-3 py-2 text-center text-green-700 dark:text-green-300 font-semibold">
+                      ${filteredSessions[0]?.paymentMethods?.efectivo?.ingresos?.toLocaleString('es-CO') || '0'}
+                    </td>
+                    <td className="px-3 py-2 text-center text-green-700 dark:text-green-300 font-semibold">
+                      ${filteredSessions[0]?.paymentMethods?.bancolombia?.ingresos?.toLocaleString('es-CO') || '0'}
+                    </td>
+                    <td className="px-3 py-2 text-center text-green-700 dark:text-green-300 font-semibold">
+                      ${filteredSessions[0]?.paymentMethods?.nequi?.ingresos?.toLocaleString('es-CO') || '0'}
+                    </td>
+                    <td className="px-3 py-2 text-center text-green-700 dark:text-green-300 font-semibold">
+                      ${filteredSessions[0]?.paymentMethods?.bold?.ingresos?.toLocaleString('es-CO') || '0'}
+                    </td>
+                    <td className="px-3 py-2 text-center text-green-700 dark:text-green-300 font-semibold">
+                      ${filteredSessions[0]?.paymentMethods?.aliado?.ingresos?.toLocaleString('es-CO') || '0'}
+                    </td>
+                    <td className="px-3 py-2 text-center text-green-700 dark:text-green-300 font-bold text-sm border-l border-green-200 dark:border-green-800">
+                      ${filteredSessions[0]?.sales?.toLocaleString('es-CO') || '0'}
+                    </td>
+                  </tr>
+
+                  {/* Fila de Egresos */}
+                  <tr className="bg-orange-50 dark:bg-orange-900 dark:bg-opacity-20 border-b border-gray-200 dark:border-gray-700">
+                    <td className="px-3 py-2 font-bold text-orange-700 dark:text-orange-300">↑ EGRESOS</td>
+                    <td className="px-3 py-2 text-center text-orange-700 dark:text-orange-300 font-semibold">
+                      ${filteredSessions[0]?.paymentMethods?.efectivo?.egresos?.toLocaleString('es-CO') || '0'}
+                    </td>
+                    <td className="px-3 py-2 text-center text-orange-700 dark:text-orange-300 font-semibold">
+                      ${filteredSessions[0]?.paymentMethods?.bancolombia?.egresos?.toLocaleString('es-CO') || '0'}
+                    </td>
+                    <td className="px-3 py-2 text-center text-orange-700 dark:text-orange-300 font-semibold">
+                      ${filteredSessions[0]?.paymentMethods?.nequi?.egresos?.toLocaleString('es-CO') || '0'}
+                    </td>
+                    <td className="px-3 py-2 text-center text-orange-700 dark:text-orange-300 font-semibold">
+                      ${filteredSessions[0]?.paymentMethods?.bold?.egresos?.toLocaleString('es-CO') || '0'}
+                    </td>
+                    <td className="px-3 py-2 text-center text-orange-700 dark:text-orange-300 font-semibold">
+                      ${filteredSessions[0]?.paymentMethods?.aliado?.egresos?.toLocaleString('es-CO') || '0'}
+                    </td>
+                    <td className="px-3 py-2 text-center text-orange-700 dark:text-orange-300 font-bold text-sm border-l border-orange-200 dark:border-orange-800">
+                      ${filteredSessions[0]?.expenses?.toLocaleString('es-CO') || '0'}
+                    </td>
+                  </tr>
+
+                  {/* Fila de Totales/Balance */}
+                  <tr className="bg-blue-50 dark:bg-blue-900 dark:bg-opacity-20 border-t-2 border-blue-300 dark:border-blue-700">
+                    <td className="px-3 py-2 font-bold text-blue-700 dark:text-blue-300">💰 BALANCE</td>
+                    <td className="px-3 py-2 text-center text-blue-700 dark:text-blue-300 font-bold">
+                      ${Math.max(0, (filteredSessions[0]?.paymentMethods?.efectivo?.ingresos || 0) - (filteredSessions[0]?.paymentMethods?.efectivo?.egresos || 0)).toLocaleString('es-CO')}
+                    </td>
+                    <td className="px-3 py-2 text-center text-blue-700 dark:text-blue-300 font-bold">
+                      ${Math.max(0, (filteredSessions[0]?.paymentMethods?.bancolombia?.ingresos || 0) - (filteredSessions[0]?.paymentMethods?.bancolombia?.egresos || 0)).toLocaleString('es-CO')}
+                    </td>
+                    <td className="px-3 py-2 text-center text-blue-700 dark:text-blue-300 font-bold">
+                      ${Math.max(0, (filteredSessions[0]?.paymentMethods?.nequi?.ingresos || 0) - (filteredSessions[0]?.paymentMethods?.nequi?.egresos || 0)).toLocaleString('es-CO')}
+                    </td>
+                    <td className="px-3 py-2 text-center text-blue-700 dark:text-blue-300 font-bold">
+                      ${Math.max(0, (filteredSessions[0]?.paymentMethods?.bold?.ingresos || 0) - (filteredSessions[0]?.paymentMethods?.bold?.egresos || 0)).toLocaleString('es-CO')}
+                    </td>
+                    <td className="px-3 py-2 text-center text-blue-700 dark:text-blue-300 font-bold">
+                      ${Math.max(0, (filteredSessions[0]?.paymentMethods?.aliado?.ingresos || 0) - (filteredSessions[0]?.paymentMethods?.aliado?.egresos || 0)).toLocaleString('es-CO')}
+                    </td>
+                    <td className="px-3 py-2 text-center text-blue-700 dark:text-blue-300 font-bold text-sm border-l-2 border-blue-300 dark:border-blue-700 bg-blue-100 dark:bg-blue-900 dark:bg-opacity-40">
+                      ${((filteredSessions[0]?.sales || 0) - (filteredSessions[0]?.expenses || 0)).toLocaleString('es-CO')}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Detalle de Sesiones - Compacto */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">📋 Sesiones</h3>
           </div>
 
           {filteredSessions.length > 0 ? (
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full text-sm">
                 <thead className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">Fecha</th>
-                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 dark:text-gray-300">Ventas</th>
-                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 dark:text-gray-300">Egresos</th>
-                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 dark:text-gray-300">Diferencia</th>
-                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 dark:text-gray-300">Estado</th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">Fecha</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-gray-700 dark:text-gray-300">Ventas</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-gray-700 dark:text-gray-300">Egresos</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-gray-700 dark:text-gray-300">Diferencia</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-gray-700 dark:text-gray-300">Estado</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {filteredSessions.map(session => (
                     <tr key={session.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                      <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                      <td className="px-4 py-2 text-gray-900 dark:text-white text-xs">
                         {new Date(session.closeDate).toLocaleDateString('es-CO')}
                       </td>
-                      <td className="px-6 py-4 text-right text-sm font-medium text-green-600 dark:text-green-400">
+                      <td className="px-4 py-2 text-right font-medium text-green-600 dark:text-green-400 text-xs">
                         ${session.sales?.toLocaleString('es-CO') || '0'}
                       </td>
-                      <td className="px-6 py-4 text-right text-sm font-medium text-orange-600 dark:text-orange-400">
+                      <td className="px-4 py-2 text-right font-medium text-orange-600 dark:text-orange-400 text-xs">
                         -${session.expenses?.toLocaleString('es-CO') || '0'}
                       </td>
-                      <td className={`px-6 py-4 text-right text-sm font-medium ${
+                      <td className={`px-4 py-2 text-right font-medium text-xs ${
                         (session.difference || 0) >= 0
                           ? 'text-green-600 dark:text-green-400'
                           : 'text-red-600 dark:text-red-400'
                       }`}>
                         {(session.difference || 0) >= 0 ? '+' : ''}${(session.difference || 0).toLocaleString('es-CO')}
                       </td>
-                      <td className="px-6 py-4 text-right text-sm">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 dark:bg-opacity-30 text-green-800 dark:text-green-300">
-                          ✅ Cerrada
+                      <td className="px-4 py-2 text-right">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 dark:bg-opacity-30 text-green-800 dark:text-green-300">
+                          ✅
                         </span>
                       </td>
                     </tr>
@@ -351,8 +501,8 @@ const Ledger = () => {
               </table>
             </div>
           ) : (
-            <div className="p-12 text-center">
-              <p className="text-gray-500 dark:text-gray-400">
+            <div className="p-8 text-center">
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
                 No hay sesiones registradas para este período
               </p>
             </div>
