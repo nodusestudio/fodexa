@@ -7,6 +7,7 @@ const navItems = [
   { to: 'deliveries', icon: Truck, label: 'Domicilios' },
   { to: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: 'reports', icon: FileText, label: 'Reportes' },
+  { to: 'ledger', icon: FileText, label: 'Libro Contable' },
   { to: 'tickets', icon: FileText, label: 'Tickets' },
 ];
 

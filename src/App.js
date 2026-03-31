@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import POS from './pages/POS';
 import Dashboard from './pages/Dashboard';
 import Reports from './pages/Reports';
+import Ledger from './pages/Ledger';
 import Customers from './pages/Customers';
 import CustomerReports from './pages/CustomerReports';
 import Articles from './pages/articles/Articles';
@@ -59,6 +60,7 @@ function App() {
                               <Route index element={<POS />} />
                               <Route path="dashboard" element={<Dashboard />} />
                               <Route path="reports" element={<Reports />} />
+                              <Route path="ledger" element={<Ledger />} />
                               <Route path="deliveries" element={<Deliveries />} />
                               <Route path="customers" element={<Customers />} />
                               <Route path="customers/reports" element={<CustomerReports />} />
