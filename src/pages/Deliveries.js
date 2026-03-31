@@ -40,8 +40,8 @@ const DeliveryRowDesktop = ({ ticket, onUpdateField, onMarkDelivered, onPrintGui
         <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{deliveryData.address || 'N/A'}</p>
       </div>
 
-      {/* ESTADO - col-span-1 (8%) */}
-      <div className="col-span-1">
+      {/* ESTADO - col-span-2 (17%) */}
+      <div className="col-span-2">
         <select
           value={status}
           onChange={(e) => onUpdateField(ticket.id, 'deliveryStatus', e.target.value)}
@@ -61,8 +61,8 @@ const DeliveryRowDesktop = ({ ticket, onUpdateField, onMarkDelivered, onPrintGui
         </p>
       </div>
 
-      {/* ACCIONES - col-span-2 (17%) */}
-      <div className="col-span-2 flex items-center justify-end gap-2">
+      {/* ACCIONES - col-span-1 (8%) */}
+      <div className="col-span-1 flex items-center justify-end gap-2">
         <button
           onClick={() => onPrintGuide(ticket)}
           className="p-2 text-gray-600 dark:text-gray-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded transition-colors"
@@ -438,9 +438,9 @@ const Deliveries = () => {
                   <div className="col-span-2">CLIENTE</div>
                   <div className="col-span-2">TELÉFONO</div>
                   <div className="col-span-3">DIRECCIÓN</div>
-                  <div className="col-span-1">ESTADO</div>
+                  <div className="col-span-2">ESTADO</div>
                   <div className="col-span-1 text-right">TOTAL</div>
-                  <div className="col-span-2 text-right">ACCIONES</div>
+                  <div className="col-span-1 text-right">ACCIONES</div>
                 </div>
               </div>
 
