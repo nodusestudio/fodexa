@@ -1,10 +1,211 @@
 import React, { useState, useMemo } from 'react';
 import { useTickets } from '../context/TicketContext';
 import { useSettings } from '../context/SettingsContext';
-import { Search, Filter, RefreshCw, Truck, CheckCircle, Clock } from 'lucide-react';
-import DeliveryRow from '../components/deliveries/DeliveryRow';
+import { Search, RefreshCw, Truck, ChevronDown, ChevronUp, Printer, Check } from 'lucide-react';
 import { formatCurrency } from '../utils/formatters';
 
+// Componente para fila de escritorio (grid de 12 columnas)
+const DeliveryRowDesktop = ({ ticket, onUpdateField, onMarkDelivered, onPrintGuide }) => {
+  const deliveryData = ticket.deliveryData || ticket.customer || {};
+  const status = ticket.deliveryStatus || 'pending';
+  
+  const statusConfig = {
+    'solicitar-domi': { label: '🚨 Solicitar Domi', color: 'bg-red-50 dark:bg-red-900/20', textColor: 'text-red-700 dark:text-red-300' },
+    'en-camino': { label: '🛵 En camino', color: 'bg-blue-50 dark:bg-blue-900/20', textColor: 'text-blue-700 dark:text-blue-300' },
+    'delivered': { label: '✅ Entregado', color: 'bg-green-50 dark:bg-green-900/20', textColor: 'text-green-700 dark:text-green-300' },
+    'cancelled': { label: '❌ Cancelado', color: 'bg-gray-50 dark:bg-gray-800', textColor: 'text-gray-700 dark:text-gray-300' },
+  };
+  
+  const statusInfo = statusConfig[status] || statusConfig['solicitar-domi'];
+
+  return (
+    <div className={`grid grid-cols-12 gap-3 px-6 py-4 border-b border-gray-200 dark:border-gray-700 items-center hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors`}>
+      {/* TICKET - col-span-1 (8%) */}
+      <div className="col-span-1 text-center">
+        <p className="text-sm font-semibold text-gray-900 dark:text-white">{ticket.ticketNumber}</p>
+      </div>
+
+      {/* CLIENTE - col-span-2 (17%) */}
+      <div className="col-span-2 truncate">
+        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{deliveryData.name || 'N/A'}</p>
+      </div>
+
+      {/* TELÉFONO - col-span-2 (17%) */}
+      <div className="col-span-2 truncate">
+        <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{deliveryData.phone || 'N/A'}</p>
+      </div>
+
+      {/* DIRECCIÓN - col-span-3 (25%) */}
+      <div className="col-span-3 truncate">
+        <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{deliveryData.address || 'N/A'}</p>
+      </div>
+
+      {/* ESTADO - col-span-1 (8%) */}
+      <div className="col-span-1">
+        <select
+          value={status}
+          onChange={(e) => onUpdateField(ticket.id, 'deliveryStatus', e.target.value)}
+          className={`w-full px-3 py-1 rounded text-xs font-medium border-0 cursor-pointer ${statusInfo.color} ${statusInfo.textColor}`}
+        >
+          <option value="solicitar-domi">🚨 Solicitar Domi</option>
+          <option value="en-camino">🛵 En camino</option>
+          <option value="delivered">✅ Entregado</option>
+          <option value="cancelled">❌ Cancelado</option>
+        </select>
+      </div>
+
+      {/* TOTAL - col-span-1 (8%) */}
+      <div className="col-span-1 text-right">
+        <p className="text-sm font-semibold text-gray-900 dark:text-white">
+          ${(ticket.total || 0).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
+        </p>
+      </div>
+
+      {/* ACCIONES - col-span-2 (17%) */}
+      <div className="col-span-2 flex items-center justify-end gap-2">
+        <button
+          onClick={() => onPrintGuide(ticket)}
+          className="p-2 text-gray-600 dark:text-gray-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded transition-colors"
+          title="Imprimir guía"
+        >
+          <Printer size={18} />
+        </button>
+        {status !== 'delivered' && (
+          <button
+            onClick={() => onMarkDelivered(ticket.id)}
+            className="p-2 text-gray-600 dark:text-gray-400 hover:bg-green-100 dark:hover:bg-green-900/30 rounded transition-colors"
+            title="Marcar como entregado"
+          >
+            <Check size={18} />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Componente para fila móvil (cards)
+const DeliveryRowMobile = ({ ticket, onUpdateField, onMarkDelivered, onPrintGuide }) => {
+  const [expanded, setExpanded] = useState(false);
+  const deliveryData = ticket.deliveryData || ticket.customer || {};
+  const status = ticket.deliveryStatus || 'pending';
+
+  const statusConfig = {
+    'solicitar-domi': { label: '🚨 Solicitar Domi', color: 'bg-red-100 dark:bg-red-900/30' },
+    'en-camino': { label: '🛵 En camino', color: 'bg-blue-100 dark:bg-blue-900/30' },
+    'delivered': { label: '✅ Entregado', color: 'bg-green-100 dark:bg-green-900/30' },
+    'cancelled': { label: '❌ Cancelado', color: 'bg-gray-100 dark:bg-gray-700' },
+  };
+
+  const statusInfo = statusConfig[status] || statusConfig['solicitar-domi'];
+
+  return (
+    <div className="border-b border-gray-200 dark:border-gray-700 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+      {/* Header de Card */}
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex-1">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+            Ticket #{ticket.ticketNumber}
+          </h3>
+          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+            {deliveryData.name || 'Cliente sin nombre'}
+          </p>
+        </div>
+        <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusInfo.color}`}>
+          {statusInfo.label}
+        </span>
+      </div>
+
+      {/* Info Básica */}
+      <div className="space-y-2 mb-3 text-sm">
+        <p className="text-gray-600 dark:text-gray-400">
+          <span className="font-medium text-gray-900 dark:text-white">Teléfono:</span> {deliveryData.phone || 'N/A'}
+        </p>
+        <p className="text-gray-600 dark:text-gray-400">
+          <span className="font-medium text-gray-900 dark:text-white">Total:</span> $
+          {(ticket.total || 0).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
+        </p>
+      </div>
+
+      {/* Botón Expandir */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center justify-between p-2 rounded bg-gray-100 dark:bg-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors mb-3"
+      >
+        <span>Detalles</span>
+        {expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+      </button>
+
+      {/* Detalles Expandidos */}
+      {expanded && (
+        <div className="space-y-3 mb-3 pb-3 border-b border-gray-200 dark:border-gray-600">
+          {/* Dirección */}
+          <div>
+            <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">DIRECCIÓN</p>
+            <p className="text-sm text-gray-900 dark:text-white">{deliveryData.address || 'N/A'}</p>
+            {deliveryData.references && (
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                Refs: {deliveryData.references}
+              </p>
+            )}
+          </div>
+
+          {/* Items */}
+          {ticket.items && ticket.items.length > 0 && (
+            <div>
+              <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">ITEMS</p>
+              <ul className="space-y-1">
+                {ticket.items.map((item, idx) => (
+                  <li key={idx} className="text-xs text-gray-700 dark:text-gray-300">
+                    {item.quantity}x {item.name}
+                    {item.notes && <span className="text-gray-500 dark:text-gray-400"> - {item.notes}</span>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Estado Select */}
+          <div>
+            <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">CAMBIAR ESTADO</p>
+            <select
+              value={status}
+              onChange={(e) => onUpdateField(ticket.id, 'deliveryStatus', e.target.value)}
+              className="w-full px-3 py-2 rounded text-xs font-medium border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            >
+              <option value="solicitar-domi">🚨 Solicitar Domi</option>
+              <option value="en-camino">🛵 En camino</option>
+              <option value="delivered">✅ Entregado</option>
+              <option value="cancelled">❌ Cancelado</option>
+            </select>
+          </div>
+        </div>
+      )}
+
+      {/* Botones de Acción */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => onPrintGuide(ticket)}
+          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-medium hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+        >
+          <Printer size={16} />
+          Imprimir
+        </button>
+        {status !== 'delivered' && (
+          <button
+            onClick={() => onMarkDelivered(ticket.id)}
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs font-medium hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
+          >
+            <Check size={16} />
+            Entregar
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Componente Principal
 const Deliveries = () => {
   const { tickets, updateTicket } = useTickets();
   const { settings } = useSettings();
@@ -214,7 +415,7 @@ const Deliveries = () => {
         </div>
       </div>
 
-      {/* Lista de Pedidos - Tabla Compacta */}
+      {/* Contenido - Responsive */}
       <div className="flex-1 overflow-auto bg-white dark:bg-gray-800">
         {filteredOrders.length === 0 ? (
           <div className="text-center py-12">
@@ -228,29 +429,44 @@ const Deliveries = () => {
           </div>
         ) : (
           <div>
-            {/* Header de Tabla */}
-            <div className="sticky top-0 bg-gray-100 dark:bg-gray-700 border-b border-gray-300 dark:border-gray-600 z-10">
-              <div className="flex items-center gap-3 px-4 py-3 text-xs font-bold text-gray-700 dark:text-gray-300 overflow-x-auto">
-                <div className="w-20 flex-shrink-0 text-center">TICKET</div>
-                <div className="w-40 flex-shrink-0">CLIENTE</div>
-                <div className="w-32 flex-shrink-0">TELÉFONO</div>
-                <div className="w-48 flex-shrink-0">DIRECCIÓN</div>
-                <div className="w-56 flex-shrink-0">ESTADO</div>
-                <div className="w-44 flex-shrink-0 text-center">COBRAR/PAGAR</div>
-                <div className="w-24 flex-shrink-0 text-center">ACCIONES</div>
+            {/* DESKTOP VIEW (lg+) - Tabla con Grid 12 columnas */}
+            <div className="hidden lg:block">
+              {/* Header */}
+              <div className="sticky top-0 bg-gray-100 dark:bg-gray-700 border-b border-gray-300 dark:border-gray-600 z-10">
+                <div className="grid grid-cols-12 gap-3 px-6 py-3 text-xs font-bold text-gray-700 dark:text-gray-300">
+                  <div className="col-span-1 text-center">TICKET</div>
+                  <div className="col-span-2">CLIENTE</div>
+                  <div className="col-span-2">TELÉFONO</div>
+                  <div className="col-span-3">DIRECCIÓN</div>
+                  <div className="col-span-1">ESTADO</div>
+                  <div className="col-span-1 text-right">TOTAL</div>
+                  <div className="col-span-2 text-right">ACCIONES</div>
+                </div>
+              </div>
+
+              {/* Filas */}
+              <div>
+                {filteredOrders.map(ticket => (
+                  <DeliveryRowDesktop
+                    key={ticket.id}
+                    ticket={ticket}
+                    onUpdateField={handleUpdateField}
+                    onMarkDelivered={handleMarkDelivered}
+                    onPrintGuide={handlePrintGuide}
+                  />
+                ))}
               </div>
             </div>
 
-            {/* Filas */}
-            <div>
+            {/* MOBILE VIEW (<lg) - Cards */}
+            <div className="lg:hidden">
               {filteredOrders.map(ticket => (
-                <DeliveryRow
+                <DeliveryRowMobile
                   key={ticket.id}
                   ticket={ticket}
                   onUpdateField={handleUpdateField}
                   onMarkDelivered={handleMarkDelivered}
                   onPrintGuide={handlePrintGuide}
-                  loading={loading}
                 />
               ))}
             </div>
