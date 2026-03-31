@@ -108,6 +108,36 @@ const Ledger = () => {
     });
   }, [allSessions, expandedView, weekDateRange, monthDateRange, dailyDateRange]);
 
+  // Agrupar sesiones por semanas de 7 días
+  const sessionsByWeeks = useMemo(() => {
+    const weeks = [];
+    let currentWeek = [];
+    let weekStartDate = null;
+    
+    const allSessionsSorted = [...allSessions].sort((a, b) => 
+      new Date(a.closeDate).getTime() - new Date(b.closeDate).getTime()
+    );
+    
+    allSessionsSorted.forEach((session, index) => {
+      if (currentWeek.length === 0) {
+        weekStartDate = new Date(session.closeDate);
+      }
+      
+      currentWeek.push(session);
+      
+      // Cada 7 días o al final de las sesiones
+      if (currentWeek.length === 7 || index === allSessionsSorted.length - 1) {
+        weeks.push({
+          startDate: weekStartDate,
+          sessions: [...currentWeek]
+        });
+        currentWeek = [];
+      }
+    });
+    
+    return weeks;
+  }, [allSessions]);
+
   // Calcular resumen
   const summary = useMemo(() => {
     const totalSales = filteredSessions.reduce((sum, s) => sum + (s.sales || 0), 0);
@@ -227,19 +257,12 @@ const Ledger = () => {
           </div>
         )}
 
-        {/* Día Selector - Solo visible en vista diaria */}
+        {/* Nota para vista Diario */}
         {expandedView === 'daily' && (
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-2">
-              <Calendar size={18} className="text-gray-600 dark:text-gray-400" />
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Seleccionar Día</label>
-            </div>
-            <input
-              type="date"
-              value={selectedDay}
-              onChange={(e) => setSelectedDay(e.target.value)}
-              className="w-full md:w-64 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-medium"
-            />
+          <div className="mb-6 p-3 bg-blue-50 dark:bg-blue-900 dark:bg-opacity-20 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <p className="text-sm text-blue-700 dark:text-blue-300">
+              📊 Vista de desglose diario: Últimos 7 días por método de pago
+            </p>
           </div>
         )}
 
@@ -362,96 +385,127 @@ const Ledger = () => {
           )}
         </div>
 
-        {/* Tabla de Ventas Diarias - Solo en vista diaria */}
-        {expandedView === 'daily' && filteredSessions.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden mb-6">
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead className="bg-gray-900 dark:bg-gray-950 border-b-2 border-gray-200 dark:border-gray-700 sticky top-0">
-                  <tr>
-                    <th className="px-3 py-3 text-left text-white font-bold">CONCEPTO</th>
-                    <th className="px-3 py-3 text-center text-white font-bold">💵 EFECTIVO</th>
-                    <th className="px-3 py-3 text-center text-white font-bold">🏦 BANCOLOMBIA</th>
-                    <th className="px-3 py-3 text-center text-white font-bold">📱 NEQUI</th>
-                    <th className="px-3 py-3 text-center text-white font-bold">⚡ BOLD</th>
-                    <th className="px-3 py-3 text-center text-white font-bold">🔗 ALIADO</th>
-                    <th className="px-3 py-3 text-center text-white font-bold">💰 TOTAL</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {/* Fila de Ingresos */}
-                  <tr className="bg-green-50 dark:bg-green-900 dark:bg-opacity-20 border-b border-gray-200 dark:border-gray-700">
-                    <td className="px-3 py-2 font-bold text-green-700 dark:text-green-300">↓ INGRESOS</td>
-                    <td className="px-3 py-2 text-center text-green-700 dark:text-green-300 font-semibold">
-                      ${filteredSessions[0]?.paymentMethods?.efectivo?.ingresos?.toLocaleString('es-CO') || '0'}
-                    </td>
-                    <td className="px-3 py-2 text-center text-green-700 dark:text-green-300 font-semibold">
-                      ${filteredSessions[0]?.paymentMethods?.bancolombia?.ingresos?.toLocaleString('es-CO') || '0'}
-                    </td>
-                    <td className="px-3 py-2 text-center text-green-700 dark:text-green-300 font-semibold">
-                      ${filteredSessions[0]?.paymentMethods?.nequi?.ingresos?.toLocaleString('es-CO') || '0'}
-                    </td>
-                    <td className="px-3 py-2 text-center text-green-700 dark:text-green-300 font-semibold">
-                      ${filteredSessions[0]?.paymentMethods?.bold?.ingresos?.toLocaleString('es-CO') || '0'}
-                    </td>
-                    <td className="px-3 py-2 text-center text-green-700 dark:text-green-300 font-semibold">
-                      ${filteredSessions[0]?.paymentMethods?.aliado?.ingresos?.toLocaleString('es-CO') || '0'}
-                    </td>
-                    <td className="px-3 py-2 text-center text-green-700 dark:text-green-300 font-bold text-sm border-l border-green-200 dark:border-green-800">
-                      ${filteredSessions[0]?.sales?.toLocaleString('es-CO') || '0'}
-                    </td>
-                  </tr>
+        {/* Tabla de Ventas Diarias - Solo en vista diaria - SECCIONES DE 7 DÍAS */}
+        {expandedView === 'daily' && sessionsByWeeks.map((week, weekIndex) => (
+          <div key={weekIndex} className="mb-8">
+            {/* Encabezado de Semana */}
+            <div className="mb-3 pb-2 border-b-2 border-blue-300 dark:border-blue-700">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                📅 Semana del {new Date(week.startDate).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: '2-digit' })}
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                {week.sessions.length} {week.sessions.length === 1 ? 'día' : 'días'}
+              </p>
+            </div>
 
-                  {/* Fila de Egresos */}
-                  <tr className="bg-orange-50 dark:bg-orange-900 dark:bg-opacity-20 border-b border-gray-200 dark:border-gray-700">
-                    <td className="px-3 py-2 font-bold text-orange-700 dark:text-orange-300">↑ EGRESOS</td>
-                    <td className="px-3 py-2 text-center text-orange-700 dark:text-orange-300 font-semibold">
-                      ${filteredSessions[0]?.paymentMethods?.efectivo?.egresos?.toLocaleString('es-CO') || '0'}
-                    </td>
-                    <td className="px-3 py-2 text-center text-orange-700 dark:text-orange-300 font-semibold">
-                      ${filteredSessions[0]?.paymentMethods?.bancolombia?.egresos?.toLocaleString('es-CO') || '0'}
-                    </td>
-                    <td className="px-3 py-2 text-center text-orange-700 dark:text-orange-300 font-semibold">
-                      ${filteredSessions[0]?.paymentMethods?.nequi?.egresos?.toLocaleString('es-CO') || '0'}
-                    </td>
-                    <td className="px-3 py-2 text-center text-orange-700 dark:text-orange-300 font-semibold">
-                      ${filteredSessions[0]?.paymentMethods?.bold?.egresos?.toLocaleString('es-CO') || '0'}
-                    </td>
-                    <td className="px-3 py-2 text-center text-orange-700 dark:text-orange-300 font-semibold">
-                      ${filteredSessions[0]?.paymentMethods?.aliado?.egresos?.toLocaleString('es-CO') || '0'}
-                    </td>
-                    <td className="px-3 py-2 text-center text-orange-700 dark:text-orange-300 font-bold text-sm border-l border-orange-200 dark:border-orange-800">
-                      ${filteredSessions[0]?.expenses?.toLocaleString('es-CO') || '0'}
-                    </td>
-                  </tr>
+            {/* Tabla de la Semana */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden mb-6">
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead className="bg-gray-900 dark:bg-gray-950 border-b-2 border-gray-200 dark:border-gray-700 sticky top-0">
+                    <tr>
+                      <th className="px-3 py-3 text-left text-white font-bold whitespace-nowrap">📅 FECHA</th>
+                      <th className="px-3 py-3 text-left text-white font-bold">DÍA</th>
+                      <th className="px-3 py-3 text-left text-white font-bold">CONCEPTO</th>
+                      <th className="px-3 py-3 text-center text-white font-bold">💵 EFECTIVO</th>
+                      <th className="px-3 py-3 text-center text-white font-bold">🏦 BANCOLOMBIA</th>
+                      <th className="px-3 py-3 text-center text-white font-bold">📱 NEQUI</th>
+                      <th className="px-3 py-3 text-center text-white font-bold">⚡ BOLD</th>
+                      <th className="px-3 py-3 text-center text-white font-bold">🔗 ALIADO</th>
+                      <th className="px-3 py-3 text-center text-white font-bold">💰 TOTAL</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {week.sessions.map((session, sessionIndex) => {
+                      const sessionDate = new Date(session.closeDate);
+                      const dayOfWeek = sessionDate.toLocaleDateString('es-CO', { weekday: 'long' });
+                      const formattedDate = sessionDate.toLocaleDateString('es-CO', { day: '2-digit', month: 'short' });
+                      
+                      return (
+                        <React.Fragment key={session.id}>
+                          {/* Fila de Ingresos */}
+                          <tr className={`border-b border-gray-200 dark:border-gray-700 ${sessionIndex % 2 === 0 ? 'bg-gray-50 dark:bg-gray-900 dark:bg-opacity-30' : ''}`}>
+                            <td className="px-3 py-2 font-bold text-gray-900 dark:text-white whitespace-nowrap">{formattedDate}</td>
+                            <td className="px-3 py-2 text-gray-600 dark:text-gray-400 capitalize text-xs">{dayOfWeek}</td>
+                            <td className="px-3 py-2 font-bold text-green-700 dark:text-green-300">↓ INGRESOS</td>
+                            <td className="px-3 py-2 text-center text-green-700 dark:text-green-300 font-semibold">
+                              ${session?.paymentMethods?.efectivo?.ingresos?.toLocaleString('es-CO') || '0'}
+                            </td>
+                            <td className="px-3 py-2 text-center text-green-700 dark:text-green-300 font-semibold">
+                              ${session?.paymentMethods?.bancolombia?.ingresos?.toLocaleString('es-CO') || '0'}
+                            </td>
+                            <td className="px-3 py-2 text-center text-green-700 dark:text-green-300 font-semibold">
+                              ${session?.paymentMethods?.nequi?.ingresos?.toLocaleString('es-CO') || '0'}
+                            </td>
+                            <td className="px-3 py-2 text-center text-green-700 dark:text-green-300 font-semibold">
+                              ${session?.paymentMethods?.bold?.ingresos?.toLocaleString('es-CO') || '0'}
+                            </td>
+                            <td className="px-3 py-2 text-center text-green-700 dark:text-green-300 font-semibold">
+                              ${session?.paymentMethods?.aliado?.ingresos?.toLocaleString('es-CO') || '0'}
+                            </td>
+                            <td className="px-3 py-2 text-center text-green-700 dark:text-green-300 font-bold text-sm border-l border-green-200 dark:border-green-800">
+                              ${session?.sales?.toLocaleString('es-CO') || '0'}
+                            </td>
+                          </tr>
 
-                  {/* Fila de Totales/Balance */}
-                  <tr className="bg-blue-50 dark:bg-blue-900 dark:bg-opacity-20 border-t-2 border-blue-300 dark:border-blue-700">
-                    <td className="px-3 py-2 font-bold text-blue-700 dark:text-blue-300">💰 BALANCE</td>
-                    <td className="px-3 py-2 text-center text-blue-700 dark:text-blue-300 font-bold">
-                      ${Math.max(0, (filteredSessions[0]?.paymentMethods?.efectivo?.ingresos || 0) - (filteredSessions[0]?.paymentMethods?.efectivo?.egresos || 0)).toLocaleString('es-CO')}
-                    </td>
-                    <td className="px-3 py-2 text-center text-blue-700 dark:text-blue-300 font-bold">
-                      ${Math.max(0, (filteredSessions[0]?.paymentMethods?.bancolombia?.ingresos || 0) - (filteredSessions[0]?.paymentMethods?.bancolombia?.egresos || 0)).toLocaleString('es-CO')}
-                    </td>
-                    <td className="px-3 py-2 text-center text-blue-700 dark:text-blue-300 font-bold">
-                      ${Math.max(0, (filteredSessions[0]?.paymentMethods?.nequi?.ingresos || 0) - (filteredSessions[0]?.paymentMethods?.nequi?.egresos || 0)).toLocaleString('es-CO')}
-                    </td>
-                    <td className="px-3 py-2 text-center text-blue-700 dark:text-blue-300 font-bold">
-                      ${Math.max(0, (filteredSessions[0]?.paymentMethods?.bold?.ingresos || 0) - (filteredSessions[0]?.paymentMethods?.bold?.egresos || 0)).toLocaleString('es-CO')}
-                    </td>
-                    <td className="px-3 py-2 text-center text-blue-700 dark:text-blue-300 font-bold">
-                      ${Math.max(0, (filteredSessions[0]?.paymentMethods?.aliado?.ingresos || 0) - (filteredSessions[0]?.paymentMethods?.aliado?.egresos || 0)).toLocaleString('es-CO')}
-                    </td>
-                    <td className="px-3 py-2 text-center text-blue-700 dark:text-blue-300 font-bold text-sm border-l-2 border-blue-300 dark:border-blue-700 bg-blue-100 dark:bg-blue-900 dark:bg-opacity-40">
-                      ${((filteredSessions[0]?.sales || 0) - (filteredSessions[0]?.expenses || 0)).toLocaleString('es-CO')}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+                          {/* Fila de Egresos */}
+                          <tr className={`border-b border-gray-200 dark:border-gray-700 ${sessionIndex % 2 === 0 ? 'bg-gray-50 dark:bg-gray-900 dark:bg-opacity-30' : ''}`}>
+                            <td className="px-3 py-2"></td>
+                            <td className="px-3 py-2"></td>
+                            <td className="px-3 py-2 font-bold text-orange-700 dark:text-orange-300">↑ EGRESOS</td>
+                            <td className="px-3 py-2 text-center text-orange-700 dark:text-orange-300 font-semibold">
+                              ${session?.paymentMethods?.efectivo?.egresos?.toLocaleString('es-CO') || '0'}
+                            </td>
+                            <td className="px-3 py-2 text-center text-orange-700 dark:text-orange-300 font-semibold">
+                              ${session?.paymentMethods?.bancolombia?.egresos?.toLocaleString('es-CO') || '0'}
+                            </td>
+                            <td className="px-3 py-2 text-center text-orange-700 dark:text-orange-300 font-semibold">
+                              ${session?.paymentMethods?.nequi?.egresos?.toLocaleString('es-CO') || '0'}
+                            </td>
+                            <td className="px-3 py-2 text-center text-orange-700 dark:text-orange-300 font-semibold">
+                              ${session?.paymentMethods?.bold?.egresos?.toLocaleString('es-CO') || '0'}
+                            </td>
+                            <td className="px-3 py-2 text-center text-orange-700 dark:text-orange-300 font-semibold">
+                              ${session?.paymentMethods?.aliado?.egresos?.toLocaleString('es-CO') || '0'}
+                            </td>
+                            <td className="px-3 py-2 text-center text-orange-700 dark:text-orange-300 font-bold text-sm border-l border-orange-200 dark:border-orange-800">
+                              ${session?.expenses?.toLocaleString('es-CO') || '0'}
+                            </td>
+                          </tr>
+
+                          {/* Fila de Balance */}
+                          <tr className={`border-b-2 border-blue-300 dark:border-blue-700 ${sessionIndex % 2 === 0 ? 'bg-blue-50 dark:bg-blue-900 dark:bg-opacity-20' : 'bg-blue-100 dark:bg-blue-900 dark:bg-opacity-10'}`}>
+                            <td className="px-3 py-2"></td>
+                            <td className="px-3 py-2"></td>
+                            <td className="px-3 py-2 font-bold text-blue-700 dark:text-blue-300">💰 BALANCE</td>
+                            <td className="px-3 py-2 text-center text-blue-700 dark:text-blue-300 font-bold">
+                              ${Math.max(0, (session?.paymentMethods?.efectivo?.ingresos || 0) - (session?.paymentMethods?.efectivo?.egresos || 0)).toLocaleString('es-CO')}
+                            </td>
+                            <td className="px-3 py-2 text-center text-blue-700 dark:text-blue-300 font-bold">
+                              ${Math.max(0, (session?.paymentMethods?.bancolombia?.ingresos || 0) - (session?.paymentMethods?.bancolombia?.egresos || 0)).toLocaleString('es-CO')}
+                            </td>
+                            <td className="px-3 py-2 text-center text-blue-700 dark:text-blue-300 font-bold">
+                              ${Math.max(0, (session?.paymentMethods?.nequi?.ingresos || 0) - (session?.paymentMethods?.nequi?.egresos || 0)).toLocaleString('es-CO')}
+                            </td>
+                            <td className="px-3 py-2 text-center text-blue-700 dark:text-blue-300 font-bold">
+                              ${Math.max(0, (session?.paymentMethods?.bold?.ingresos || 0) - (session?.paymentMethods?.bold?.egresos || 0)).toLocaleString('es-CO')}
+                            </td>
+                            <td className="px-3 py-2 text-center text-blue-700 dark:text-blue-300 font-bold">
+                              ${Math.max(0, (session?.paymentMethods?.aliado?.ingresos || 0) - (session?.paymentMethods?.aliado?.egresos || 0)).toLocaleString('es-CO')}
+                            </td>
+                            <td className="px-3 py-2 text-center text-blue-700 dark:text-blue-300 font-bold text-sm border-l-2 border-blue-300 dark:border-blue-700 bg-blue-200 dark:bg-blue-900 dark:bg-opacity-50">
+                              ${((session?.sales || 0) - (session?.expenses || 0)).toLocaleString('es-CO')}
+                            </td>
+                          </tr>
+                        </React.Fragment>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
-        )}
+        ))}
 
         {/* Detalle de Sesiones - Compacto */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
