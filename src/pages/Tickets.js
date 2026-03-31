@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useTickets } from '../context/TicketContext';
 import { formatCurrency } from '../utils/formatters';
-import { Search, Printer, Eye, X, FileText } from 'lucide-react';
+import { Search, Printer, Eye, X, FileText, Trash2 } from 'lucide-react';
 import TicketPrint from '../components/tickets/TicketPrint';
 
 const Tickets = () => {
-  const { getAllTickets, getTicketsByDate } = useTickets();
+  const { getAllTickets, getTicketsByDate, deleteTicket } = useTickets();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedTicket, setSelectedTicket] = useState(null);
@@ -23,6 +23,22 @@ const Tickets = () => {
   const handleViewTicket = (ticket) => {
     setSelectedTicket(ticket);
     setShowPrintModal(true);
+  };
+
+  const handleDeleteTicket = async (ticket) => {
+    const confirmed = window.confirm(
+      `¿Estás seguro de que deseas eliminar el ticket ${ticket.ticketNumber}?\n\nEsta acción eliminará el pedido de todo el sistema y no se puede deshacer.`
+    );
+    
+    if (confirmed) {
+      try {
+        await deleteTicket(ticket.id);
+        console.log('✅ Ticket eliminado:', ticket.id);
+      } catch (error) {
+        console.error('❌ Error eliminando ticket:', error);
+        alert('Error al eliminar el ticket: ' + error.message);
+      }
+    }
   };
 
   const totalVentas = filteredTickets.reduce((sum, t) => sum + t.total, 0);
@@ -94,7 +110,7 @@ const Tickets = () => {
                   <th className="px-2 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase hidden md:table-cell">Cliente</th>
                   <th className="px-2 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase hidden sm:table-cell">Pago</th>
                   <th className="px-2 sm:px-6 py-2 sm:py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Total</th>
-                  <th className="px-2 sm:px-6 py-2 sm:py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Impr</th>
+                  <th className="px-2 sm:px-6 py-2 sm:py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -137,12 +153,19 @@ const Tickets = () => {
                       <td className="px-2 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-right font-bold text-gray-800 dark:text-white text-xs sm:text-sm">
                         {formatCurrency(ticket.total)}
                       </td>
-                      <td className="px-2 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-center">
+                      <td className="px-2 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-center flex items-center justify-center gap-2">
                         <button
                           onClick={() => handleViewTicket(ticket)}
                           className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 inline-flex items-center"
                         >
                           <Printer size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteTicket(ticket)}
+                          className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 inline-flex items-center"
+                          title="Eliminar ticket"
+                        >
+                          <Trash2 size={16} />
                         </button>
                       </td>
                     </tr>
