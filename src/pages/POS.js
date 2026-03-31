@@ -12,12 +12,15 @@ import OrderInfo from '../components/orders/OrderInfo';
 import PaymentModal from '../components/payments/PaymentModal';
 import tables from '../data/tables';
 import { useProducts } from '../context/ProductContext';
-import { ShoppingCart } from 'lucide-react';
+import { useCash } from '../context/CashContext';
+import { ShoppingCart, Lock, AlertCircle } from 'lucide-react';
 
 const POS = () => {
   const [localOrderType, setLocalOrderType] = useState(null);
   const { currentOrderType, selectedTable, deliveryData, setOrderType, selectTable, setDeliveryData, clearCurrentOrder } = useOrder();
   const { addItem, clearCart, items } = useCart();
+  const { isCashOpen, cashSession } = useCash();
+  const [showNoCashModal, setShowNoCashModal] = useState(false);
   const [view, setView] = useState('board');
   const [currentOrder, setCurrentOrder] = useState(null);
   const [showTableSelector, setShowTableSelector] = useState(false);
@@ -34,6 +37,18 @@ const POS = () => {
   const { getActiveProducts, getActiveCategories } = useProducts();
   const dynamicProducts = getActiveProducts();
   const dynamicCategories = getActiveCategories();
+
+  // ✅ PHASE 3: Validar que caja esté abierta
+  useEffect(() => {
+    if (!isCashOpen) {
+      setShowNoCashModal(true);
+      setView('board');
+      setLocalOrderType(null);
+      setShowTableSelector(false);
+      setShowCustomerSelector(false);
+      setShowProducts(false);
+    }
+  }, [isCashOpen]);
 
   useEffect(() => {
     window.setDeliveryData = (data) => {
@@ -86,6 +101,13 @@ const POS = () => {
   const { deleteOrder, updateOrder } = useOrder();
 
   const handleNewOrder = (type) => {
+    // ✅ PHASE 3: Bloquear si caja no está abierta
+    if (!isCashOpen) {
+      alert('⚠️ Debes abrir caja antes de crear órdenes');
+      setShowNoCashModal(true);
+      return;
+    }
+
     console.log('📝 handleNewOrder llamado con type:', type);
     setView('creating');
     setLocalOrderType(type);
@@ -378,6 +400,59 @@ const POS = () => {
           ticket={ticketToPrint}
           onClose={() => { setShowPrintModal(false); setTicketToPrint(null); }}
         />
+      )}
+
+      {/* ✅ PHASE 3: Modal - Caja no abierta */}
+      {showNoCashModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-8 text-center space-y-6">
+            <div className="flex justify-center">
+              <div className="w-16 h-16 bg-orange-100 dark:bg-orange-900 dark:bg-opacity-30 rounded-full flex items-center justify-center">
+                <Lock size={32} className="text-orange-600 dark:text-orange-400" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
+                💰 Caja Cerrada
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400">
+                Debes abrir caja antes de crear órdenes
+              </p>
+            </div>
+
+            <div className="bg-orange-50 dark:bg-orange-900 dark:bg-opacity-20 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle size={20} className="text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0" />
+                <div className="text-left">
+                  <p className="font-medium text-orange-900 dark:text-orange-300">
+                    {cashSession 
+                      ? `Caja abierta: ${new Date(cashSession.openDate).toLocaleTimeString('es-CO')}`
+                      : 'No hay sesión de caja activa. Accede a la sección de Caja para abrir.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 pt-4">
+              <button
+                onClick={() => {
+                  window.location.href = '/#/cash';
+                  setShowNoCashModal(false);
+                }}
+                className="px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-lg transition-colors"
+              >
+                Abrir Caja Now
+              </button>
+              <button
+                onClick={() => setShowNoCashModal(false)}
+                className="px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
