@@ -199,6 +199,14 @@ const Ledger = () => {
               Resumen de ingresos, egresos y estado de caja
             </p>
           </div>
+          {/* Saldo Total - Compacto en Header */}
+          <div className="bg-gradient-to-br from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-900 rounded-xl p-4 text-white shadow-lg flex flex-col items-center justify-center min-w-fit">
+            <p className="text-blue-100 text-xs font-medium mb-1">💰 Saldo Total</p>
+            <h2 className="text-3xl md:text-4xl font-bold">${summary.balance.toLocaleString('es-CO')}</h2>
+            <p className="text-blue-100 text-xs mt-1">
+              {expandedView === 'week' ? 'Últimos 7 días' : `${new Date(selectedMonth + '-01').toLocaleDateString('es-CO', { month: 'long', year: 'numeric' })}`}
+            </p>
+          </div>
         </div>
 
         {/* Vista Tabs */}
@@ -256,30 +264,7 @@ const Ledger = () => {
           </div>
         )}
 
-        {/* Nota para vista Diario */}
-        {expandedView === 'daily' && (
-          <div className="mb-6 p-3 bg-blue-50 dark:bg-blue-900 dark:bg-opacity-20 border border-blue-200 dark:border-blue-800 rounded-lg">
-            <p className="text-sm text-blue-700 dark:text-blue-300">
-              📊 Vista de desglose diario: Últimos 7 días por método de pago
-            </p>
-          </div>
-        )}
 
-        {/* Saldo Prominente - Compacto */}
-        <div className="bg-gradient-to-br from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-900 rounded-xl p-5 text-white mb-5 shadow-lg">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex-1">
-              <p className="text-blue-100 text-xs font-medium mb-1">💰 Saldo Total</p>
-              <h2 className="text-4xl md:text-5xl font-bold">${summary.balance.toLocaleString('es-CO')}</h2>
-              <p className="text-blue-100 text-xs mt-2">
-                {expandedView === 'week' ? 'Últimos 7 días' : `${new Date(selectedMonth + '-01').toLocaleDateString('es-CO', { month: 'long', year: 'numeric' })}`}
-              </p>
-            </div>
-            <div className="bg-blue-500 bg-opacity-30 p-3 rounded-lg flex-shrink-0">
-              <DollarSign size={32} />
-            </div>
-          </div>
-        </div>
 
         {/* Métricas - Compactas */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
@@ -334,30 +319,7 @@ const Ledger = () => {
           </div>
         </div>
 
-        {/* Breakdown por Método de Pago - Compacto en una fila */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 mb-6">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <h3 className="text-sm font-bold text-gray-900 dark:text-white whitespace-nowrap">💳 MÉTODOS</h3>
-            
-            {/* Efectivo */}
-            <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900 dark:bg-opacity-20 px-3 py-2 rounded border border-green-200 dark:border-green-800">
-              <span className="text-xs font-medium text-green-700 dark:text-green-300">💵 ${summary.paymentBreakdown.cash.toLocaleString('es-CO')}</span>
-              <span className="text-xs text-green-600 dark:text-green-400">{summary.totalSales > 0 ? ((summary.paymentBreakdown.cash / summary.totalSales * 100).toFixed(0)) : 0}%</span>
-            </div>
 
-            {/* Tarjeta */}
-            <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-900 dark:bg-opacity-20 px-3 py-2 rounded border border-blue-200 dark:border-blue-800">
-              <span className="text-xs font-medium text-blue-700 dark:text-blue-300">💳 ${summary.paymentBreakdown.card.toLocaleString('es-CO')}</span>
-              <span className="text-xs text-blue-600 dark:text-blue-400">{summary.totalSales > 0 ? ((summary.paymentBreakdown.card / summary.totalSales * 100).toFixed(0)) : 0}%</span>
-            </div>
-
-            {/* Transferencia */}
-            <div className="flex items-center gap-2 bg-purple-50 dark:bg-purple-900 dark:bg-opacity-20 px-3 py-2 rounded border border-purple-200 dark:border-purple-800">
-              <span className="text-xs font-medium text-purple-700 dark:text-purple-300">💸 ${summary.paymentBreakdown.transfer.toLocaleString('es-CO')}</span>
-              <span className="text-xs text-purple-600 dark:text-purple-400">{summary.totalSales > 0 ? ((summary.paymentBreakdown.transfer / summary.totalSales * 100).toFixed(0)) : 0}%</span>
-            </div>
-          </div>
-        </div>
 
         {/* Tabla de Ventas Diarias - Solo en vista diaria - SECCIONES DE 7 DÍAS */}
         {expandedView === 'daily' && sessionsByWeeks.map((week, weekIndex) => (
