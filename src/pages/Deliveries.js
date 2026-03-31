@@ -9,6 +9,45 @@ const DeliveryRowDesktop = ({ ticket, onUpdateField, onMarkDelivered, onPrintGui
   const deliveryData = ticket.deliveryData || ticket.customer || {};
   const status = ticket.deliveryStatus || 'pending';
   
+  // Lógica de cálculo de cobro/pago
+  const calculatePaymentInfo = () => {
+    const pago_efectivo = parseFloat(ticket.pago_efectivo) || 0;
+    const pago_digital = parseFloat(ticket.pago_digital) || 0;
+    const total = parseFloat(ticket.total) || 0;
+    const deliveryCost = parseFloat(ticket.deliveryCost) || 0;
+    
+    const totalPaid = pago_efectivo + pago_digital;
+    const pendingAmount = total - totalPaid;
+    
+    if (pendingAmount > 0) {
+      return {
+        label: '⏳ Pendiente de Pago',
+        amount: pendingAmount,
+        color: 'bg-yellow-50 dark:bg-yellow-900/20',
+        textColor: 'text-yellow-700 dark:text-yellow-300'
+      };
+    } else if (pago_efectivo > 0) {
+      // Si pagó en efectivo, el domiciliario recibe la diferencia después de descuentos
+      const domiAmount = deliveryCost > 0 ? pago_efectivo - deliveryCost : pago_efectivo;
+      return {
+        label: '💵 Paga Domi',
+        amount: domiAmount,
+        color: 'bg-green-50 dark:bg-green-900/20',
+        textColor: 'text-green-700 dark:text-green-300'
+      };
+    } else {
+      // Si pagó digital, la empresa cobra
+      return {
+        label: '🏢 Paga Empresa',
+        amount: total,
+        color: 'bg-blue-50 dark:bg-blue-900/20',
+        textColor: 'text-blue-700 dark:text-blue-300'
+      };
+    }
+  };
+  
+  const paymentInfo = calculatePaymentInfo();
+  
   const statusConfig = {
     'solicitar-domi': { label: '🚨 Solicitar Domi', color: 'bg-red-50 dark:bg-red-900/20', textColor: 'text-red-700 dark:text-red-300' },
     'en-camino': { label: '🛵 En camino', color: 'bg-blue-50 dark:bg-blue-900/20', textColor: 'text-blue-700 dark:text-blue-300' },
@@ -54,10 +93,13 @@ const DeliveryRowDesktop = ({ ticket, onUpdateField, onMarkDelivered, onPrintGui
         </select>
       </div>
 
-      {/* TOTAL - col-span-1 (8%) */}
-      <div className="col-span-1 text-right">
-        <p className="text-sm font-semibold text-gray-900 dark:text-white">
-          ${(ticket.total || 0).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
+      {/* TOTAL/COBRAR-PAGAR - col-span-2 (17%) */}
+      <div className={`col-span-2 rounded px-3 py-2 ${paymentInfo.color}`}>
+        <p className={`text-xs font-semibold ${paymentInfo.textColor}`}>
+          {paymentInfo.label}
+        </p>
+        <p className={`text-sm font-bold ${paymentInfo.textColor}`}>
+          ${paymentInfo.amount.toLocaleString('es-CO', { maximumFractionDigits: 0 })}
         </p>
       </div>
 
@@ -90,6 +132,40 @@ const DeliveryRowMobile = ({ ticket, onUpdateField, onMarkDelivered, onPrintGuid
   const deliveryData = ticket.deliveryData || ticket.customer || {};
   const status = ticket.deliveryStatus || 'pending';
 
+  // Lógica de cálculo de cobro/pago (igual que desktop)
+  const calculatePaymentInfo = () => {
+    const pago_efectivo = parseFloat(ticket.pago_efectivo) || 0;
+    const pago_digital = parseFloat(ticket.pago_digital) || 0;
+    const total = parseFloat(ticket.total) || 0;
+    const deliveryCost = parseFloat(ticket.deliveryCost) || 0;
+    
+    const totalPaid = pago_efectivo + pago_digital;
+    const pendingAmount = total - totalPaid;
+    
+    if (pendingAmount > 0) {
+      return {
+        label: '⏳ Pendiente de Pago',
+        amount: pendingAmount,
+        color: 'bg-yellow-100 dark:bg-yellow-900/30'
+      };
+    } else if (pago_efectivo > 0) {
+      const domiAmount = deliveryCost > 0 ? pago_efectivo - deliveryCost : pago_efectivo;
+      return {
+        label: '💵 Paga Domi',
+        amount: domiAmount,
+        color: 'bg-green-100 dark:bg-green-900/30'
+      };
+    } else {
+      return {
+        label: '🏢 Paga Empresa',
+        amount: total,
+        color: 'bg-blue-100 dark:bg-blue-900/30'
+      };
+    }
+  };
+  
+  const paymentInfo = calculatePaymentInfo();
+
   const statusConfig = {
     'solicitar-domi': { label: '🚨 Solicitar Domi', color: 'bg-red-100 dark:bg-red-900/30' },
     'en-camino': { label: '🛵 En camino', color: 'bg-blue-100 dark:bg-blue-900/30' },
@@ -121,10 +197,12 @@ const DeliveryRowMobile = ({ ticket, onUpdateField, onMarkDelivered, onPrintGuid
         <p className="text-gray-600 dark:text-gray-400">
           <span className="font-medium text-gray-900 dark:text-white">Teléfono:</span> {deliveryData.phone || 'N/A'}
         </p>
-        <p className="text-gray-600 dark:text-gray-400">
-          <span className="font-medium text-gray-900 dark:text-white">Total:</span> $
-          {(ticket.total || 0).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
-        </p>
+        <div className={`rounded p-2 ${paymentInfo.color}`}>
+          <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{paymentInfo.label}</p>
+          <p className="text-sm font-bold text-gray-900 dark:text-white">
+            ${paymentInfo.amount.toLocaleString('es-CO', { maximumFractionDigits: 0 })}
+          </p>
+        </div>
       </div>
 
       {/* Botón Expandir */}
@@ -439,7 +517,7 @@ const Deliveries = () => {
                   <div className="col-span-2">TELÉFONO</div>
                   <div className="col-span-3">DIRECCIÓN</div>
                   <div className="col-span-2">ESTADO</div>
-                  <div className="col-span-1 text-right">TOTAL</div>
+                  <div className="col-span-2">COBRAR/PAGAR</div>
                   <div className="col-span-1 text-right">ACCIONES</div>
                 </div>
               </div>
