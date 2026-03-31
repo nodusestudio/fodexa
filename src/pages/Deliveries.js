@@ -235,7 +235,7 @@ const Deliveries = () => {
                 <div className="w-40 flex-shrink-0">CLIENTE</div>
                 <div className="w-32 flex-shrink-0">TELÉFONO</div>
                 <div className="w-48 flex-shrink-0">DIRECCIÓN</div>
-                <div className="w-40 flex-shrink-0">ESTADO</div>
+                <div className="w-56 flex-shrink-0">ESTADO</div>
                 <div className="w-44 flex-shrink-0 text-center">COBRAR/PAGAR</div>
                 <div className="w-24 flex-shrink-0 text-center">ACCIONES</div>
               </div>

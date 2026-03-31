@@ -148,8 +148,8 @@ const DeliveryRow = ({ ticket, onUpdateField, onMarkDelivered, onPrintGuide, loa
             <InlineEdit field="deliveryData.address" value={deliveryData.address} placeholder="Dirección" />
           </div>
 
-          {/* Estado - 160px */}
-          <div className="w-40 flex-shrink-0 whitespace-nowrap flex items-center gap-2">
+          {/* Estado - 224px */}
+          <div className="w-56 flex-shrink-0 whitespace-nowrap flex items-center gap-2">
             <select
               value={localStatus}
               onChange={(e) => {
