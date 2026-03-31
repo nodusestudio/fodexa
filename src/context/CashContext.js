@@ -63,12 +63,17 @@ export const CashProvider = ({ children }) => {
   };
 
   // Cerrar caja
-  const closeCash = async (finalCount, observations) => {
+  const closeCash = async (finalCount, observations, dayExpenses = []) => {
     if (!user || !cashSession) return null;
     
     try {
       const expectedAmount = calculateExpectedAmount();
-      const difference = finalCount - expectedAmount;
+      
+      // Calcular total de egresos
+      const totalExpensesAmount = dayExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+      
+      // La diferencia es el conteo final menos el monto esperado
+      const difference = finalCount - (expectedAmount - totalExpensesAmount);
       
       const sessionMovements = cashMovements.filter(m => 
         new Date(m.date) >= new Date(cashSession.openDate)
@@ -102,6 +107,8 @@ export const CashProvider = ({ children }) => {
         closeUser: 'Cajero Demo',
         finalCount: parseFloat(finalCount) || 0,
         expectedAmount: expectedAmount,
+        totalExpenses: totalExpensesAmount,
+        dayExpenses: dayExpenses, // Guardar detalle de egresos
         difference: difference,
         observations: observations || '',
         status: 'closed',
@@ -115,6 +122,7 @@ export const CashProvider = ({ children }) => {
       // Guardar sesión cerrada en Firestore
       const docRef = await addDoc(collection(db, 'cashSessions'), closedSession);
       console.log('💾 Sesión cerrada y guardada en Firestore con ID:', docRef.id);
+      console.log('📤 Egresos del día:', dayExpenses, 'Total:', totalExpensesAmount);
       
       setCashSession(null);
       addMovement('closing', finalCount, 'Cierre de caja');
