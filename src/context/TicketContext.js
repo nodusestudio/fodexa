@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useSettings } from './SettingsContext';
 import { useAuth } from './AuthContext';
-import { collection, addDoc, onSnapshot, query, where, orderBy, updateDoc, doc } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, where, orderBy, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
 const TicketContext = createContext();
@@ -208,6 +208,27 @@ export const TicketProvider = ({ children }) => {
     }
   };
 
+  const deleteTicket = async (ticketId) => {
+    try {
+      // Eliminar del estado local primero
+      setTickets(prev => prev.filter(t => t.id !== ticketId));
+      
+      // Eliminar de Firestore si el usuario está autenticado
+      if (user?.uid) {
+        const ticketRef = doc(db, `users/${user.uid}/tickets`, ticketId);
+        await deleteDoc(ticketRef);
+        console.log('✅ Ticket eliminado de Firestore:', ticketId);
+      } else {
+        console.warn('⚠️ Usuario no autenticado. Cambios solo locales.');
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('❌ Error eliminando ticket en Firebase:', error.message);
+      throw error;
+    }
+  };
+
   const updateCompanyData = (data) => {
     setCompanyData(prev => ({ ...prev, ...data }));
   };
@@ -222,6 +243,7 @@ export const TicketProvider = ({ children }) => {
     getAllTickets,
     getTicketsByDate,
     updateTicket,
+    deleteTicket,
   };
 
   return (

@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { useTickets } from '../context/TicketContext';
 import { useSettings } from '../context/SettingsContext';
-import { Search, RefreshCw, Truck, ChevronDown, ChevronUp, Printer, Check } from 'lucide-react';
+import { Search, RefreshCw, Truck, ChevronDown, ChevronUp, Printer, Check, Trash2 } from 'lucide-react';
 import { formatCurrency } from '../utils/formatters';
 
 // Componente para fila de escritorio (grid de 12 columnas)
-const DeliveryRowDesktop = ({ ticket, onUpdateField, onMarkDelivered, onPrintGuide }) => {
+const DeliveryRowDesktop = ({ ticket, onUpdateField, onMarkDelivered, onPrintGuide, onDeleteTicket }) => {
   const deliveryData = ticket.deliveryData || ticket.customer || {};
   const status = ticket.deliveryStatus || 'pending';
   
@@ -121,13 +121,20 @@ const DeliveryRowDesktop = ({ ticket, onUpdateField, onMarkDelivered, onPrintGui
             <Check size={18} />
           </button>
         )}
+        <button
+          onClick={() => onDeleteTicket(ticket.id)}
+          className="p-2 text-gray-600 dark:text-gray-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors"
+          title="Eliminar ticket"
+        >
+          <Trash2 size={18} />
+        </button>
       </div>
     </div>
   );
 };
 
 // Componente para fila móvil (cards)
-const DeliveryRowMobile = ({ ticket, onUpdateField, onMarkDelivered, onPrintGuide }) => {
+const DeliveryRowMobile = ({ ticket, onUpdateField, onMarkDelivered, onPrintGuide, onDeleteTicket }) => {
   const [expanded, setExpanded] = useState(false);
   const deliveryData = ticket.deliveryData || ticket.customer || {};
   const status = ticket.deliveryStatus || 'pending';
@@ -278,6 +285,13 @@ const DeliveryRowMobile = ({ ticket, onUpdateField, onMarkDelivered, onPrintGuid
             Entregar
           </button>
         )}
+        <button
+          onClick={() => onDeleteTicket(ticket.id)}
+          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 text-xs font-medium hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+        >
+          <Trash2 size={16} />
+          Eliminar
+        </button>
       </div>
     </div>
   );
@@ -285,7 +299,7 @@ const DeliveryRowMobile = ({ ticket, onUpdateField, onMarkDelivered, onPrintGuid
 
 // Componente Principal
 const Deliveries = () => {
-  const { tickets, updateTicket } = useTickets();
+  const { tickets, updateTicket, deleteTicket } = useTickets();
   const { settings } = useSettings();
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -429,6 +443,29 @@ const Deliveries = () => {
     printWindow.document.close();
   };
 
+  // Eliminar ticket
+  const handleDeleteTicket = async (ticketId) => {
+    const ticket = tickets.find(t => t.id === ticketId);
+    if (!ticket) return;
+    
+    const confirmed = window.confirm(
+      `¿Estás seguro de que deseas eliminar el ticket ${ticket.ticketNumber}?\n\nEsta acción eliminará el pedido de todo el sistema y no se puede deshacer.`
+    );
+    
+    if (confirmed) {
+      setLoading(true);
+      try {
+        await deleteTicket(ticketId);
+        console.log('✅ Ticket eliminado:', ticketId);
+      } catch (error) {
+        console.error('❌ Error eliminando ticket:', error);
+        alert('Error al eliminar el ticket: ' + error.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
   return (
     <div className="h-full flex flex-col bg-gray-50 dark:bg-gray-900 overflow-hidden">
       {/* Header */}
@@ -531,6 +568,7 @@ const Deliveries = () => {
                     onUpdateField={handleUpdateField}
                     onMarkDelivered={handleMarkDelivered}
                     onPrintGuide={handlePrintGuide}
+                    onDeleteTicket={handleDeleteTicket}
                   />
                 ))}
               </div>
@@ -545,6 +583,7 @@ const Deliveries = () => {
                   onUpdateField={handleUpdateField}
                   onMarkDelivered={handleMarkDelivered}
                   onPrintGuide={handlePrintGuide}
+                  onDeleteTicket={handleDeleteTicket}
                 />
               ))}
             </div>
