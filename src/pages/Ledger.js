@@ -443,61 +443,74 @@ const Ledger = () => {
           </div>
         ))}
 
-        {/* Detalle de Sesiones - Compacto */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">📋 Sesiones</h3>
-          </div>
+        {/* Detalle de Sesiones - Tabla de Cierres de Caja */}
+        {(expandedView === 'week' || expandedView === 'month') && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">📋 Cierres de Caja Diarios</h3>
+            </div>
 
-          {filteredSessions.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
-                  <tr>
-                    <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">Fecha</th>
-                    <th className="px-4 py-2 text-right text-xs font-semibold text-gray-700 dark:text-gray-300">Ventas</th>
-                    <th className="px-4 py-2 text-right text-xs font-semibold text-gray-700 dark:text-gray-300">Egresos</th>
-                    <th className="px-4 py-2 text-right text-xs font-semibold text-gray-700 dark:text-gray-300">Diferencia</th>
-                    <th className="px-4 py-2 text-right text-xs font-semibold text-gray-700 dark:text-gray-300">Estado</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {filteredSessions.map(session => (
-                    <tr key={session.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                      <td className="px-4 py-2 text-gray-900 dark:text-white text-xs">
-                        {new Date(session.closeDate).toLocaleDateString('es-CO')}
-                      </td>
-                      <td className="px-4 py-2 text-right font-medium text-green-600 dark:text-green-400 text-xs">
-                        ${session.sales?.toLocaleString('es-CO') || '0'}
-                      </td>
-                      <td className="px-4 py-2 text-right font-medium text-orange-600 dark:text-orange-400 text-xs">
-                        -${session.expenses?.toLocaleString('es-CO') || '0'}
-                      </td>
-                      <td className={`px-4 py-2 text-right font-medium text-xs ${
-                        (session.difference || 0) >= 0
-                          ? 'text-green-600 dark:text-green-400'
-                          : 'text-red-600 dark:text-red-400'
-                      }`}>
-                        {(session.difference || 0) >= 0 ? '+' : ''}${(session.difference || 0).toLocaleString('es-CO')}
-                      </td>
-                      <td className="px-4 py-2 text-right">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 dark:bg-opacity-30 text-green-800 dark:text-green-300">
-                          ✅
-                        </span>
-                      </td>
+            {filteredSessions.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-900 dark:bg-gray-950 border-b-2 border-gray-200 dark:border-gray-700">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-white">DÍA</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-white">📅 FECHA</th>
+                      <th className="px-4 py-3 text-right text-xs font-bold text-white">💰 INGRESOS</th>
+                      <th className="px-4 py-3 text-right text-xs font-bold text-white">📤 EGRESO</th>
+                      <th className="px-4 py-3 text-right text-xs font-bold text-white">✅ SALDO</th>
+                      <th className="px-4 py-3 text-center text-xs font-bold text-white">ESTADO</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="p-8 text-center">
-              <p className="text-gray-500 dark:text-gray-400 text-sm">
-                No hay sesiones registradas para este período
-              </p>
-            </div>
-          )}
-        </div>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                    {filteredSessions.map((session, idx) => {
+                      const sessionDate = new Date(session.closeDate);
+                      const dayName = sessionDate.toLocaleDateString('es-CO', { weekday: 'long' });
+                      const formattedDate = sessionDate.toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: '2-digit' });
+                      const saldo = (session.sales || 0) - (session.expenses || 0);
+                      
+                      return (
+                        <tr key={session.id} className={`hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${idx % 2 === 0 ? 'bg-gray-50 dark:bg-gray-900 dark:bg-opacity-20' : ''}`}>
+                          <td className="px-4 py-3 text-gray-900 dark:text-white text-xs font-medium capitalize">
+                            {dayName}
+                          </td>
+                          <td className="px-4 py-3 text-gray-900 dark:text-white text-xs font-medium whitespace-nowrap">
+                            {formattedDate}
+                          </td>
+                          <td className="px-4 py-3 text-right font-semibold text-green-600 dark:text-green-400 text-xs">
+                            ${session.sales?.toLocaleString('es-CO') || '0'}
+                          </td>
+                          <td className="px-4 py-3 text-right font-semibold text-orange-600 dark:text-orange-400 text-xs">
+                            ${session.expenses?.toLocaleString('es-CO') || '0'}
+                          </td>
+                          <td className={`px-4 py-3 text-right font-bold text-xs border-l-2 ${
+                            saldo >= 0
+                              ? 'text-green-600 dark:text-green-400 border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900 dark:bg-opacity-20'
+                              : 'text-red-600 dark:text-red-400 border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900 dark:bg-opacity-20'
+                          }`}>
+                            {saldo >= 0 ? '+' : ''}${saldo.toLocaleString('es-CO')}
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 dark:bg-opacity-30 text-green-800 dark:text-green-300">
+                              ✅ Cerrado
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="p-8 text-center">
+                <p className="text-gray-500 dark:text-gray-400 text-sm">
+                  No hay sesiones registradas para este período
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
