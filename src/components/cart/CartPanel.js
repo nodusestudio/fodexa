@@ -153,10 +153,10 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp, c
 			// ✅ Disparar evento para guardar ORDEN (sin imprimir ticket)
 			window.dispatchEvent(new CustomEvent('orderSaved', { detail: { ...savedOrder, status: 'pending' } }));
 			
-			// Mostrar confirmación después
-			setTimeout(() => {
-				alert('✅ ¡Orden guardada exitosamente!');
-			}, 300);
+			// Mostrar notificación automática
+			window.dispatchEvent(new CustomEvent('push-message', {
+				detail: { message: '✅ ¡Orden guardada exitosamente!', type: 'success' }
+			}));
 		} catch (error) {
 			console.error('❌ Error guardando orden:', error);
 			alert('❌ Error: No se pudo guardar la orden');

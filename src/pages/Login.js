@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Mail, Lock, AlertCircle, Loader, Eye, EyeOff } from 'lucide-react';
+import { APP_VERSION } from '../config/version';
 
 export default function Login() {
   const [email, setEmail] = useState('test@example.com');
@@ -266,7 +267,7 @@ export default function Login() {
         {/* Info */}
         <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
           <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-            ℹ️ Una vez logueado, verás un botón ⚙️ para cargar datos ficticios de prueba.
+            ℹ️ actualización n {APP_VERSION}
           </p>
         </div>
       </div>

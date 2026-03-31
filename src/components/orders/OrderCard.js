@@ -321,42 +321,6 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
               >
                 🍳 Cocina
               </button>
-              {order.type === 'delivery' && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (order.status === 'completed') {
-                      alert('Este pedido ya ha sido marcado como entregado');
-                      return;
-                    }
-                    console.log('🚚 Click en botón Domi - Status:', order.status, 'Tipo:', order.type);
-                    
-                    if (order.status === 'ready') {
-                      console.log('✅ Estado READY - Solicitando domiciliario');
-                      handleDelivery();
-                    } else if (order.status === 'waiting') {
-                      console.log('⏳ Estado WAITING - Marcando salida');
-                      handleDeliveryCompleted();
-                    } else {
-                      console.warn('⚠️ Estado no válido para domi:', order.status);
-                      alert(`❌ El pedido debe estar LISTO (Ready) o EN ESPERA (Waiting) para solicitar domicilio. Estado actual: ${order.status}`);
-                    }
-                  }}
-                  disabled={order.status === 'completed'}
-                  className={`flex-1 min-w-[80px] text-xs px-2 py-1.5 rounded font-bold transition-all shadow-md whitespace-nowrap ${
-                    order.status === 'completed'
-                      ? 'bg-gray-400 dark:bg-gray-600 text-gray-600 dark:text-gray-500 cursor-not-allowed'
-                      : order.status === 'ready'
-                      ? 'bg-green-500 hover:bg-green-600 text-white cursor-pointer'
-                      : order.status === 'waiting'
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer animate-pulse'
-                      : 'bg-gray-400 hover:bg-gray-500 text-gray-700 cursor-not-allowed'
-                  }`}
-                >
-                  {order.status === 'ready' ? '📲 Solicitar Domi' : order.status === 'waiting' ? '✅ Salida Domi' : '🚚 Domi'}
-                </button>
-              )}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
