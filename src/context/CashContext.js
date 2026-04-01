@@ -76,9 +76,10 @@ export const CashProvider = ({ children }) => {
       return;
     }
 
+    console.log('📂 Cargando sesiones cerradas para usuario:', user.uid);
+
     const q = query(
-      collection(db, 'cashSessions'),
-      where('userId', '==', user.uid),
+      collection(db, `users/${user.uid}/cashSessions`),
       orderBy('closeDate', 'desc')
     );
 
@@ -92,7 +93,7 @@ export const CashProvider = ({ children }) => {
           openDate: doc.data().openDate?.toDate?.() || new Date(doc.data().openDate),
         }));
         setSessionHistory(sessions);
-        console.log('📊 Sesiones cargadas del Libro Contable:', sessions.length);
+        console.log('✅ Sesiones cargadas del Libro Contable:', sessions.length);
       },
       (error) => {
         console.warn('⚠️ Error cargando sesiones cerradas:', error.message);
@@ -145,9 +146,19 @@ export const CashProvider = ({ children }) => {
 
   // Cerrar caja
   const closeCash = async (finalCount, observations, dayExpenses = []) => {
-    if (!user || !cashSession) return null;
+    if (!user) {
+      console.error('❌ ERROR: Usuario no autenticado');
+      throw new Error('Usuario no autenticado');
+    }
+    
+    if (!cashSession) {
+      console.error('❌ ERROR: No hay caja abierta');
+      throw new Error('No hay caja abierta');
+    }
     
     try {
+      console.log('📋 Iniciando cierre de caja...', { userId: user.uid, cashSessionId: cashSession.id });
+      
       const expectedAmount = calculateExpectedAmount();
       
       // Calcular total de egresos
@@ -256,9 +267,11 @@ export const CashProvider = ({ children }) => {
         expenseCount: sessionMovements.filter(m => m.type === 'expense').length,
       };
       
-      // Guardar sesión cerrada en Firestore
-      const docRef = await addDoc(collection(db, 'cashSessions'), closedSession);
-      console.log('💾 Sesión cerrada y guardada en Firestore con ID:', docRef.id);
+      console.log('💾 Objeto de sesión cerrada:', closedSession);
+      
+      // Guardar sesión cerrada en Firestore (en colección anidada por usuario)
+      const docRef = await addDoc(collection(db, `users/${user.uid}/cashSessions`), closedSession);
+      console.log('✅ Sesión cerrada y guardada en Firestore con ID:', docRef.id);
       console.log('📤 Egresos del día:', dayExpenses, 'Total:', totalExpensesAmount);
       
       setCashSession(null);
@@ -266,7 +279,7 @@ export const CashProvider = ({ children }) => {
       
       return { id: docRef.id, ...closedSession };
     } catch (error) {
-      console.error('Error closing cash session:', error);
+      console.error('❌ Error closing cash session:', error);
       throw error;
     }
   };
