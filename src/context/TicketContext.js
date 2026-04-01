@@ -145,6 +145,7 @@ export const TicketProvider = ({ children }) => {
       deliveryCost,
       total,
       paymentType: orderData.paymentType || 'pending',
+      transferType: orderData.transferType || null, // Almacenar tipo de transferencia (nequi/bancolombia)
       status: 'completed',
       // Inicializar pagos (se actualizan después)
       pago_efectivo: orderData.pago_efectivo || 0,

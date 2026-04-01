@@ -142,12 +142,18 @@ const Tickets = () => {
                         {ticket.customer?.name || '-'}
                       </td>
                       <td className="px-2 sm:px-6 py-2 sm:py-4 whitespace-nowrap hidden sm:table-cell">
-                        <span className={`px-1 sm:px-2 py-0.5 sm:py-1 text-xs font-semibold rounded-full capitalize ${
+                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
                           ticket.paymentType === 'cash' ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' :
                           ticket.paymentType === 'card' ? 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200' :
+                          ticket.paymentType === 'transfer' ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200' :
                           'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
                         }`}>
-                          {ticket.paymentType === 'cash' ? '💵' : ticket.paymentType === 'card' ? '💳' : ticket.paymentType}
+                          {ticket.paymentType === 'cash' ? 'Efectivo' : 
+                           ticket.paymentType === 'card' ? 'Tarjeta' :
+                           ticket.paymentType === 'transfer' && ticket.transferType ? (
+                             ticket.transferType === 'nequi' ? 'Nequi' : 'Bancolombia'
+                           ) :
+                           ticket.paymentType || 'Pendiente'}
                         </span>
                       </td>
                       <td className="px-2 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-right font-bold text-gray-800 dark:text-white text-xs sm:text-sm">

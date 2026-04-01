@@ -218,10 +218,14 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
       .reduce((sum, m) => sum + m.amount, 0);
     
     // Agregar datos de pago al order ANTES de crear ticket
+    // Obtener el tipo de transferencia si existe
+    const transferMethod = finalPaymentMethods.find(m => m.type === 'transfer');
     const orderWithPayment = {
       ...order,
       pago_efectivo,
       pago_digital,
+      paymentType: finalPaymentMethods.length === 1 ? finalPaymentMethods[0].type : 'mixed',
+      ...(transferMethod && { transferType: transferMethod.transferType }),
     };
     
     // Registrar en caja

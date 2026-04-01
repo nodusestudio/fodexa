@@ -19,6 +19,7 @@ export const CashProvider = ({ children }) => {
   useEffect(() => {
     if (!user) {
       setExpenses([]);
+      setSessionHistory([]);
       setLoading(false);
       return;
     }
@@ -33,6 +34,39 @@ export const CashProvider = ({ children }) => {
 
     setExpenses(expensesWithId);
     setLoading(false);
+  }, [user]);
+
+  // ✅ Cargar sesiones cerradas desde Firestore (Libro Contable)
+  useEffect(() => {
+    if (!user) {
+      setSessionHistory([]);
+      return;
+    }
+
+    const q = query(
+      collection(db, 'cashSessions'),
+      where('userId', '==', user.uid),
+      orderBy('closeDate', 'desc')
+    );
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const sessions = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          closeDate: doc.data().closeDate?.toDate?.() || new Date(doc.data().closeDate),
+          openDate: doc.data().openDate?.toDate?.() || new Date(doc.data().openDate),
+        }));
+        setSessionHistory(sessions);
+        console.log('📊 Sesiones cargadas del Libro Contable:', sessions.length);
+      },
+      (error) => {
+        console.warn('⚠️ Error cargando sesiones cerradas:', error.message);
+      }
+    );
+
+    return () => unsubscribe();
   }, [user]);
 
   // Abrir caja
