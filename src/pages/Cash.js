@@ -121,9 +121,13 @@ const Cash = () => {
                       <span className="text-sm text-green-600 dark:text-green-400">Inicial</span>
                     </div>
                     <p className="text-3xl font-bold text-green-800 dark:text-green-300">
-                      ${summary?.initialAmount.toLocaleString()}
-                        {formatCurrency(summary?.initialAmount || 0)}
+                      {formatCurrency(summary?.initialAmount || 0)}
                     </p>
+                    {cashSession?.fundAmount > 0 && (
+                      <p className="text-xs text-green-600 dark:text-green-400 mt-2">
+                        (Fondo: {formatCurrency(cashSession.fundAmount)})
+                      </p>
+                    )}
                   </div>
                   
                   <div className="bg-blue-50 dark:bg-blue-900 dark:bg-opacity-20 rounded-xl p-6">
@@ -132,8 +136,7 @@ const Cash = () => {
                       <span className="text-sm text-blue-600 dark:text-blue-400">Ventas</span>
                     </div>
                     <p className="text-3xl font-bold text-blue-800 dark:text-blue-300">
-                      ${summary?.sales.toLocaleString()}
-                        {formatCurrency(summary?.sales || 0)}
+                      {formatCurrency(summary?.sales || 0)}
                     </p>
                   </div>
                   
@@ -143,8 +146,7 @@ const Cash = () => {
                       <span className="text-sm text-red-600 dark:text-red-400">Egresos</span>
                     </div>
                     <p className="text-3xl font-bold text-red-800 dark:text-red-300">
-                      ${summary?.expenses.toLocaleString()}
-                        {formatCurrency(summary?.expenses || 0)}
+                      {formatCurrency(summary?.expenses || 0)}
                     </p>
                   </div>
                   
@@ -154,8 +156,7 @@ const Cash = () => {
                       <span className="text-sm text-purple-600 dark:text-purple-400">Esperado</span>
                     </div>
                     <p className="text-3xl font-bold text-purple-800 dark:text-purple-300">
-                      ${summary?.expected.toLocaleString()}
-                        {formatCurrency(summary?.expected || 0)}
+                      {formatCurrency(summary?.expected || 0)}
                     </p>
                   </div>
                 </div>
@@ -224,8 +225,7 @@ const Cash = () => {
                               <td className={`px-6 py-4 whitespace-nowrap text-right font-semibold ${
                                 movement.type === 'expense' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
                               }`}>
-                                {movement.type === 'expense' ? '-' : '+'}${movement.amount.toLocaleString()}
-                                  {movement.type === 'expense' ? '-' : '+'}{formatCurrency(movement.amount)}
+                                {movement.type === 'expense' ? '-' : '+'}{formatCurrency(movement.amount)}
                               </td>
                             </tr>
                           ))}
