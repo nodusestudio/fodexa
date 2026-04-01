@@ -461,6 +461,7 @@ export const CashProvider = ({ children }) => {
 
   const value = {
     cashSession,
+    setCashSession,
     expenses,
     cashMovements,
     sessionHistory,
