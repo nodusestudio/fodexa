@@ -14,6 +14,11 @@ const Ledger = () => {
   });
   const [expandedView, setExpandedView] = useState('mayor'); // 'mayor' or 'daily'
   const [mayorFilterType, setMayorFilterType] = useState('week'); // 'day', 'week', 'month', 'year'
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [calendarMonth, setCalendarMonth] = useState(new Date());
+  const [tempStartDate, setTempStartDate] = useState(new Date(new Date().setDate(new Date().getDate() - 6)));
+  const [tempEndDate, setTempEndDate] = useState(new Date());
+  const [customDateRange, setCustomDateRange] = useState(null);
 
   // Generar todas las sesiones con datos de ejemplo si no hay datos reales
   const allSessions = useMemo(() => {
@@ -69,6 +74,11 @@ const Ledger = () => {
 
   // Calcular rango de fechas para Libro Mayor según el filtro seleccionado
   const mayorDateRange = useMemo(() => {
+    // Si hay un rango personalizado, usarlo
+    if (customDateRange) {
+      return { start: customDateRange.start, end: customDateRange.end };
+    }
+
     const end = new Date();
     const start = new Date();
     
@@ -100,7 +110,7 @@ const Ledger = () => {
     }
     
     return { start, end };
-  }, [mayorFilterType]);
+  }, [mayorFilterType, customDateRange]);
 
   // Calcular rango de fechas para vista semanal (últimos 7 días)
   const weekDateRange = useMemo(() => {
@@ -273,47 +283,224 @@ const Ledger = () => {
 
         {/* Selector de Rango para Libro Mayor */}
         {expandedView === 'mayor' && (
-          <div className="mb-6 flex flex-wrap gap-2">
+          <div className="mb-6">
             <button
-              onClick={() => setMayorFilterType('day')}
-              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
-                mayorFilterType === 'day'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600'
-              }`}
+              onClick={() => setShowDatePicker(!showDatePicker)}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm transition-colors flex items-center gap-2"
             >
-              Día
+              <Calendar size={16} />
+              Seleccionar Rango
             </button>
-            <button
-              onClick={() => setMayorFilterType('week')}
-              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
-                mayorFilterType === 'week'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600'
-              }`}
-            >
-              Semana
-            </button>
-            <button
-              onClick={() => setMayorFilterType('month')}
-              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
-                mayorFilterType === 'month'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600'
-              }`}
-            >
-              Mes
-            </button>
-            <button
-              onClick={() => setMayorFilterType('year')}
-              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
-                mayorFilterType === 'year'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600'
-              }`}
-            >
-              Año
-            </button>
+
+            {/* Modal de Selector de Rango */}
+            {showDatePicker && (
+              <div className="mt-4 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 p-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Calendario */}
+                  <div className="md:col-span-1">
+                    <div className="flex items-center justify-between mb-4">
+                      <button
+                        onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1))}
+                        className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                      >
+                        &lt;
+                      </button>
+                      <h3 className="text-gray-900 dark:text-white font-bold text-center">
+                        {calendarMonth.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' })}
+                      </h3>
+                      <button
+                        onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1))}
+                        className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                      >
+                        &gt;
+                      </button>
+                    </div>
+
+                    {/* Días de la semana */}
+                    <div className="grid grid-cols-7 gap-1 text-center text-xs font-bold text-gray-600 dark:text-gray-400 mb-2">
+                      {['Do', 'Lu', 'Ma', 'Mié', 'Jue', 'Vi', 'Sáb'].map(day => (
+                        <div key={day}>{day}</div>
+                      ))}
+                    </div>
+
+                    {/* Días del mes */}
+                    <div className="grid grid-cols-7 gap-1 text-center text-sm">
+                      {(() => {
+                        const firstDay = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1).getDay();
+                        const daysInMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 0).getDate();
+                        const prevDays = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 0).getDate();
+                        const days = [];
+
+                        // Días del mes anterior
+                        for (let i = firstDay - 1; i >= 0; i--) {
+                          days.push(
+                            <div key={`prev-${i}`} className="py-1 text-gray-400 dark:text-gray-600">
+                              {prevDays - i}
+                            </div>
+                          );
+                        }
+
+                        // Días del mes actual
+                        for (let i = 1; i <= daysInMonth; i++) {
+                          const date = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), i);
+                          const isSelected = (tempStartDate.toDateString() === date.toDateString()) || (tempEndDate.toDateString() === date.toDateString());
+                          const isInRange = date >= tempStartDate && date <= tempEndDate;
+                          const isToday = new Date().toDateString() === date.toDateString();
+
+                          days.push(
+                            <button
+                              key={i}
+                              onClick={() => {
+                                if (!tempStartDate || date < tempStartDate) {
+                                  setTempStartDate(date);
+                                  setTempEndDate(date);
+                                } else if (date > tempEndDate) {
+                                  setTempEndDate(date);
+                                } else {
+                                  setTempStartDate(date);
+                                  setTempEndDate(date);
+                                }
+                              }}
+                              className={`py-1 rounded font-medium transition-colors ${
+                                isSelected
+                                  ? 'bg-green-500 text-white'
+                                  : isInRange
+                                  ? 'bg-green-200 dark:bg-green-900 text-gray-900 dark:text-white'
+                                  : isToday
+                                  ? 'bg-blue-100 dark:bg-blue-900 text-gray-900 dark:text-white'
+                                  : 'text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
+                              }`}
+                            >
+                              {i}
+                            </button>
+                          );
+                        }
+
+                        // Días del próximo mes
+                        const totalSlots = days.length;
+                        for (let i = 1; totalSlots + i <= 42; i++) {
+                          days.push(
+                            <div key={`next-${i}`} className="py-1 text-gray-400 dark:text-gray-600">
+                              {i}
+                            </div>
+                          );
+                        }
+
+                        return days;
+                      })()}
+                    </div>
+
+                    <div className="mt-4 text-xs text-gray-600 dark:text-gray-400">
+                      <div>Fecha de inicio:</div>
+                      <div className="font-bold text-gray-900 dark:text-white">{tempStartDate.toLocaleDateString('es-CO')}</div>
+                      <div className="mt-2">Fecha de finalización:</div>
+                      <div className="font-bold text-gray-900 dark:text-white">{tempEndDate.toLocaleDateString('es-CO')}</div>
+                    </div>
+                  </div>
+
+                  {/* Opciones Predefinidas */}
+                  <div className="md:col-span-2">
+                    <h4 className="font-bold text-gray-900 dark:text-white mb-3">Opciones Rápidas</h4>
+                    <div className="space-y-2">
+                      {[
+                        { label: 'Hoy', value: 'day' },
+                        { label: 'Ayer', value: 'yesterday' },
+                        { label: 'Esta semana', value: 'week' },
+                        { label: 'Última semana', value: 'lastWeek' },
+                        { label: 'Este mes', value: 'month' },
+                        { label: 'Último mes', value: 'lastMonth' },
+                        { label: 'Últimos 7 días', value: 'last7' },
+                        { label: 'Últimos 30 días', value: 'last30' },
+                      ].map(option => (
+                        <button
+                          key={option.value}
+                          onClick={() => {
+                            const today = new Date();
+                            let start, end;
+
+                            switch (option.value) {
+                              case 'day':
+                                start = new Date(today);
+                                end = new Date(today);
+                                setMayorFilterType('day');
+                                break;
+                              case 'yesterday':
+                                start = new Date(today.setDate(today.getDate() - 1));
+                                end = new Date(start);
+                                break;
+                              case 'week':
+                                start = new Date(today.setDate(today.getDate() - 6));
+                                end = new Date();
+                                setMayorFilterType('week');
+                                break;
+                              case 'lastWeek':
+                                end = new Date(today.setDate(today.getDate() - 7));
+                                start = new Date(end.setDate(end.getDate() - 6));
+                                break;
+                              case 'month':
+                                start = new Date(today.getFullYear(), today.getMonth(), 1);
+                                end = new Date();
+                                setMayorFilterType('month');
+                                break;
+                              case 'lastMonth':
+                                start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                                end = new Date(today.getFullYear(), today.getMonth(), 0);
+                                break;
+                              case 'last7':
+                                end = new Date();
+                                start = new Date(today.setDate(today.getDate() - 6));
+                                break;
+                              case 'last30':
+                                end = new Date();
+                                start = new Date(today.setDate(today.getDate() - 29));
+                                break;
+                              default:
+                                start = new Date();
+                                end = new Date();
+                            }
+
+                            setTempStartDate(start);
+                            setTempEndDate(end);
+                          }}
+                          className="w-full text-left px-3 py-2 rounded text-sm text-gray-900 dark:text-white hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors"
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Nota de limitación */}
+                <div className="mt-6 p-3 bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-800 rounded text-xs text-blue-900 dark:text-blue-100">
+                  ℹ️ {' '}
+                  <span className="font-medium">Nota: Los datos de ventas están limitados a los últimos 31 días.</span>
+                </div>
+
+                {/* Botones de Acción */}
+                <div className="mt-6 flex gap-3 justify-end">
+                  <button
+                    onClick={() => setShowDatePicker(false)}
+                    className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-white rounded-lg font-medium transition-colors hover:bg-gray-400 dark:hover:bg-gray-500"
+                  >
+                    CANCELAR
+                  </button>
+                  <button
+                    onClick={() => {
+                      // Guardar el rango personalizado
+                      setCustomDateRange({
+                        start: tempStartDate,
+                        end: tempEndDate
+                      });
+                      setShowDatePicker(false);
+                    }}
+                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
+                  >
+                    ACEPTAR
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
