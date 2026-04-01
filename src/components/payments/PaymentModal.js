@@ -225,7 +225,7 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
       pago_efectivo,
       pago_digital,
       paymentType: finalPaymentMethods.length === 1 ? finalPaymentMethods[0].type : 'mixed',
-      ...(transferMethod && { transferType: transferMethod.transferType }),
+      transferType: transferMethod?.transferType || null, // Pasar el transferType explícitamente
     };
     
     // Registrar en caja
@@ -270,6 +270,7 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
         status: orderStatus,
         paymentMethods: finalPaymentMethods,
         paymentType: paymentType,
+        transferType: transferMethod?.transferType || null,
         deliveryData: orderData.type === 'delivery' ? deliveryData : undefined,
         pago_efectivo,
         pago_digital,

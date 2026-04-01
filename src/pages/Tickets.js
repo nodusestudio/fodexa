@@ -150,8 +150,10 @@ const Tickets = () => {
                         }`}>
                           {ticket.paymentType === 'cash' ? 'Efectivo' : 
                            ticket.paymentType === 'card' ? 'Tarjeta' :
-                           ticket.paymentType === 'transfer' && ticket.transferType ? (
-                             ticket.transferType === 'nequi' ? 'Nequi' : 'Bancolombia'
+                           ticket.paymentType === 'transfer' ? (
+                             ticket.transferType === 'nequi' ? 'Nequi' : 
+                             ticket.transferType === 'bancolombia' ? 'Bancolombia' : 
+                             'Transferencia'
                            ) :
                            ticket.paymentType || 'Pendiente'}
                         </span>

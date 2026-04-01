@@ -23,6 +23,7 @@ export const TicketProvider = ({ children }) => {
       deliveryCost: 0,
       total: 23.2,
       paymentType: 'cash',
+      transferType: null,
       status: 'completed',
       createdAt: new Date(Date.now() - 30 * 60000),
     },
@@ -40,6 +41,7 @@ export const TicketProvider = ({ children }) => {
       deliveryCost: 0,
       total: 17.4,
       paymentType: 'card',
+      transferType: null,
       status: 'completed',
       createdAt: new Date(Date.now() - 60 * 60000),
     },
@@ -57,6 +59,7 @@ export const TicketProvider = ({ children }) => {
       deliveryCost: 5,
       total: 15.44,
       paymentType: 'cash',
+      transferType: null,
       status: 'completed',
       createdAt: new Date(Date.now() - 120 * 60000),
     },
@@ -77,11 +80,16 @@ export const TicketProvider = ({ children }) => {
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        const ticketsData = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          createdAt: doc.data().createdAt?.toDate?.() || doc.data().createdAt,
-        }));
+        const ticketsData = snapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            createdAt: data.createdAt?.toDate?.() || data.createdAt,
+            // Asegurar que transferType existe (migración para tickets antiguos)
+            transferType: data.transferType || null,
+          };
+        });
         // Agregar tickets propios + demo
         const demoTickets = tickets.filter(t => t.userId === 'shared');
         setTickets([...ticketsData, ...demoTickets]);
