@@ -316,12 +316,12 @@ export const CashProvider = ({ children }) => {
     if (!cashSession || !tickets) return;
 
     // Obtener domicilios completados desde la última sesión
+    // NOTA: NO usar deliveryStatus (no existe), usar orderType === 'delivery'
     const deliveryTickets = tickets.filter(ticket => {
       const ticketDate = new Date(ticket.createdAt);
       const sessionStart = new Date(cashSession.openDate);
       return (
         ticket.orderType === 'delivery' &&
-        ticket.deliveryStatus === 'delivered' &&
         ticket.status === 'completed' &&
         ticketDate >= sessionStart &&
         ticket.deliveryCost > 0
@@ -331,27 +331,36 @@ export const CashProvider = ({ children }) => {
     // Calcular total acumulado de domicilios
     const totalDeliveryAmount = deliveryTickets.reduce((sum, t) => sum + (t.deliveryCost || 0), 0);
 
-    // Buscar el movimiento acumulativo de domicilios (el que iniciamos en openCash)
-    // Nota: los metadatos se esparcen directamente en el objeto movement, no en una propiedad metadata
+    console.log('🔍 DEBUG: Buscando movimiento acumulativo...', {
+      totalDeliveryAmount,
+      deliveryTicketsFound: deliveryTickets.length,
+      tickets: deliveryTickets.map(t => ({ id: t.id, orderType: t.orderType, status: t.status, deliveryCost: t.deliveryCost })),
+      cashSessionId: cashSession.id,
+      cashMovementsCount: cashMovements.length,
+    });
+
+    // Buscar el movimiento acumulativo de domicilios (búsqueda más flexible)
     const deliveryMovementIndex = cashMovements.findIndex(
       m => m.type === 'expense' && 
            m.isAccumulative === true && 
-           m.category === 'Domicilios' &&
-           m.sessionId === cashSession.id
+           m.category === 'Domicilios'
     );
+
+    console.log('🔍 Movimiento encontrado en índice:', deliveryMovementIndex);
 
     if (deliveryMovementIndex !== -1) {
       // Actualizar el movimiento existente con el nuevo total
       const updatedMovements = [...cashMovements];
+      const oldAmount = updatedMovements[deliveryMovementIndex].amount;
       updatedMovements[deliveryMovementIndex] = {
         ...updatedMovements[deliveryMovementIndex],
         amount: totalDeliveryAmount
       };
       setCashMovements(updatedMovements);
       
-      if (totalDeliveryAmount > 0) {
-        console.log(`🚗 Domicilios actualizado a $${totalDeliveryAmount.toLocaleString('es-CO')}`);
-      }
+      console.log(`✅ Domicilios actualizado: $${oldAmount} → $${totalDeliveryAmount}`);
+    } else {
+      console.warn('❌ Movimiento acumulativo de domicilios NO encontrado!');
     }
   };
 
