@@ -19,6 +19,13 @@ const Ledger = () => {
   const [tempStartDate, setTempStartDate] = useState(new Date(new Date().setDate(new Date().getDate() - 6)));
   const [tempEndDate, setTempEndDate] = useState(new Date());
   const [customDateRange, setCustomDateRange] = useState(null);
+  
+  // Estados para vista Diario
+  const [showDailyDatePicker, setShowDailyDatePicker] = useState(false);
+  const [dailyCalendarMonth, setDailyCalendarMonth] = useState(new Date());
+  const [dailyTempStartDate, setDailyTempStartDate] = useState(new Date(new Date().setDate(new Date().getDate() - 6)));
+  const [dailyTempEndDate, setDailyTempEndDate] = useState(new Date());
+  const [dailyCustomDateRange, setDailyCustomDateRange] = useState(null);
 
   // Generar todas las sesiones con datos de ejemplo si no hay datos reales
   const allSessions = useMemo(() => {
@@ -157,7 +164,16 @@ const Ledger = () => {
     let currentWeek = [];
     let weekStartDate = null;
     
-    const allSessionsSorted = [...allSessions].sort((a, b) => 
+    // Filtrar sesiones por rango personalizado si está disponible
+    let sessionsToUse = allSessions;
+    if (dailyCustomDateRange) {
+      sessionsToUse = allSessions.filter(session => {
+        const sessionDate = new Date(session.closeDate);
+        return sessionDate >= dailyCustomDateRange.start && sessionDate <= dailyCustomDateRange.end;
+      });
+    }
+    
+    const allSessionsSorted = [...sessionsToUse].sort((a, b) => 
       new Date(a.closeDate).getTime() - new Date(b.closeDate).getTime()
     );
     
@@ -179,7 +195,7 @@ const Ledger = () => {
     });
     
     return weeks;
-  }, [allSessions]);
+  }, [allSessions, dailyCustomDateRange]);
 
   // Calcular resumen
   const summary = useMemo(() => {
@@ -514,6 +530,230 @@ const Ledger = () => {
 
 
 
+
+        {/* Selector de Rango para Diario */}
+        {expandedView === 'daily' && (
+          <div className="mb-6">
+            <button
+              onClick={() => setShowDailyDatePicker(!showDailyDatePicker)}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm transition-colors flex items-center gap-2"
+            >
+              <Calendar size={16} />
+              Seleccionar Rango
+            </button>
+
+            {/* Modal de Selector de Rango para Diario */}
+            {showDailyDatePicker && (
+              <div className="mt-3 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 p-4">
+                <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
+                  {/* Calendario Compacto */}
+                  <div className="sm:col-span-2">
+                    <div className="flex items-center justify-between mb-2">
+                      <button
+                        onClick={() => setDailyCalendarMonth(new Date(dailyCalendarMonth.getFullYear(), dailyCalendarMonth.getMonth() - 1))}
+                        className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-sm"
+                      >
+                        &lt;
+                      </button>
+                      <h3 className="text-gray-900 dark:text-white font-bold text-xs text-center flex-1">
+                        {dailyCalendarMonth.toLocaleDateString('es-CO', { month: 'short', year: 'numeric' })}
+                      </h3>
+                      <button
+                        onClick={() => setDailyCalendarMonth(new Date(dailyCalendarMonth.getFullYear(), dailyCalendarMonth.getMonth() + 1))}
+                        className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-sm"
+                      >
+                        &gt;
+                      </button>
+                    </div>
+
+                    {/* Días de la semana */}
+                    <div className="grid grid-cols-7 gap-0.5 text-center text-2xs font-bold text-gray-600 dark:text-gray-400 mb-1">
+                      {['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá'].map(day => (
+                        <div key={day} className="text-2xs">{day}</div>
+                      ))}
+                    </div>
+
+                    {/* Días del mes */}
+                    <div className="grid grid-cols-7 gap-0.5 text-center text-2xs">
+                      {(() => {
+                        const firstDay = new Date(dailyCalendarMonth.getFullYear(), dailyCalendarMonth.getMonth(), 1).getDay();
+                        const daysInMonth = new Date(dailyCalendarMonth.getFullYear(), dailyCalendarMonth.getMonth() + 1, 0).getDate();
+                        const prevDays = new Date(dailyCalendarMonth.getFullYear(), dailyCalendarMonth.getMonth(), 0).getDate();
+                        const days = [];
+
+                        for (let i = firstDay - 1; i >= 0; i--) {
+                          days.push(
+                            <div key={`prev-${i}`} className="py-0.5 text-gray-400 dark:text-gray-600 text-2xs">
+                              {prevDays - i}
+                            </div>
+                          );
+                        }
+
+                        for (let i = 1; i <= daysInMonth; i++) {
+                          const date = new Date(dailyCalendarMonth.getFullYear(), dailyCalendarMonth.getMonth(), i);
+                          const isSelected = (dailyTempStartDate.toDateString() === date.toDateString()) || (dailyTempEndDate.toDateString() === date.toDateString());
+                          const isInRange = date >= dailyTempStartDate && date <= dailyTempEndDate;
+                          const isToday = new Date().toDateString() === date.toDateString();
+
+                          days.push(
+                            <button
+                              key={i}
+                              onClick={() => {
+                                if (!dailyTempStartDate || date < dailyTempStartDate) {
+                                  setDailyTempStartDate(date);
+                                  setDailyTempEndDate(date);
+                                } else if (date > dailyTempEndDate) {
+                                  setDailyTempEndDate(date);
+                                } else {
+                                  setDailyTempStartDate(date);
+                                  setDailyTempEndDate(date);
+                                }
+                              }}
+                              className={`py-0.5 rounded text-2xs font-medium transition-colors ${
+                                isSelected
+                                  ? 'bg-green-500 text-white'
+                                  : isInRange
+                                  ? 'bg-green-200 dark:bg-green-900 text-gray-900 dark:text-white'
+                                  : isToday
+                                  ? 'bg-blue-100 dark:bg-blue-900 text-gray-900 dark:text-white'
+                                  : 'text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
+                              }`}
+                            >
+                              {i}
+                            </button>
+                          );
+                        }
+
+                        const totalSlots = days.length;
+                        for (let i = 1; totalSlots + i <= 42; i++) {
+                          days.push(
+                            <div key={`next-${i}`} className="py-0.5 text-gray-400 dark:text-gray-600 text-2xs">
+                              {i}
+                            </div>
+                          );
+                        }
+
+                        return days;
+                      })()}
+                    </div>
+
+                    <div className="mt-2 text-2xs text-gray-600 dark:text-gray-400">
+                      <div className="leading-tight">Inicio:</div>
+                      <div className="font-bold text-gray-900 dark:text-white text-2xs">{dailyTempStartDate.toLocaleDateString('es-CO')}</div>
+                      <div className="leading-tight mt-1">Fin:</div>
+                      <div className="font-bold text-gray-900 dark:text-white text-2xs">{dailyTempEndDate.toLocaleDateString('es-CO')}</div>
+                    </div>
+                  </div>
+
+                  {/* Opciones Predefinidas */}
+                  <div className="sm:col-span-3">
+                    <h4 className="font-bold text-gray-900 dark:text-white mb-2 text-xs">Opciones Rápidas</h4>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {[
+                        { label: 'Hoy', value: 'day' },
+                        { label: 'Ayer', value: 'yesterday' },
+                        { label: 'Esta semana', value: 'week' },
+                        { label: 'Última semana', value: 'lastWeek' },
+                        { label: 'Este mes', value: 'month' },
+                        { label: 'Último mes', value: 'lastMonth' },
+                        { label: 'Últ. 7 días', value: 'last7' },
+                        { label: 'Últ. 30 días', value: 'last30' },
+                      ].map(option => (
+                        <button
+                          key={option.value}
+                          onClick={() => {
+                            const today = new Date();
+                            let start = new Date();
+                            let end = new Date();
+
+                            switch (option.value) {
+                              case 'day':
+                                start = new Date();
+                                end = new Date();
+                                break;
+                              case 'yesterday':
+                                start = new Date();
+                                start.setDate(start.getDate() - 1);
+                                end = new Date(start);
+                                break;
+                              case 'week':
+                                start = new Date();
+                                start.setDate(start.getDate() - 6);
+                                end = new Date();
+                                break;
+                              case 'lastWeek':
+                                end = new Date();
+                                end.setDate(end.getDate() - 7);
+                                start = new Date(end);
+                                start.setDate(start.getDate() - 6);
+                                break;
+                              case 'month':
+                                start = new Date(today.getFullYear(), today.getMonth(), 1);
+                                end = new Date();
+                                break;
+                              case 'lastMonth':
+                                start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                                end = new Date(today.getFullYear(), today.getMonth(), 0);
+                                break;
+                              case 'last7':
+                                end = new Date();
+                                start = new Date();
+                                start.setDate(start.getDate() - 6);
+                                break;
+                              case 'last30':
+                                end = new Date();
+                                start = new Date();
+                                start.setDate(start.getDate() - 29);
+                                break;
+                              default:
+                                start = new Date();
+                                end = new Date();
+                            }
+
+                            setDailyTempStartDate(start);
+                            setDailyTempEndDate(end);
+                            setDailyCustomDateRange({ start, end });
+                            setShowDailyDatePicker(false);
+                          }}
+                          className="px-2 py-1.5 rounded text-2xs text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors font-medium"
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Nota */}
+                    <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-800 rounded text-2xs text-blue-900 dark:text-blue-100">
+                      <span className="font-medium">ℹ️ Datos limitados a últimos 31 días.</span>
+                    </div>
+
+                    {/* Botones */}
+                    <div className="mt-3 flex gap-2 justify-end">
+                      <button
+                        onClick={() => setShowDailyDatePicker(false)}
+                        className="px-3 py-1 bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-white rounded text-2xs font-medium transition-colors hover:bg-gray-400 dark:hover:bg-gray-500"
+                      >
+                        CANCELAR
+                      </button>
+                      <button
+                        onClick={() => {
+                          setDailyCustomDateRange({
+                            start: dailyTempStartDate,
+                            end: dailyTempEndDate
+                          });
+                          setShowDailyDatePicker(false);
+                        }}
+                        className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-2xs font-medium transition-colors"
+                      >
+                        ACEPTAR
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Tabla de Ventas Diarias - Solo en vista diaria - SECCIONES DE 7 DÍAS */}
         {expandedView === 'daily' && sessionsByWeeks.map((week, weekIndex) => (
