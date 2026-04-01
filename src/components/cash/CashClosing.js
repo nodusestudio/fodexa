@@ -81,7 +81,7 @@ const CashClosing = ({ onClose }) => {
 
   const totalPayments = Object.values(paymentBreakdown).reduce((a, b) => a + b, 0);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!finalCount || parseFloat(finalCount) < 0) {
@@ -89,42 +89,61 @@ const CashClosing = ({ onClose }) => {
       return;
     }
 
-    const closedSession = closeCash(finalCount, observations, []);
-    
-    if (closedSession && closedSession.id) {
-      console.log('💾 Sesión cerrada, ID:', closedSession.id);
-      
-      // ✅ PHASE 5: Generar ticket de cierre automático
-      const closingTicket = {
-        id: `closing_${closedSession.id}`,
-        ticketNumber: `CIERRE-${new Date().toISOString().slice(0, 10)}`,
-        type: 'closing',
-        openTime: new Date(cashSession.openDate).toLocaleTimeString('es-CO'),
-        closeTime: closeTime.toLocaleTimeString('es-CO'),
-        duration: sessionDuration,
-        initialAmount: cashSession.initialAmount,
-        fundAmount: cashSession.fundAmount,
-        totalSales: totalPayments,
-        totalExpenses: totalExpensesByType,
-        expensesByPaymentType: expensesByPaymentType,
-        paymentBreakdown: paymentBreakdown,
-        expectedAmount: cashSession.initialAmount + totalPayments - totalExpensesByType,
-        finalCount: parseFloat(finalCount),
-        difference: parseFloat(finalCount) - (cashSession.initialAmount + totalPayments - totalExpensesByType),
-        observations: observations,
-        createdAt: new Date(),
-      };
+    try {
+      // Obtener todos los egresos de los movimientos de caja
+      const dayExpenses = cashMovements
+        .filter(m => m.type === 'expense')
+        .map(m => ({
+          id: m.id,
+          amount: m.amount,
+          category: m.category || m.paymentType || 'otros',
+          description: m.description,
+          paymentType: m.paymentType || 'efectivo',
+        }));
 
-      // Disparar evento con ticket de cierre para impresión
-      window.dispatchEvent(new CustomEvent('cashClosed', { 
-        detail: { 
-          sessionId: closedSession.id,
-          closingTicket: closingTicket 
-        } 
-      }));
+      console.log('📋 Egresos del día para guardar:', dayExpenses);
+
+      // Esperar a que closeCash se complete
+      const closedSession = await closeCash(finalCount, observations, dayExpenses);
+      
+      if (closedSession && closedSession.id) {
+        console.log('💾 Sesión cerrada, ID:', closedSession.id);
+        
+        // ✅ PHASE 5: Generar ticket de cierre automático
+        const closingTicket = {
+          id: `closing_${closedSession.id}`,
+          ticketNumber: `CIERRE-${new Date().toISOString().slice(0, 10)}`,
+          type: 'closing',
+          openTime: new Date(cashSession.openDate).toLocaleTimeString('es-CO'),
+          closeTime: closeTime.toLocaleTimeString('es-CO'),
+          duration: sessionDuration,
+          initialAmount: cashSession.initialAmount,
+          fundAmount: cashSession.fundAmount,
+          totalSales: totalPayments,
+          totalExpenses: totalExpensesByType,
+          expensesByPaymentType: expensesByPaymentType,
+          paymentBreakdown: paymentBreakdown,
+          expectedAmount: cashSession.initialAmount + totalPayments - totalExpensesByType,
+          finalCount: parseFloat(finalCount),
+          difference: parseFloat(finalCount) - (cashSession.initialAmount + totalPayments - totalExpensesByType),
+          observations: observations,
+          createdAt: new Date(),
+        };
+
+        // Disparar evento con ticket de cierre para impresión
+        window.dispatchEvent(new CustomEvent('cashClosed', { 
+          detail: { 
+            sessionId: closedSession.id,
+            closingTicket: closingTicket 
+          } 
+        }));
+      }
+
+      onClose();
+    } catch (error) {
+      console.error('❌ Error cerrando caja:', error);
+      alert('Error al cerrar caja: ' + error.message);
     }
-    
-    onClose();
   };
 
   const difference = finalCount ? (parseFloat(finalCount) - (cashSession?.initialAmount + totalPayments - totalExpensesByType)) : 0;
