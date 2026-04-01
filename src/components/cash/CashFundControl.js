@@ -20,17 +20,17 @@ const CashFundControl = ({ fundAmount = 0, onClose, onUpdate }) => {
   const [additionalAmount, setAdditionalAmount] = useState(0);
 
   const billDenominations = [
-    { value: 100000, label: '$100K' },
-    { value: 50000, label: '$50K' },
-    { value: 20000, label: '$20K' },
-    { value: 10000, label: '$10K' },
-    { value: 5000, label: '$5K' },
-    { value: 2000, label: '$2K' },
-    { value: 1000, label: '$1K' },
-    { value: 500, label: '$500' },
-    { value: 200, label: '$200' },
-    { value: 100, label: '$100' },
     { value: 50, label: '$50' },
+    { value: 100, label: '$100' },
+    { value: 200, label: '$200' },
+    { value: 500, label: '$500' },
+    { value: 1000, label: '$1K' },
+    { value: 2000, label: '$2K' },
+    { value: 5000, label: '$5K' },
+    { value: 10000, label: '$10K' },
+    { value: 20000, label: '$20K' },
+    { value: 50000, label: '$50K' },
+    { value: 100000, label: '$100K' },
   ];
 
   const billsTotal = useMemo(() => {
