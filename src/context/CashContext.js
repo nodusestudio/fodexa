@@ -125,7 +125,21 @@ export const CashProvider = ({ children }) => {
     };
     setCashSession(session);
     console.log('📂 Caja abierta - ID:', session.id, 'Capital:', session.initialAmount, 'Fondo:', session.fundAmount);
-    addMovement('opening', initialAmount, 'Apertura de ca ja');
+    addMovement('opening', initialAmount, 'Apertura de caja');
+    
+    // ✅ Crear movimiento acumulativo de domicilios en $0
+    addMovement(
+      'expense',
+      0,
+      '🚗 Domicilios del Día',
+      { 
+        paymentType: 'efectivo',
+        category: 'Domicilios',
+        isAccumulative: true,
+        sessionId: session.id
+      }
+    );
+    
     return session;
   };
 
@@ -297,7 +311,7 @@ export const CashProvider = ({ children }) => {
     return movement;
   };
 
-  // ✅ Registrar gastos automáticos de domicilios entregados
+  // ✅ Actualizar monto acumulado de domicilios entregados
   const registerDeliveryExpenses = (tickets) => {
     if (!cashSession || !tickets) return;
 
@@ -314,29 +328,30 @@ export const CashProvider = ({ children }) => {
       );
     });
 
-    // Verificar cuáles ya están registrados (evitar duplicados)
-    const existingDeliveryExpenses = cashMovements.filter(m => 
-      m.type === 'expense' && 
-      m.description && 
-      m.description.includes('Domicilio -')
+    // Calcular total acumulado de domicilios
+    const totalDeliveryAmount = deliveryTickets.reduce((sum, t) => sum + (t.deliveryCost || 0), 0);
+
+    // Buscar el movimiento acumulativo de domicilios (el que iniciamos en openCash)
+    const deliveryMovementIndex = cashMovements.findIndex(
+      m => m.type === 'expense' && 
+           m.metadata?.isAccumulative && 
+           m.metadata?.category === 'Domicilios' &&
+           m.metadata?.sessionId === cashSession.id
     );
 
-    // Registrar solo los nuevos domicilios
-    deliveryTickets.forEach(ticket => {
-      const alreadyExists = existingDeliveryExpenses.some(exp => 
-        exp.description.includes(`Domicilio - ${ticket.id}`)
-      );
-
-      if (!alreadyExists && ticket.deliveryCost > 0) {
-        addMovement(
-          'expense',
-          ticket.deliveryCost,
-          `Domicilio - ${ticket.id} (${ticket.customer?.name || 'Cliente'})`,
-          { paymentType: 'efectivo', category: 'Domicilios' }
-        );
-        console.log(`✅ Egreso de domicilio registrado: $${ticket.deliveryCost}`);
+    if (deliveryMovementIndex !== -1) {
+      // Actualizar el movimiento existente con el nuevo total
+      const updatedMovements = [...cashMovements];
+      updatedMovements[deliveryMovementIndex] = {
+        ...updatedMovements[deliveryMovementIndex],
+        amount: totalDeliveryAmount
+      };
+      setCashMovements(updatedMovements);
+      
+      if (totalDeliveryAmount > 0) {
+        console.log(`🚗 Domicilios actualizado a $${totalDeliveryAmount.toLocaleString('es-CO')}`);
       }
-    });
+    }
   };
 
   // Calcular monto esperado en caja
