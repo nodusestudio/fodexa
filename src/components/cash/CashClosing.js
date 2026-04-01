@@ -4,15 +4,12 @@ import { useTickets } from '../../context/TicketContext';
 import { Lock, X, Plus, Trash2, Clock, TrendingUp } from 'lucide-react';
 
 const CashClosing = ({ onClose }) => {
-  const { cashSession, closeCash, calculateExpectedAmount, cashMovements } = useCash();
+  const { cashSession, closeCash, cashMovements } = useCash();
   const { tickets } = useTickets();
   const [finalCount, setFinalCount] = useState('');
   const [observations, setObservations] = useState('');
-  const [expenses, setExpenses] = useState([]);
-  const [newExpense, setNewExpense] = useState({ source: 'efectivo', description: '', amount: '' });
   const [showPaymentBreakdown, setShowPaymentBreakdown] = useState(true);
 
-  const expectedAmount = calculateExpectedAmount();
   const closeTime = new Date();
 
   // ✅ PHASE 5: Calcular duración de sesión
@@ -25,7 +22,27 @@ const CashClosing = ({ onClose }) => {
     return { hours, minutes, totalMinutes: Math.floor(diffMs / (1000 * 60)) };
   }, [cashSession, closeTime]);
 
-  // ✅ PHASE 5: Breakdown automático de pagos desde tickets
+  // ✅ Calcular egresos por tipo de pago
+  const expensesByPaymentType = useMemo(() => {
+    const breakdown = {
+      efectivo: 0,
+      bancolombia: 0,
+      nequi: 0,
+    };
+
+    cashMovements.forEach(movement => {
+      if (movement.type === 'expense') {
+        const paymentType = movement.metadata?.paymentType || 'efectivo';
+        if (breakdown.hasOwnProperty(paymentType)) {
+          breakdown[paymentType] += movement.amount;
+        }
+      }
+    });
+
+    return breakdown;
+  }, [cashMovements]);
+
+  const totalExpensesByType = Object.values(expensesByPaymentType).reduce((a, b) => a + b, 0);
   const paymentBreakdown = useMemo(() => {
     const breakdown = {
       cash: 0,
@@ -56,54 +73,6 @@ const CashClosing = ({ onClose }) => {
     return breakdown;
   }, [tickets, cashSession]);
 
-  // Agregar egreso automático de domicilios al montar
-  useEffect(() => {
-    const deliveryTickets = tickets.filter(t => 
-      t.orderType === 'delivery' && 
-      t.deliveryStatus === 'delivered' &&
-      new Date(t.createdAt) >= new Date(cashSession?.openDate)
-    );
-    
-    const totalDeliveryCost = deliveryTickets.reduce((sum, t) => sum + (t.deliveryCost || 0), 0);
-    
-    if (totalDeliveryCost > 0) {
-      setExpenses([{
-        id: 'delivery_auto',
-        source: 'efectivo',
-        description: `Domicilios (${deliveryTickets.length} entregas)`,
-        amount: totalDeliveryCost,
-        isFixed: true,
-      }]);
-    }
-  }, [cashSession, tickets]);
-
-  const handleAddExpense = () => {
-    if (!newExpense.description || !newExpense.amount) {
-      alert('⚠️ Completa descripción y monto');
-      return;
-    }
-
-    const expense = {
-      id: Date.now(),
-      source: newExpense.source,
-      description: newExpense.description,
-      amount: parseFloat(newExpense.amount),
-      isFixed: false,
-    };
-
-    setExpenses([...expenses, expense]);
-    setNewExpense({ source: 'efectivo', description: '', amount: '' });
-  };
-
-  const handleDeleteExpense = (id) => {
-    if (id === 'delivery_auto') {
-      alert('⚠️ No puedes eliminar egresos automáticos');
-      return;
-    }
-    setExpenses(expenses.filter(e => e.id !== id));
-  };
-
-  const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
   const totalPayments = Object.values(paymentBreakdown).reduce((a, b) => a + b, 0);
 
   const handleSubmit = (e) => {
@@ -130,11 +99,12 @@ const CashClosing = ({ onClose }) => {
         initialAmount: cashSession.initialAmount,
         fundAmount: cashSession.fundAmount,
         totalSales: totalPayments,
-        totalExpenses: totalExpenses,
+        totalExpenses: totalExpensesByType,
+        expensesByPaymentType: expensesByPaymentType,
         paymentBreakdown: paymentBreakdown,
-        expectedAmount: expectedAmount,
+        expectedAmount: cashSession.initialAmount + totalPayments - totalExpensesByType,
         finalCount: parseFloat(finalCount),
-        difference: parseFloat(finalCount) - expectedAmount,
+        difference: parseFloat(finalCount) - (cashSession.initialAmount + totalPayments - totalExpensesByType),
         observations: observations,
         createdAt: new Date(),
       };
@@ -151,7 +121,7 @@ const CashClosing = ({ onClose }) => {
     onClose();
   };
 
-  const difference = finalCount ? (parseFloat(finalCount) - expectedAmount) : 0;
+  const difference = finalCount ? (parseFloat(finalCount) - (cashSession?.initialAmount + totalPayments - totalExpensesByType)) : 0;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -267,6 +237,45 @@ const CashClosing = ({ onClose }) => {
 
 
 
+          {/* Egresos por Tipo de Pago */}
+          {totalExpensesByType > 0 && (
+            <div className="border border-red-200 dark:border-red-800 rounded-lg p-4 bg-red-50 dark:bg-red-900 dark:bg-opacity-20">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-3">📤 Egresos del Día</h3>
+              <div className="space-y-2">
+                {expensesByPaymentType.efectivo > 0 && (
+                  <div className="flex justify-between items-center py-2 border-b border-red-200 dark:border-red-800">
+                    <span className="text-gray-700 dark:text-gray-300">💵 Efectivo</span>
+                    <span className="font-bold text-red-600 dark:text-red-400">
+                      -${expensesByPaymentType.efectivo.toLocaleString()}
+                    </span>
+                  </div>
+                )}
+                {expensesByPaymentType.bancolombia > 0 && (
+                  <div className="flex justify-between items-center py-2 border-b border-red-200 dark:border-red-800">
+                    <span className="text-gray-700 dark:text-gray-300">🏦 Bancolombia</span>
+                    <span className="font-bold text-red-600 dark:text-red-400">
+                      -${expensesByPaymentType.bancolombia.toLocaleString()}
+                    </span>
+                  </div>
+                )}
+                {expensesByPaymentType.nequi > 0 && (
+                  <div className="flex justify-between items-center py-2 border-b border-red-200 dark:border-red-800">
+                    <span className="text-gray-700 dark:text-gray-300">📱 Nequi</span>
+                    <span className="font-bold text-red-600 dark:text-red-400">
+                      -${expensesByPaymentType.nequi.toLocaleString()}
+                    </span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center py-3 pt-3 border-t-2 border-red-300 dark:border-red-700 font-bold">
+                  <span className="text-gray-900 dark:text-white">Total Egresos</span>
+                  <span className="text-lg text-red-600 dark:text-red-400">
+                    -${totalExpensesByType.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* ✅ PHASE 5: Cálculo paso a paso */}
           <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900 dark:from-opacity-20 dark:to-pink-900 dark:to-opacity-20 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
             <h3 className="font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
@@ -281,9 +290,17 @@ const CashClosing = ({ onClose }) => {
                 <span className="text-gray-700 dark:text-gray-300">Ventas (automático):</span>
                 <span className="font-medium text-green-600 dark:text-green-400">+${totalPayments.toLocaleString()}</span>
               </div>
+              {totalExpensesByType > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-gray-700 dark:text-gray-300">Egresos:</span>
+                  <span className="font-medium text-red-600 dark:text-red-400">-${totalExpensesByType.toLocaleString()}</span>
+                </div>
+              )}
               <div className="flex justify-between pt-2 border-t border-purple-200 dark:border-purple-800 font-bold">
                 <span className="text-gray-900 dark:text-white">Monto Esperado:</span>
-                <span className="text-purple-600 dark:text-purple-400">${(cashSession?.initialAmount + totalPayments).toLocaleString()}</span>
+                <span className="text-purple-600 dark:text-purple-400">
+                  ${(cashSession?.initialAmount + totalPayments - totalExpensesByType).toLocaleString()}
+                </span>
               </div>
             </div>
           </div>

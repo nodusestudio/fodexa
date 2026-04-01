@@ -233,13 +233,13 @@ export const CashProvider = ({ children }) => {
         userId: user.uid,
         amount: parseFloat(data.amount) || 0,
         category: data.category || 'otros',
-        description: data.description || '',
+        paymentType: data.paymentType || 'efectivo',
         date: new Date(),
         user: 'Cajero Demo',
       };
       
       const docRef = await addDoc(collection(db, 'expenses'), expense);
-      addMovement('expense', expense.amount, `Egreso: ${expense.description}`);
+      addMovement('expense', expense.amount, `Egreso: ${expense.category}`, { paymentType: expense.paymentType });
       
       return { id: docRef.id, ...expense };
     } catch (error) {
