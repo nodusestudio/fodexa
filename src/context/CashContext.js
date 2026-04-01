@@ -88,15 +88,70 @@ export const CashProvider = ({ children }) => {
         .reduce((sum, m) => sum + m.amount, 0);
 
       const paymentBreakdown = {};
+      const paymentMethods = {
+        efectivo: { ingresos: 0, egresos: 0 },
+        bancolombia: { ingresos: 0, egresos: 0 },
+        nequi: { ingresos: 0, egresos: 0 },
+        bold: { ingresos: 0, egresos: 0 },
+        aliado: { ingresos: 0, egresos: 0 },
+      };
+
+      // Procesar movimientos de venta
       sessionMovements
         .filter(m => m.type === 'sale')
         .forEach(m => {
           const paymentType = m.paymentType || 'otros';
+          
+          // Construir paymentBreakdown clásico
           if (!paymentBreakdown[paymentType]) {
             paymentBreakdown[paymentType] = 0;
           }
           paymentBreakdown[paymentType] += m.amount;
+
+          // Desglosar en paymentMethods para ingresos
+          if (m.paymentType === 'cash') {
+            paymentMethods.efectivo.ingresos += m.amount;
+          } else if (m.paymentType === 'card') {
+            paymentMethods.bancolombia.ingresos += m.amount;
+          } else if (m.paymentType === 'transfer') {
+            // Usar transferType del metadata para separar Nequi y Bancolombia
+            if (m.transferType === 'nequi') {
+              paymentMethods.nequi.ingresos += m.amount;
+            } else if (m.transferType === 'bancolombia') {
+              paymentMethods.bancolombia.ingresos += m.amount;
+            } else {
+              // Por defecto si no está especificado
+              paymentMethods.nequi.ingresos += m.amount;
+            }
+          } else if (m.paymentType === 'bold') {
+            paymentMethods.bold.ingresos += m.amount;
+          } else if (m.paymentType === 'aliado') {
+            paymentMethods.aliado.ingresos += m.amount;
+          } else {
+            // Otros métodos default a efectivo
+            paymentMethods.efectivo.ingresos += m.amount;
+          }
         });
+
+      // Procesar egresos (expenses)
+      // Los egresos se distribuyen proporcionalmente o de forma específica según el tipo
+      dayExpenses?.forEach(expense => {
+        const category = expense.category?.toLowerCase() || 'otros';
+        if (category === 'efectivo' || category === 'cash') {
+          paymentMethods.efectivo.egresos += (expense.amount || 0);
+        } else if (category === 'bancolombia' || category === 'card' || category === 'banco') {
+          paymentMethods.bancolombia.egresos += (expense.amount || 0);
+        } else if (category === 'nequi') {
+          paymentMethods.nequi.egresos += (expense.amount || 0);
+        } else if (category === 'bold') {
+          paymentMethods.bold.egresos += (expense.amount || 0);
+        } else if (category === 'aliado') {
+          paymentMethods.aliado.egresos += (expense.amount || 0);
+        } else {
+          // Otros gastos se distribuyen al efectivo
+          paymentMethods.efectivo.egresos += (expense.amount || 0);
+        }
+      });
 
       const closeDate = new Date();
       const closedSession = {
@@ -115,6 +170,7 @@ export const CashProvider = ({ children }) => {
         sales: sales,
         expenses: expensesAmount,
         paymentBreakdown: paymentBreakdown,
+        paymentMethods: paymentMethods, // Incluir desglose detallado por método
         saleCount: sessionMovements.filter(m => m.type === 'sale').length,
         expenseCount: sessionMovements.filter(m => m.type === 'expense').length,
       };
