@@ -241,7 +241,6 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
         
         addMovement('sale', method.amount, description, metadata);
       });
-      });
     }
 
     // Guardar ticket en local CON datos de pago incluidos desde el inicio
