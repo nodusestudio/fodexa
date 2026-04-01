@@ -294,37 +294,37 @@ const Ledger = () => {
 
             {/* Modal de Selector de Rango */}
             {showDatePicker && (
-              <div className="mt-4 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 p-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Calendario */}
-                  <div className="md:col-span-1">
-                    <div className="flex items-center justify-between mb-4">
+              <div className="mt-3 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 p-4">
+                <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
+                  {/* Calendario Compacto */}
+                  <div className="sm:col-span-2">
+                    <div className="flex items-center justify-between mb-2">
                       <button
                         onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1))}
-                        className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                        className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-sm"
                       >
                         &lt;
                       </button>
-                      <h3 className="text-gray-900 dark:text-white font-bold text-center">
-                        {calendarMonth.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' })}
+                      <h3 className="text-gray-900 dark:text-white font-bold text-xs text-center flex-1">
+                        {calendarMonth.toLocaleDateString('es-CO', { month: 'short', year: 'numeric' })}
                       </h3>
                       <button
                         onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1))}
-                        className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                        className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-sm"
                       >
                         &gt;
                       </button>
                     </div>
 
                     {/* Días de la semana */}
-                    <div className="grid grid-cols-7 gap-1 text-center text-xs font-bold text-gray-600 dark:text-gray-400 mb-2">
-                      {['Do', 'Lu', 'Ma', 'Mié', 'Jue', 'Vi', 'Sáb'].map(day => (
-                        <div key={day}>{day}</div>
+                    <div className="grid grid-cols-7 gap-0.5 text-center text-2xs font-bold text-gray-600 dark:text-gray-400 mb-1">
+                      {['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá'].map(day => (
+                        <div key={day} className="text-2xs">{day}</div>
                       ))}
                     </div>
 
                     {/* Días del mes */}
-                    <div className="grid grid-cols-7 gap-1 text-center text-sm">
+                    <div className="grid grid-cols-7 gap-0.5 text-center text-2xs">
                       {(() => {
                         const firstDay = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1).getDay();
                         const daysInMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 0).getDate();
@@ -334,7 +334,7 @@ const Ledger = () => {
                         // Días del mes anterior
                         for (let i = firstDay - 1; i >= 0; i--) {
                           days.push(
-                            <div key={`prev-${i}`} className="py-1 text-gray-400 dark:text-gray-600">
+                            <div key={`prev-${i}`} className="py-0.5 text-gray-400 dark:text-gray-600 text-2xs">
                               {prevDays - i}
                             </div>
                           );
@@ -361,7 +361,7 @@ const Ledger = () => {
                                   setTempEndDate(date);
                                 }
                               }}
-                              className={`py-1 rounded font-medium transition-colors ${
+                              className={`py-0.5 rounded text-2xs font-medium transition-colors ${
                                 isSelected
                                   ? 'bg-green-500 text-white'
                                   : isInRange
@@ -380,7 +380,7 @@ const Ledger = () => {
                         const totalSlots = days.length;
                         for (let i = 1; totalSlots + i <= 42; i++) {
                           days.push(
-                            <div key={`next-${i}`} className="py-1 text-gray-400 dark:text-gray-600">
+                            <div key={`next-${i}`} className="py-0.5 text-gray-400 dark:text-gray-600 text-2xs">
                               {i}
                             </div>
                           );
@@ -390,18 +390,18 @@ const Ledger = () => {
                       })()}
                     </div>
 
-                    <div className="mt-4 text-xs text-gray-600 dark:text-gray-400">
-                      <div>Fecha de inicio:</div>
-                      <div className="font-bold text-gray-900 dark:text-white">{tempStartDate.toLocaleDateString('es-CO')}</div>
-                      <div className="mt-2">Fecha de finalización:</div>
-                      <div className="font-bold text-gray-900 dark:text-white">{tempEndDate.toLocaleDateString('es-CO')}</div>
+                    <div className="mt-2 text-2xs text-gray-600 dark:text-gray-400">
+                      <div className="leading-tight">Inicio:</div>
+                      <div className="font-bold text-gray-900 dark:text-white text-2xs">{tempStartDate.toLocaleDateString('es-CO')}</div>
+                      <div className="leading-tight mt-1">Fin:</div>
+                      <div className="font-bold text-gray-900 dark:text-white text-2xs">{tempEndDate.toLocaleDateString('es-CO')}</div>
                     </div>
                   </div>
 
-                  {/* Opciones Predefinidas */}
-                  <div className="md:col-span-2">
-                    <h4 className="font-bold text-gray-900 dark:text-white mb-3">Opciones Rápidas</h4>
-                    <div className="space-y-2">
+                  {/* Opciones Predefinidas Compactas */}
+                  <div className="sm:col-span-3">
+                    <h4 className="font-bold text-gray-900 dark:text-white mb-2 text-xs">Opciones Rápidas</h4>
+                    <div className="grid grid-cols-2 gap-1.5">
                       {[
                         { label: 'Hoy', value: 'day' },
                         { label: 'Ayer', value: 'yesterday' },
@@ -409,38 +409,40 @@ const Ledger = () => {
                         { label: 'Última semana', value: 'lastWeek' },
                         { label: 'Este mes', value: 'month' },
                         { label: 'Último mes', value: 'lastMonth' },
-                        { label: 'Últimos 7 días', value: 'last7' },
-                        { label: 'Últimos 30 días', value: 'last30' },
+                        { label: 'Últ. 7 días', value: 'last7' },
+                        { label: 'Últ. 30 días', value: 'last30' },
                       ].map(option => (
                         <button
                           key={option.value}
                           onClick={() => {
                             const today = new Date();
-                            let start, end;
+                            let start = new Date();
+                            let end = new Date();
 
                             switch (option.value) {
                               case 'day':
-                                start = new Date(today);
-                                end = new Date(today);
-                                setMayorFilterType('day');
+                                start = new Date();
+                                end = new Date();
                                 break;
                               case 'yesterday':
-                                start = new Date(today.setDate(today.getDate() - 1));
+                                start = new Date();
+                                start.setDate(start.getDate() - 1);
                                 end = new Date(start);
                                 break;
                               case 'week':
-                                start = new Date(today.setDate(today.getDate() - 6));
+                                start = new Date();
+                                start.setDate(start.getDate() - 6);
                                 end = new Date();
-                                setMayorFilterType('week');
                                 break;
                               case 'lastWeek':
-                                end = new Date(today.setDate(today.getDate() - 7));
-                                start = new Date(end.setDate(end.getDate() - 6));
+                                end = new Date();
+                                end.setDate(end.getDate() - 7);
+                                start = new Date(end);
+                                start.setDate(start.getDate() - 6);
                                 break;
                               case 'month':
                                 start = new Date(today.getFullYear(), today.getMonth(), 1);
                                 end = new Date();
-                                setMayorFilterType('month');
                                 break;
                               case 'lastMonth':
                                 start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
@@ -448,11 +450,13 @@ const Ledger = () => {
                                 break;
                               case 'last7':
                                 end = new Date();
-                                start = new Date(today.setDate(today.getDate() - 6));
+                                start = new Date();
+                                start.setDate(start.getDate() - 6);
                                 break;
                               case 'last30':
                                 end = new Date();
-                                start = new Date(today.setDate(today.getDate() - 29));
+                                start = new Date();
+                                start.setDate(start.getDate() - 29);
                                 break;
                               default:
                                 start = new Date();
@@ -461,43 +465,44 @@ const Ledger = () => {
 
                             setTempStartDate(start);
                             setTempEndDate(end);
+                            // Guardar y cerrar automáticamente
+                            setCustomDateRange({ start, end });
+                            setShowDatePicker(false);
                           }}
-                          className="w-full text-left px-3 py-2 rounded text-sm text-gray-900 dark:text-white hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors"
+                          className="px-2 py-1.5 rounded text-2xs text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors font-medium"
                         >
                           {option.label}
                         </button>
                       ))}
                     </div>
+
+                    {/* Nota de limitación */}
+                    <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-800 rounded text-2xs text-blue-900 dark:text-blue-100">
+                      <span className="font-medium">ℹ️ Datos limitados a últimos 31 días.</span>
+                    </div>
+
+                    {/* Botones de Acción */}
+                    <div className="mt-3 flex gap-2 justify-end">
+                      <button
+                        onClick={() => setShowDatePicker(false)}
+                        className="px-3 py-1 bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-white rounded text-2xs font-medium transition-colors hover:bg-gray-400 dark:hover:bg-gray-500"
+                      >
+                        CANCELAR
+                      </button>
+                      <button
+                        onClick={() => {
+                          setCustomDateRange({
+                            start: tempStartDate,
+                            end: tempEndDate
+                          });
+                          setShowDatePicker(false);
+                        }}
+                        className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-2xs font-medium transition-colors"
+                      >
+                        ACEPTAR
+                      </button>
+                    </div>
                   </div>
-                </div>
-
-                {/* Nota de limitación */}
-                <div className="mt-6 p-3 bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-800 rounded text-xs text-blue-900 dark:text-blue-100">
-                  ℹ️ {' '}
-                  <span className="font-medium">Nota: Los datos de ventas están limitados a los últimos 31 días.</span>
-                </div>
-
-                {/* Botones de Acción */}
-                <div className="mt-6 flex gap-3 justify-end">
-                  <button
-                    onClick={() => setShowDatePicker(false)}
-                    className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-white rounded-lg font-medium transition-colors hover:bg-gray-400 dark:hover:bg-gray-500"
-                  >
-                    CANCELAR
-                  </button>
-                  <button
-                    onClick={() => {
-                      // Guardar el rango personalizado
-                      setCustomDateRange({
-                        start: tempStartDate,
-                        end: tempEndDate
-                      });
-                      setShowDatePicker(false);
-                    }}
-                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
-                  >
-                    ACEPTAR
-                  </button>
                 </div>
               </div>
             )}
