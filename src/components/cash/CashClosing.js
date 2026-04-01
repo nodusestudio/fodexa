@@ -114,7 +114,7 @@ const CashClosing = ({ onClose }) => {
       return;
     }
 
-    const closedSession = closeCash(finalCount, observations, expenses);
+    const closedSession = closeCash(finalCount, observations, []);
     
     if (closedSession && closedSession.id) {
       console.log('💾 Sesión cerrada, ID:', closedSession.id);
@@ -134,7 +134,7 @@ const CashClosing = ({ onClose }) => {
         paymentBreakdown: paymentBreakdown,
         expectedAmount: expectedAmount,
         finalCount: parseFloat(finalCount),
-        difference: parseFloat(finalCount) - (expectedAmount - totalExpenses),
+        difference: parseFloat(finalCount) - expectedAmount,
         observations: observations,
         createdAt: new Date(),
       };
@@ -151,7 +151,7 @@ const CashClosing = ({ onClose }) => {
     onClose();
   };
 
-  const difference = finalCount ? (parseFloat(finalCount) - (expectedAmount - totalExpenses)) : 0;
+  const difference = finalCount ? (parseFloat(finalCount) - expectedAmount) : 0;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -265,101 +265,7 @@ const CashClosing = ({ onClose }) => {
             )}
           </div>
 
-          {/* Egresos */}
-          <div className="border border-orange-200 dark:border-orange-800 rounded-lg p-4 bg-orange-50 dark:bg-orange-900 dark:bg-opacity-20">
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">📤 Egresos del Día</h3>
-            
-            {/* Lista de Egresos */}
-            {expenses.length > 0 && (
-              <div className="space-y-2 mb-4">
-                {expenses.map(expense => (
-                  <div key={expense.id} className="flex items-center justify-between bg-white dark:bg-gray-700 p-3 rounded border border-orange-200 dark:border-orange-800">
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-800 dark:text-white">
-                        {expense.description}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {expense.source.charAt(0).toUpperCase() + expense.source.slice(1)}
-                        {expense.isFixed && ' (Automático)'}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-orange-600 dark:text-orange-400">
-                        -${expense.amount.toLocaleString()}
-                      </span>
-                      {!expense.isFixed && (
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteExpense(expense.id)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
 
-            {/* Agregar nuevo egreso */}
-            <div className="bg-white dark:bg-gray-700 rounded-lg p-3 space-y-3 border border-orange-200 dark:border-orange-800">
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                    Fuente
-                  </label>
-                  <select
-                    value={newExpense.source}
-                    onChange={(e) => setNewExpense({ ...newExpense, source: e.target.value })}
-                    className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-600 text-gray-800 dark:text-white"
-                  >
-                    <option value="efectivo">💵 Efectivo</option>
-                    <option value="tarjeta">💳 Tarjeta</option>
-                    <option value="transferencia">💸 Transferencia</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                    Monto
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={newExpense.amount}
-                    onChange={(e) => setNewExpense({ ...newExpense, amount: e.target.value })}
-                    placeholder="0.00"
-                    className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-600 text-gray-800 dark:text-white"
-                  />
-                </div>
-              </div>
-              <input
-                type="text"
-                value={newExpense.description}
-                onChange={(e) => setNewExpense({ ...newExpense, description: e.target.value })}
-                placeholder="Descripción del egreso (Ej: Suministros, Mantenimiento...)"
-                className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-600 text-gray-800 dark:text-white"
-              />
-              <button
-                type="button"
-                onClick={handleAddExpense}
-                className="w-full px-3 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded flex items-center justify-center gap-2"
-              >
-                <Plus size={16} /> Agregar Egreso
-              </button>
-            </div>
-
-            {/* Total Egresos */}
-            {expenses.length > 0 && (
-              <div className="mt-3 pt-3 border-t border-orange-200 dark:border-orange-800 flex justify-between">
-                <span className="font-semibold text-gray-800 dark:text-white">Total Egresos:</span>
-                <span className="font-bold text-orange-600 dark:text-orange-400">
-                  -${totalExpenses.toLocaleString()}
-                </span>
-              </div>
-            )}
-          </div>
 
           {/* ✅ PHASE 5: Cálculo paso a paso */}
           <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900 dark:from-opacity-20 dark:to-pink-900 dark:to-opacity-20 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
@@ -375,13 +281,9 @@ const CashClosing = ({ onClose }) => {
                 <span className="text-gray-700 dark:text-gray-300">Ventas (automático):</span>
                 <span className="font-medium text-green-600 dark:text-green-400">+${totalPayments.toLocaleString()}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-700 dark:text-gray-300">Egresos:</span>
-                <span className="font-medium text-orange-600 dark:text-orange-400">-${totalExpenses.toLocaleString()}</span>
-              </div>
               <div className="flex justify-between pt-2 border-t border-purple-200 dark:border-purple-800 font-bold">
                 <span className="text-gray-900 dark:text-white">Monto Esperado:</span>
-                <span className="text-purple-600 dark:text-purple-400">${(cashSession?.initialAmount + totalPayments - totalExpenses).toLocaleString()}</span>
+                <span className="text-purple-600 dark:text-purple-400">${(cashSession?.initialAmount + totalPayments).toLocaleString()}</span>
               </div>
             </div>
           </div>
