@@ -15,6 +15,25 @@ export const CashProvider = ({ children }) => {
   const [sessionHistory, setSessionHistory] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // Calcular gastos automáticos de domicilios
+  const calculateDeliveryExpenses = (tickets) => {
+    if (!cashSession || !tickets) return 0;
+    
+    const deliveryTickets = tickets.filter(ticket => {
+      const ticketDate = new Date(ticket.createdAt);
+      const sessionStart = new Date(cashSession.openDate);
+      return (
+        ticket.orderType === 'delivery' &&
+        ticket.deliveryStatus === 'delivered' &&
+        ticket.status === 'completed' &&
+        ticketDate >= sessionStart
+      );
+    });
+
+    const totalDeliveryCost = deliveryTickets.reduce((sum, t) => sum + (t.deliveryCost || 0), 0);
+    return totalDeliveryCost;
+  };
+
   // Cargar gastos de prueba cuando hay usuario
   useEffect(() => {
     if (!user) {
@@ -357,6 +376,7 @@ export const CashProvider = ({ children }) => {
     addExpense,
     addMovement,
     calculateExpectedAmount,
+    calculateDeliveryExpenses,
     getCashSummary,
     getTodayExpenses,
     getSessionHistory,

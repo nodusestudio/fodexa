@@ -4,13 +4,18 @@ import { useTickets } from '../../context/TicketContext';
 import { Lock, X, Plus, Trash2, Clock, TrendingUp } from 'lucide-react';
 
 const CashClosing = ({ onClose }) => {
-  const { cashSession, closeCash, cashMovements } = useCash();
+  const { cashSession, closeCash, cashMovements, calculateDeliveryExpenses } = useCash();
   const { tickets } = useTickets();
   const [finalCount, setFinalCount] = useState('');
   const [observations, setObservations] = useState('');
   const [showPaymentBreakdown, setShowPaymentBreakdown] = useState(true);
 
   const closeTime = new Date();
+
+  // ✅ Calcular egreso automático de domicilios
+  const deliveryExpenses = useMemo(() => {
+    return calculateDeliveryExpenses(tickets);
+  }, [tickets, cashSession, calculateDeliveryExpenses]);
 
   // ✅ PHASE 5: Calcular duración de sesión
   const sessionDuration = useMemo(() => {
@@ -22,10 +27,10 @@ const CashClosing = ({ onClose }) => {
     return { hours, minutes, totalMinutes: Math.floor(diffMs / (1000 * 60)) };
   }, [cashSession, closeTime]);
 
-  // ✅ Calcular egresos por tipo de pago
+  // ✅ Calcular egresos por tipo de pago (incluyendo domicilios automáticos)
   const expensesByPaymentType = useMemo(() => {
     const breakdown = {
-      efectivo: 0,
+      efectivo: deliveryExpenses, // ✅ Domicilios siempre en efectivo, comienzan aquí
       bancolombia: 0,
       nequi: 0,
     };
@@ -40,7 +45,7 @@ const CashClosing = ({ onClose }) => {
     });
 
     return breakdown;
-  }, [cashMovements]);
+  }, [cashMovements, deliveryExpenses]);
 
   const totalExpensesByType = Object.values(expensesByPaymentType).reduce((a, b) => a + b, 0);
   const paymentBreakdown = useMemo(() => {
@@ -243,11 +248,23 @@ const CashClosing = ({ onClose }) => {
               <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-3">📤 Egresos del Día</h3>
               <div className="space-y-2">
                 {expensesByPaymentType.efectivo > 0 && (
-                  <div className="flex justify-between items-center py-2 border-b border-red-200 dark:border-red-800">
-                    <span className="text-gray-700 dark:text-gray-300">💵 Efectivo</span>
-                    <span className="font-bold text-red-600 dark:text-red-400">
-                      -${expensesByPaymentType.efectivo.toLocaleString()}
-                    </span>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center py-2 border-b border-red-200 dark:border-red-800">
+                      <span className="text-gray-700 dark:text-gray-300">💵 Efectivo</span>
+                      <span className="font-bold text-red-600 dark:text-red-400">
+                        -${expensesByPaymentType.efectivo.toLocaleString()}
+                      </span>
+                    </div>
+                    {deliveryExpenses > 0 && (
+                      <div className="ml-4 text-xs text-gray-600 dark:text-gray-400 py-1">
+                        🚗 Domicilios: -${deliveryExpenses.toLocaleString()}
+                      </div>
+                    )}
+                    {(expensesByPaymentType.efectivo - deliveryExpenses) > 0 && (
+                      <div className="ml-4 text-xs text-gray-600 dark:text-gray-400 py-1">
+                        📝 Otros: -${(expensesByPaymentType.efectivo - deliveryExpenses).toLocaleString()}
+                      </div>
+                    )}
                   </div>
                 )}
                 {expensesByPaymentType.bancolombia > 0 && (

@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useCash } from '../context/CashContext';
+import { useTickets } from '../context/TicketContext';
 import { DollarSign, MinusCircle, Lock, TrendingUp } from 'lucide-react';
 import { formatCurrency } from '../utils/formatters';
 import CashOpening from '../components/cash/CashOpening';
@@ -9,7 +10,8 @@ import CashClosingTicket from '../components/cash/CashClosingTicket';
 import CashHistory from './CashHistory';
 
 const Cash = () => {
-  const { isCashOpen, cashSession, getCashSummary, getTodayExpenses, cashMovements, closeCash } = useCash();
+  const { isCashOpen, cashSession, getCashSummary, getTodayExpenses, cashMovements, closeCash, calculateDeliveryExpenses } = useCash();
+  const { tickets } = useTickets();
   const [showOpening, setShowOpening] = useState(false);
   const [showExpenses, setShowExpenses] = useState(false);
   const [showClosing, setShowClosing] = useState(false);
@@ -19,6 +21,11 @@ const Cash = () => {
 
   const summary = getCashSummary();
   const todayExpenses = getTodayExpenses();
+  
+  // ✅ Calcular automáticos de domicilios
+  const deliveryExpenses = useMemo(() => {
+    return calculateDeliveryExpenses(tickets);
+  }, [tickets, calculateDeliveryExpenses]);
 
   // Escuchar evento de cierre de caja
   useEffect(() => {
@@ -146,7 +153,10 @@ const Cash = () => {
                       <span className="text-sm text-red-600 dark:text-red-400">Egresos</span>
                     </div>
                     <p className="text-3xl font-bold text-red-800 dark:text-red-300">
-                      {formatCurrency(summary?.expenses || 0)}
+                      {formatCurrency((summary?.expenses || 0) + deliveryExpenses)}
+                    </p>
+                    <p className="text-xs text-red-600 dark:text-red-400 mt-2">
+                      🚗 Domicilios: {formatCurrency(deliveryExpenses)}
                     </p>
                   </div>
                   
