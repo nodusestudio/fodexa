@@ -12,7 +12,8 @@ const Ledger = () => {
     const today = new Date();
     return today.toISOString().split('T')[0];
   });
-  const [expandedView, setExpandedView] = useState('week'); // 'week', 'month', or 'daily'
+  const [expandedView, setExpandedView] = useState('mayor'); // 'mayor' or 'daily'
+  const [mayorFilterType, setMayorFilterType] = useState('week'); // 'day', 'week', 'month', 'year'
 
   // Generar todas las sesiones con datos de ejemplo si no hay datos reales
   const allSessions = useMemo(() => {
@@ -66,6 +67,41 @@ const Ledger = () => {
     return sessionHistory;
   }, [sessionHistory]);
 
+  // Calcular rango de fechas para Libro Mayor según el filtro seleccionado
+  const mayorDateRange = useMemo(() => {
+    const end = new Date();
+    const start = new Date();
+    
+    switch (mayorFilterType) {
+      case 'day':
+        // Un solo día
+        start.setHours(0, 0, 0, 0);
+        end.setHours(23, 59, 59, 999);
+        break;
+      case 'week':
+        // Últimos 7 días
+        start.setDate(end.getDate() - 6);
+        break;
+      case 'month':
+        // Mes actual
+        start.setDate(1);
+        start.setHours(0, 0, 0, 0);
+        end.setHours(23, 59, 59, 999);
+        break;
+      case 'year':
+        // Año actual
+        start.setMonth(0);
+        start.setDate(1);
+        start.setHours(0, 0, 0, 0);
+        end.setHours(23, 59, 59, 999);
+        break;
+      default:
+        start.setDate(start.getDate() - 6);
+    }
+    
+    return { start, end };
+  }, [mayorFilterType]);
+
   // Calcular rango de fechas para vista semanal (últimos 7 días)
   const weekDateRange = useMemo(() => {
     const end = new Date();
@@ -93,10 +129,8 @@ const Ledger = () => {
   // Filtrar sesiones según la vista
   const filteredSessions = useMemo(() => {
     let dateRange;
-    if (expandedView === 'week') {
-      dateRange = weekDateRange;
-    } else if (expandedView === 'month') {
-      dateRange = monthDateRange;
+    if (expandedView === 'mayor') {
+      dateRange = mayorDateRange;
     } else if (expandedView === 'daily') {
       dateRange = dailyDateRange;
     }
@@ -105,7 +139,7 @@ const Ledger = () => {
       const closeDate = new Date(session.closeDate);
       return closeDate >= dateRange.start && closeDate <= dateRange.end;
     });
-  }, [allSessions, expandedView, weekDateRange, monthDateRange, dailyDateRange]);
+  }, [allSessions, expandedView, mayorDateRange, dailyDateRange]);
 
   // Agrupar sesiones por semanas de 7 días
   const sessionsByWeeks = useMemo(() => {
@@ -193,10 +227,10 @@ const Ledger = () => {
           <div>
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
               <FileText size={36} className="text-blue-600 dark:text-blue-400" />
-              Libro Contable
+              Libro Mayor
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
-              Resumen de ingresos, egresos y estado de caja
+              Estado detallado de caja por día
             </p>
           </div>
           {/* Saldo Total - Compacto en Header */}
@@ -204,7 +238,11 @@ const Ledger = () => {
             <p className="text-blue-100 text-xs font-medium mb-1">💰 Saldo Total</p>
             <h2 className="text-3xl md:text-4xl font-bold">${summary.balance.toLocaleString('es-CO')}</h2>
             <p className="text-blue-100 text-xs mt-1">
-              {expandedView === 'week' ? 'Últimos 7 días' : `${new Date(selectedMonth + '-01').toLocaleDateString('es-CO', { month: 'long', year: 'numeric' })}`}
+              {expandedView === 'mayor' && mayorFilterType === 'day' && 'Hoy'}
+              {expandedView === 'mayor' && mayorFilterType === 'week' && 'Esta semana'}
+              {expandedView === 'mayor' && mayorFilterType === 'month' && 'Este mes'}
+              {expandedView === 'mayor' && mayorFilterType === 'year' && 'Este año'}
+              {expandedView === 'daily' && 'Hoy'}
             </p>
           </div>
         </div>
@@ -212,24 +250,14 @@ const Ledger = () => {
         {/* Vista Tabs */}
         <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-gray-700">
           <button
-            onClick={() => setExpandedView('week')}
+            onClick={() => setExpandedView('mayor')}
             className={`px-4 py-3 font-medium border-b-2 transition-colors ${
-              expandedView === 'week'
+              expandedView === 'mayor'
                 ? 'border-blue-600 text-blue-600 dark:text-blue-400'
                 : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
             }`}
           >
-            📅 Última Semana
-          </button>
-          <button
-            onClick={() => setExpandedView('month')}
-            className={`px-4 py-3 font-medium border-b-2 transition-colors ${
-              expandedView === 'month'
-                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-            }`}
-          >
-            📆 Mes Completo
+            📊 Libro Mayor
           </button>
           <button
             onClick={() => setExpandedView('daily')}
@@ -243,24 +271,49 @@ const Ledger = () => {
           </button>
         </div>
 
-        {/* Mes Selector - Solo visible en vista mensual */}
-        {expandedView === 'month' && (
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-2">
-              <Calendar size={18} className="text-gray-600 dark:text-gray-400" />
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Seleccionar Mes</label>
-            </div>
-            <select
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              className="w-full md:w-64 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-medium"
+        {/* Selector de Rango para Libro Mayor */}
+        {expandedView === 'mayor' && (
+          <div className="mb-6 flex flex-wrap gap-2">
+            <button
+              onClick={() => setMayorFilterType('day')}
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+                mayorFilterType === 'day'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600'
+              }`}
             >
-              {availableMonths.map(month => (
-                <option key={month.value} value={month.value}>
-                  {month.label}
-                </option>
-              ))}
-            </select>
+              Día
+            </button>
+            <button
+              onClick={() => setMayorFilterType('week')}
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+                mayorFilterType === 'week'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600'
+              }`}
+            >
+              Semana
+            </button>
+            <button
+              onClick={() => setMayorFilterType('month')}
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+                mayorFilterType === 'month'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600'
+              }`}
+            >
+              Mes
+            </button>
+            <button
+              onClick={() => setMayorFilterType('year')}
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+                mayorFilterType === 'year'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600'
+              }`}
+            >
+              Año
+            </button>
           </div>
         )}
 
@@ -393,7 +446,7 @@ const Ledger = () => {
         ))}
 
         {/* Detalle de Sesiones - Tabla de Cierres de Caja */}
-        {(expandedView === 'week' || expandedView === 'month') && (
+        {expandedView === 'mayor' && (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div className="p-4 border-b border-gray-200 dark:border-gray-700">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white">📋 Cierres de Caja Diarios</h3>
