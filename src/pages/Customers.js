@@ -10,6 +10,7 @@ const Customers = () => {
   const { customers, searchCustomers, deleteCustomer, exportCustomers, getCustomerStats, addCustomer, updateCustomer } = useCustomers();
   const { tickets } = useTickets();
   
+  const [selectedTab, setSelectedTab] = useState('listado');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterClassification, setFilterClassification] = useState('all');
   const [showForm, setShowForm] = useState(false);
@@ -99,7 +100,7 @@ const Customers = () => {
     <div className="h-full flex flex-col bg-gray-50 dark:bg-gray-900">
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-3 sm:px-6 py-3 sm:py-4">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-4">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-4 mb-4">
           <div>
             <h1 className="text-lg sm:text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-1 sm:gap-2">
               <Users size={24} className="text-blue-600 dark:text-blue-400 flex-shrink-0" />
@@ -133,9 +134,36 @@ const Customers = () => {
             </button>
           </div>
         </div>
+
+        {/* Pestañas */}
+        <div className="flex gap-1 sm:gap-2 border-b border-gray-300 dark:border-gray-700">
+          <button
+            onClick={() => setSelectedTab('listado')}
+            className={`px-3 sm:px-4 py-2 font-semibold transition-colors border-b-2 text-xs sm:text-sm whitespace-nowrap ${
+              selectedTab === 'listado'
+                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+            }`}
+          >
+            Listado
+          </button>
+          <button
+            onClick={() => setSelectedTab('reportes')}
+            className={`px-3 sm:px-4 py-2 font-semibold transition-colors border-b-2 text-xs sm:text-sm whitespace-nowrap ${
+              selectedTab === 'reportes'
+                ? 'border-purple-600 text-purple-600 dark:text-purple-400'
+                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+            }`}
+          >
+            Reportes
+          </button>
+        </div>
       </div>
 
-      {/* Filtros y Búsqueda */}
+      {/* Contenido según pestaña */}
+      {selectedTab === 'listado' ? (
+        <>
+          {/* Filtros y Búsqueda */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-3 sm:px-6 py-3 sm:py-4">
         <div className="flex flex-col gap-2 sm:gap-4">
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
@@ -337,6 +365,61 @@ const Customers = () => {
             </div>
           </div>
         </div>
+      )}
+        </>
+      ) : (
+        <>
+          {/* Reportes de Clientes */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 space-y-6">
+            {/* Estadísticas generales */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-blue-50 dark:bg-blue-900 dark:bg-opacity-20 rounded-lg p-4">
+                <p className="text-sm text-blue-600 dark:text-blue-400 font-semibold">Total Clientes</p>
+                <p className="text-3xl font-bold text-blue-800 dark:text-blue-300 mt-2">{totalCustomers}</p>
+              </div>
+              <div className="bg-purple-50 dark:bg-purple-900 dark:bg-opacity-20 rounded-lg p-4">
+                <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold">👑 VIP</p>
+                <p className="text-3xl font-bold text-purple-800 dark:text-purple-300 mt-2">{vipCustomers}</p>
+              </div>
+              <div className="bg-green-50 dark:bg-green-900 dark:bg-opacity-20 rounded-lg p-4">
+                <p className="text-sm text-green-600 dark:text-green-400 font-semibold">⭐ Frecuentes</p>
+                <p className="text-3xl font-bold text-green-800 dark:text-green-300 mt-2">{frequentCustomers}</p>
+              </div>
+              <div className="bg-orange-50 dark:bg-orange-900 dark:bg-opacity-20 rounded-lg p-4">
+                <p className="text-sm text-orange-600 dark:text-orange-400 font-semibold">Ingresos Totales</p>
+                <p className="text-3xl font-bold text-orange-800 dark:text-orange-300 mt-2">${totalRevenue.toLocaleString('es-CO')}</p>
+              </div>
+            </div>
+
+            {/* Clasificación de clientes */}
+            <div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">Clasificación de Clientes</h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">👑</span>
+                    <span className="font-semibold text-gray-700 dark:text-gray-300">VIP</span>
+                  </div>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">{vipCustomers} clientes</span>
+                </div>
+                <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">⭐</span>
+                    <span className="font-semibold text-gray-700 dark:text-gray-300">Frecuentes</span>
+                  </div>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">{frequentCustomers} clientes</span>
+                </div>
+                <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">👤</span>
+                    <span className="font-semibold text-gray-700 dark:text-gray-300">Ocasionales</span>
+                  </div>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">{totalCustomers - vipCustomers - frequentCustomers} clientes</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
       )}
 
       {/* Modales */}

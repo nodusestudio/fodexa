@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { ShoppingCart, LayoutDashboard, FileText, Settings, DollarSign, Users, X, ChevronDown, Truck } from 'lucide-react';
+import { ShoppingCart, LayoutDashboard, FileText, Settings, DollarSign, Users, X, Truck } from 'lucide-react';
 
 const navItems = [
   { to: '/', icon: ShoppingCart, label: 'Punto de Venta' },
@@ -9,20 +9,14 @@ const navItems = [
   { to: 'reports', icon: FileText, label: 'Reportes' },
   { to: 'ledger', icon: FileText, label: 'Libro Contable' },
   { to: 'tickets', icon: FileText, label: 'Tickets' },
+  { to: 'cash', icon: DollarSign, label: 'Caja' },
+  { to: 'customers', icon: Users, label: 'Clientes' },
+  { to: 'articles', icon: null, label: 'Artículos', customIcon: true },
 ];
 
 function Sidebar({ onClose }) {
-  const [openSubmenus, setOpenSubmenus] = useState({});
-
   const handleNavClick = () => {
     onClose();
-  };
-
-  const toggleSubmenu = (id) => {
-    setOpenSubmenus(prev => ({
-      ...prev,
-      [id]: !prev[id]
-    }));
   };
 
   return (
@@ -37,7 +31,7 @@ function Sidebar({ onClose }) {
         </button>
       </div>
       <nav className="flex-1 py-4 overflow-y-auto">
-        {navItems.map(({ to, icon: Icon, label }) => (
+        {navItems.map(({ to, icon: Icon, label, customIcon }) => (
           <NavLink
             key={to}
             to={to}
@@ -49,163 +43,16 @@ function Sidebar({ onClose }) {
               }`
             }
           >
-            <Icon className="w-5 h-5" />
-            {label}
-          </NavLink>
-        ))}
-
-        {/* Caja - Con Submenú */}
-        <div className="px-3 py-2">
-          <button
-            onClick={() => toggleSubmenu('cash-submenu')}
-            className="flex items-center justify-between w-full px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-700 dark:hover:bg-gray-700 rounded-lg transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <DollarSign className="w-5 h-5" />
-              <span className="font-medium">Caja</span>
-            </div>
-            <ChevronDown 
-              className={`w-4 h-4 transform transition-transform ${openSubmenus['cash-submenu'] ? 'rotate-180' : ''}`}
-            />
-          </button>
-          {openSubmenus['cash-submenu'] && (
-            <div className="mt-1 ml-4 space-y-1">
-              <NavLink
-                to="/cash"
-                onClick={handleNavClick}
-                className={({ isActive }) =>
-                  `block px-3 py-2 text-sm rounded-lg transition-colors ${
-                    isActive
-                      ? 'bg-primary-600 text-white font-semibold'
-                      : 'text-gray-400 hover:text-white hover:bg-gray-700 dark:hover:bg-gray-700'
-                  }`
-                }
-              >
-                📊 Caja Actual
-              </NavLink>
-              <NavLink
-                to="/cash/history"
-                onClick={handleNavClick}
-                className={({ isActive }) =>
-                  `block px-3 py-2 text-sm rounded-lg transition-colors ${
-                    isActive
-                      ? 'bg-primary-600 text-white font-semibold'
-                      : 'text-gray-400 hover:text-white hover:bg-gray-700 dark:hover:bg-gray-700'
-                  }`
-                }
-              >
-                📋 Historial
-              </NavLink>
-            </div>
-          )}
-        </div>
-
-        {/* Clientes - Con Submenú */}
-        <div className="px-3 py-2">
-          <button
-            onClick={() => toggleSubmenu('customers-submenu')}
-            className="flex items-center justify-between w-full px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-700 dark:hover:bg-gray-700 rounded-lg transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <Users className="w-5 h-5" />
-              <span className="font-medium">Clientes</span>
-            </div>
-            <ChevronDown 
-              className={`w-4 h-4 transform transition-transform ${openSubmenus['customers-submenu'] ? 'rotate-180' : ''}`}
-            />
-          </button>
-          {openSubmenus['customers-submenu'] && (
-            <div className="mt-1 ml-4 space-y-1">
-              <NavLink
-                to="/customers"
-                onClick={handleNavClick}
-                className={({ isActive }) =>
-                  `block px-3 py-2 text-sm rounded-lg transition-colors ${
-                    isActive
-                      ? 'bg-primary-600 text-white font-semibold'
-                      : 'text-gray-400 hover:text-white hover:bg-gray-700 dark:hover:bg-gray-700'
-                  }`
-                }
-              >
-                👥 Listado de Clientes
-              </NavLink>
-              <NavLink
-                to="/customers/reports"
-                onClick={handleNavClick}
-                className={({ isActive }) =>
-                  `block px-3 py-2 text-sm rounded-lg transition-colors ${
-                    isActive
-                      ? 'bg-primary-600 text-white font-semibold'
-                      : 'text-gray-400 hover:text-white hover:bg-gray-700 dark:hover:bg-gray-700'
-                  }`
-                }
-              >
-                📊 Reportes de Clientes
-              </NavLink>
-            </div>
-          )}
-        </div>
-
-        {/* Artículos - Con Submenú */}
-        <div className="px-3 py-2">
-          <button
-            onClick={() => toggleSubmenu('articles-submenu')}
-            className="flex items-center justify-between w-full px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-700 dark:hover:bg-gray-700 rounded-lg transition-colors"
-          >
-            <div className="flex items-center gap-3">
+            {customIcon ? (
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
               </svg>
-              <span className="font-medium">Artículos</span>
-            </div>
-            <ChevronDown 
-              className={`w-4 h-4 transform transition-transform ${openSubmenus['articles-submenu'] ? 'rotate-180' : ''}`}
-            />
-          </button>
-          {openSubmenus['articles-submenu'] && (
-            <div className="mt-1 ml-4 space-y-1">
-              <NavLink
-                to="/articles/products"
-                onClick={handleNavClick}
-                className={({ isActive }) =>
-                  `block px-3 py-2 text-sm rounded-lg transition-colors ${
-                    isActive
-                      ? 'bg-primary-600 text-white font-semibold'
-                      : 'text-gray-400 hover:text-white hover:bg-gray-700 dark:hover:bg-gray-700'
-                  }`
-                }
-              >
-                📦 Productos
-              </NavLink>
-              <NavLink
-                to="/articles/categories"
-                onClick={handleNavClick}
-                className={({ isActive }) =>
-                  `block px-3 py-2 text-sm rounded-lg transition-colors ${
-                    isActive
-                      ? 'bg-primary-600 text-white font-semibold'
-                      : 'text-gray-400 hover:text-white hover:bg-gray-700 dark:hover:bg-gray-700'
-                  }`
-                }
-              >
-                📂 Categorías
-              </NavLink>
-              <NavLink
-                to="/articles/addons"
-                onClick={handleNavClick}
-                className={({ isActive }) =>
-                  `block px-3 py-2 text-sm rounded-lg transition-colors ${
-                    isActive
-                      ? 'bg-primary-600 text-white font-semibold'
-                      : 'text-gray-400 hover:text-white hover:bg-gray-700 dark:hover:bg-gray-700'
-                  }`
-                }
-              >
-                🎁 Adicionales
-              </NavLink>
-            </div>
-          )}
-        </div>
+            ) : (
+              Icon && <Icon className="w-5 h-5" />
+            )}
+            {label}
+          </NavLink>
+        ))}
       </nav>
       <div className="p-4 border-t border-gray-800 dark:border-gray-900">
         <NavLink
