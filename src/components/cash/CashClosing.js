@@ -38,7 +38,7 @@ const CashClosing = ({ onClose }) => {
     // Incluir todos los movimientos de gasto, incluyendo domicilios ya registrados
     cashMovements.forEach(movement => {
       if (movement.type === 'expense') {
-        const paymentType = movement.metadata?.paymentType || 'efectivo';
+        const paymentType = movement.paymentType || 'efectivo';
         if (breakdown.hasOwnProperty(paymentType)) {
           breakdown[paymentType] += movement.amount;
         }

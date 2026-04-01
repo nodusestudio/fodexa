@@ -332,11 +332,12 @@ export const CashProvider = ({ children }) => {
     const totalDeliveryAmount = deliveryTickets.reduce((sum, t) => sum + (t.deliveryCost || 0), 0);
 
     // Buscar el movimiento acumulativo de domicilios (el que iniciamos en openCash)
+    // Nota: los metadatos se esparcen directamente en el objeto movement, no en una propiedad metadata
     const deliveryMovementIndex = cashMovements.findIndex(
       m => m.type === 'expense' && 
-           m.metadata?.isAccumulative && 
-           m.metadata?.category === 'Domicilios' &&
-           m.metadata?.sessionId === cashSession.id
+           m.isAccumulative === true && 
+           m.category === 'Domicilios' &&
+           m.sessionId === cashSession.id
     );
 
     if (deliveryMovementIndex !== -1) {
