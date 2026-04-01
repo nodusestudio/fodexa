@@ -19,6 +19,20 @@ export const CashProvider = ({ children }) => {
   const calculateDeliveryExpenses = (tickets) => {
     if (!cashSession || !tickets) return 0;
     
+    // Obtener gastos de domicilios del cashMovements (ya registrados)
+    const deliveryMovements = cashMovements.filter(m => 
+      m.type === 'expense' && 
+      m.metadata?.category === 'Domicilios'
+    );
+
+    const totalFromMovements = deliveryMovements.reduce((sum, m) => sum + m.amount, 0);
+    
+    // Si los movimientos ya están registrados, los usamos
+    if (totalFromMovements > 0) {
+      return totalFromMovements;
+    }
+
+    // Si no hay movimientos registrados, calculamos del total de domicilios
     const deliveryTickets = tickets.filter(ticket => {
       const ticketDate = new Date(ticket.createdAt);
       const sessionStart = new Date(cashSession.openDate);
@@ -283,6 +297,48 @@ export const CashProvider = ({ children }) => {
     return movement;
   };
 
+  // ✅ Registrar gastos automáticos de domicilios entregados
+  const registerDeliveryExpenses = (tickets) => {
+    if (!cashSession || !tickets) return;
+
+    // Obtener domicilios completados desde la última sesión
+    const deliveryTickets = tickets.filter(ticket => {
+      const ticketDate = new Date(ticket.createdAt);
+      const sessionStart = new Date(cashSession.openDate);
+      return (
+        ticket.orderType === 'delivery' &&
+        ticket.deliveryStatus === 'delivered' &&
+        ticket.status === 'completed' &&
+        ticketDate >= sessionStart &&
+        ticket.deliveryCost > 0
+      );
+    });
+
+    // Verificar cuáles ya están registrados (evitar duplicados)
+    const existingDeliveryExpenses = cashMovements.filter(m => 
+      m.type === 'expense' && 
+      m.description && 
+      m.description.includes('Domicilio -')
+    );
+
+    // Registrar solo los nuevos domicilios
+    deliveryTickets.forEach(ticket => {
+      const alreadyExists = existingDeliveryExpenses.some(exp => 
+        exp.description.includes(`Domicilio - ${ticket.id}`)
+      );
+
+      if (!alreadyExists && ticket.deliveryCost > 0) {
+        addMovement(
+          'expense',
+          ticket.deliveryCost,
+          `Domicilio - ${ticket.id} (${ticket.customer?.name || 'Cliente'})`,
+          { paymentType: 'efectivo', category: 'Domicilios' }
+        );
+        console.log(`✅ Egreso de domicilio registrado: $${ticket.deliveryCost}`);
+      }
+    });
+  };
+
   // Calcular monto esperado en caja
   const calculateExpectedAmount = () => {
     if (!cashSession) return 0;
@@ -375,6 +431,7 @@ export const CashProvider = ({ children }) => {
     closeCash,
     addExpense,
     addMovement,
+    registerDeliveryExpenses,
     calculateExpectedAmount,
     calculateDeliveryExpenses,
     getCashSummary,

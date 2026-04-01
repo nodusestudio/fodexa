@@ -30,11 +30,12 @@ const CashClosing = ({ onClose }) => {
   // ✅ Calcular egresos por tipo de pago (incluyendo domicilios automáticos)
   const expensesByPaymentType = useMemo(() => {
     const breakdown = {
-      efectivo: deliveryExpenses, // ✅ Domicilios siempre en efectivo, comienzan aquí
+      efectivo: 0,
       bancolombia: 0,
       nequi: 0,
     };
 
+    // Incluir todos los movimientos de gasto, incluyendo domicilios ya registrados
     cashMovements.forEach(movement => {
       if (movement.type === 'expense') {
         const paymentType = movement.metadata?.paymentType || 'efectivo';
@@ -45,7 +46,7 @@ const CashClosing = ({ onClose }) => {
     });
 
     return breakdown;
-  }, [cashMovements, deliveryExpenses]);
+  }, [cashMovements]);
 
   const totalExpensesByType = Object.values(expensesByPaymentType).reduce((a, b) => a + b, 0);
   const paymentBreakdown = useMemo(() => {
@@ -255,16 +256,21 @@ const CashClosing = ({ onClose }) => {
                         -${expensesByPaymentType.efectivo.toLocaleString()}
                       </span>
                     </div>
-                    {deliveryExpenses > 0 && (
-                      <div className="ml-4 text-xs text-gray-600 dark:text-gray-400 py-1">
-                        🚗 Domicilios: -${deliveryExpenses.toLocaleString()}
+                    {/* Desglose de domicilios registrados */}
+                    {cashMovements.filter(m => m.type === 'expense' && m.metadata?.category === 'Domicilios').map((movement, idx) => (
+                      <div key={idx} className="ml-4 text-xs text-gray-600 dark:text-gray-400 py-1 border-l border-red-200 pl-2">
+                        🚗 {movement.description}: -${movement.amount.toLocaleString()}
                       </div>
-                    )}
-                    {(expensesByPaymentType.efectivo - deliveryExpenses) > 0 && (
-                      <div className="ml-4 text-xs text-gray-600 dark:text-gray-400 py-1">
-                        📝 Otros: -${(expensesByPaymentType.efectivo - deliveryExpenses).toLocaleString()}
-                      </div>
-                    )}
+                    ))}
+                    {/* Otros egresos en efectivo */}
+                    {cashMovements
+                      .filter(m => m.type === 'expense' && m.metadata?.paymentType !== 'bancolombia' && m.metadata?.paymentType !== 'nequi' && m.metadata?.category !== 'Domicilios')
+                      .map((movement, idx) => (
+                        <div key={idx} className="ml-4 text-xs text-gray-600 dark:text-gray-400 py-1 border-l border-red-200 pl-2">
+                          📝 {movement.description}: -${movement.amount.toLocaleString()}
+                        </div>
+                      ))
+                    }
                   </div>
                 )}
                 {expensesByPaymentType.bancolombia > 0 && (

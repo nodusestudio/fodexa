@@ -10,7 +10,7 @@ import CashClosingTicket from '../components/cash/CashClosingTicket';
 import CashHistory from './CashHistory';
 
 const Cash = () => {
-  const { isCashOpen, cashSession, getCashSummary, getTodayExpenses, cashMovements, closeCash, calculateDeliveryExpenses } = useCash();
+  const { isCashOpen, cashSession, getCashSummary, getTodayExpenses, cashMovements, closeCash, calculateDeliveryExpenses, registerDeliveryExpenses } = useCash();
   const { tickets } = useTickets();
   const [showOpening, setShowOpening] = useState(false);
   const [showExpenses, setShowExpenses] = useState(false);
@@ -26,6 +26,13 @@ const Cash = () => {
   const deliveryExpenses = useMemo(() => {
     return calculateDeliveryExpenses(tickets);
   }, [tickets, calculateDeliveryExpenses]);
+
+  // ✅ Registrar automáticamente los egresos de domicilios completados
+  useEffect(() => {
+    if (isCashOpen && tickets && tickets.length > 0) {
+      registerDeliveryExpenses(tickets);
+    }
+  }, [tickets, isCashOpen, registerDeliveryExpenses]);
 
   // Escuchar evento de cierre de caja
   useEffect(() => {
