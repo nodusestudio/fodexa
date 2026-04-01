@@ -266,58 +266,7 @@ const Ledger = () => {
 
 
 
-        {/* Métricas - Compactas */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-          {/* Ventas */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between mb-1">
-              <p className="text-gray-600 dark:text-gray-400 text-xs font-medium">📈 Ventas</p>
-              <TrendingUp size={16} className="text-green-600 dark:text-green-400" />
-            </div>
-            <h3 className="text-2xl font-bold text-green-600 dark:text-green-400">
-              ${summary.totalSales.toLocaleString('es-CO')}
-            </h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              {summary.sessionCount} {summary.sessionCount === 1 ? 'sesión' : 'sesiones'}
-            </p>
-          </div>
 
-          {/* Egresos */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between mb-1">
-              <p className="text-gray-600 dark:text-gray-400 text-xs font-medium">📤 Egresos</p>
-              <Filter size={16} className="text-orange-600 dark:text-orange-400" />
-            </div>
-            <h3 className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-              -${summary.totalExpenses.toLocaleString('es-CO')}
-            </h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              {(summary.totalExpenses / summary.totalSales * 100).toFixed(1)}% de ventas
-            </p>
-          </div>
-
-          {/* Diferencia */}
-          <div className={`rounded-lg p-4 shadow-sm border ${
-            summary.totalDifference >= 0
-              ? 'bg-green-50 dark:bg-green-900 dark:bg-opacity-20 border-green-200 dark:border-green-800'
-              : 'bg-red-50 dark:bg-red-900 dark:bg-opacity-20 border-red-200 dark:border-red-800'
-          }`}>
-            <p className={`text-xs font-medium mb-1 ${
-              summary.totalDifference >= 0
-                ? 'text-green-700 dark:text-green-300'
-                : 'text-red-700 dark:text-red-300'
-            }`}>
-              {summary.totalDifference >= 0 ? '✅ Diferencia' : '⚠️ Faltante'}
-            </p>
-            <h3 className={`text-2xl font-bold ${
-              summary.totalDifference >= 0
-                ? 'text-green-600 dark:text-green-400'
-                : 'text-red-600 dark:text-red-400'
-            }`}>
-              {summary.totalDifference >= 0 ? '+' : ''}${summary.totalDifference.toLocaleString('es-CO')}
-            </h3>
-          </div>
-        </div>
 
 
 
