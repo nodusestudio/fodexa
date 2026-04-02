@@ -205,33 +205,65 @@ export const SettingsProvider = ({ children }) => {
     if (!user) return false;
 
     try {
-      console.log('🗑️ INICIANDO RESETEO AGRESIVO...');
+      console.log('🗑️ INICIANDO RESETEO NUCLEAR TOTAL...');
       
-      // 1️⃣ LIMPIAR localStorage completamente
+      // 1️⃣ LIMPIAR localStorage COMPLETAMENTE - TODO TODO TODO
       console.log('🧹 Limpiando localStorage...');
-      const keysToRemove = Object.keys(localStorage).filter(key => 
-        key.includes(user.uid) || 
-        key.includes('order') || 
-        key.includes('cart') || 
-        key.includes('cash') ||
-        key.includes('ticket')
-      );
-      keysToRemove.forEach(key => {
-        localStorage.removeItem(key);
-        console.log(`  ✓ Removed: ${key}`);
+      const keysToCheck = Object.keys(localStorage);
+      let localStorageCleared = 0;
+      keysToCheck.forEach(key => {
+        // Remover CUALQUIER cosa que pueda tener datos
+        const shouldRemove = key.includes(user.uid) || 
+                            key.includes('order') || 
+                            key.includes('cart') || 
+                            key.includes('cash') ||
+                            key.includes('cashSession') ||
+                            key.includes('ticket') ||
+                            key.includes('delivery') ||
+                            key.includes('ledger') ||
+                            key.includes('report') ||
+                            key.includes('domain') ||
+                            key.includes('fodexa');
+        
+        if (shouldRemove) {
+          localStorage.removeItem(key);
+          console.log(`  ✓ localStorage removed: ${key}`);
+          localStorageCleared++;
+        }
       });
+      console.log(`✅ localStorage: ${localStorageCleared} keys eliminadas`);
 
-      // 2️⃣ COLECCIONES A ELIMINAR (expandida)
+      // 2️⃣ LIMPIAR sessionStorage COMPLETAMENTE
+      console.log('🧹 Limpiando sessionStorage...');
+      sessionStorage.clear();
+      console.log('✅ sessionStorage: limpiado');
+
+      // 3️⃣ LIMPIAR IndexedDB
+      console.log('🧹 Limpiando IndexedDB...');
+      if (window.indexedDB) {
+        try {
+          ['fodexa', 'firebase', 'orders', 'tickets', 'cash', 'cashSessions'].forEach(dbName => {
+            try {
+              indexedDB.deleteDatabase(dbName);
+              console.log(`  ✓ Deleted IndexedDB: ${dbName}`);
+            } catch (err) {}
+          });
+        } catch (err) {
+          console.warn('IndexedDB cleanup: ', err.message);
+        }
+      }
+
+      // 4️⃣ COLECCIONES A ELIMINAR EN FIRESTORE
       const collectionsToReset = [
         'orders',        // Órdenes activas
         'tickets',       // Órdenes completadas
         'cash',          // Gastos/movimientos de caja
-        'cashSessions',  // Sesiones de caja (LIBRO CONTABLE)
+        'cashSessions',  // Sesiones de caja (LIBRO CONTABLE) ← CRÍTICO
         'ledger',        // Reportes contables
         'reports',       // Reportes generados
       ];
 
-      // 3️⃣ Función auxiliar mejorada - ELIMINA RECURSIVAMENTE todo
+      // 5️⃣ Función auxiliar mejorada - ELIMINA RECURSIVAMENTE todo
       const deleteCollection = async (collectionPath) => {
         try {
           const collRef = collection(db, collectionPath);
@@ -276,50 +308,49 @@ export const SettingsProvider = ({ children }) => {
         }
       };
 
-      // 4️⃣ Eliminar colecciones SECUENCIALMENTE
+      // 6️⃣ Eliminar colecciones SECUENCIALMENTE
       let totalDeleted = 0;
       for (const collectionName of collectionsToReset) {
         const collPath = `users/${user.uid}/${collectionName}`;
         console.log(`\n🔄 Procesando ${collectionName}...`);
         totalDeleted += await deleteCollection(collPath);
-        // Pequeño delay entre colecciones
+        // Delay entre colecciones
         await new Promise(resolve => setTimeout(resolve, 200));
       }
 
-      // 5️⃣ GARANTÍA EXTRA: Verificar que cashSessions (Libro Contable) está COMPLETAMENTE VACÍO
+      // 7️⃣ GARANTÍA EXTRA: Verificar que cashSessions (Libro Contable) está COMPLETAMENTE VACÍO
       console.log('\n🔐 VERIFICACIÓN FINAL DEL LIBRO CONTABLE...');
       const cashSessionsRef = collection(db, `users/${user.uid}/cashSessions`);
       const finalCheck = await getDocs(cashSessionsRef);
       if (finalCheck.size > 0) {
-        console.warn(`⚠️ ALERTA: Libro Contable aún tiene ${finalCheck.size} registros! Eliminando...`);
+        console.warn(`⚠️ ALERTA: Libro Contable aún tiene ${finalCheck.size} registros! ELIMINANDO...`);
         let extraDeleted = 0;
         for (const doc of finalCheck.docs) {
           await deleteDoc(doc.ref);
           extraDeleted++;
-          console.log(`  ✓ Eliminado: ${doc.id}`);
+          console.log(`  ✓ Forzado eliminar: ${doc.id}`);
         }
         totalDeleted += extraDeleted;
-        console.log(`✅ Libro Contable limpiado: ${extraDeleted} registros eliminados`);
+        console.log(`✅ Libro Contable limpiado: ${extraDeleted} registros eliminados en 2º intento`);
       } else {
-        console.log('✅ Libro Contable: 100% LIMPIO');
+        console.log('✅ Libro Contable: 100% LIMPIO ');
       }
 
-      console.log(`\n✅ TOTAL ELIMINADO: ${totalDeleted} documentos`);
-      console.log('⏳ Esperando 2 segundos antes de recargar...');
+      console.log(`\n✅ TOTAL ELIMINADO FIRESTORE: ${totalDeleted} documentos`);
+      console.log(`✅ TOTAL ELIMINADO localStorage: ${localStorageCleared} keys`);
+      console.log('⏳ Esperando 1 segundo antes de recargar...');
       
-      // 5️⃣ RECARGAR CON DELAY MAYOR
+      // 8️⃣ RECARGAR CON DELAY
       setTimeout(() => {
-        console.log('🔄 Recargando página...');
-        alert('✅ Sistema completamente limpio!\n\nClientes y artículos preservados\n\nRecargando en 3 segundos...');
-        setTimeout(() => {
-          window.location.href = window.location.href; // Reload completo
-        }, 3000);
-      }, 2000);
+        console.log('🔄 RECARGANDO PÁGINA COMPLETAMENTE...');
+        // Hard reload
+        window.location.href = window.location.href + '?nocache=' + Date.now();
+      }, 1000);
       
       return true;
     } catch (error) {
       console.error('❌ ERROR CRÍTICO:', error);
-      alert('❌ Error al resetear: ' + error.message + '\n\nRevisa la consola para detalles');
+      alert('❌ Error: ' + error.message + '\n\nRevisa consola (F12)');
       return false;
     }
   };
