@@ -349,9 +349,9 @@ const POS = () => {
           {showProducts && items && items.length > 0 && (
             <button
               onClick={() => setShowCartDrawer(true)}
-              className="fixed bottom-4 right-4 md:hidden z-40 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg font-bold text-base transition-all hover:scale-110 active:scale-95 flex-col gap-0.5"
+              className="fixed bottom-4 right-4 md:hidden z-40 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-full w-12 sm:w-14 h-12 sm:h-14 flex items-center justify-center shadow-lg font-bold text-xs sm:text-sm transition-all hover:scale-110 active:scale-95 flex-col gap-0.5"
             >
-              <ShoppingCart size={20} />
+              <ShoppingCart size={18} className="sm:w-5 sm:h-5" />
               <span className="text-xs">{items.length}</span>
             </button>
           )}
@@ -365,8 +365,8 @@ const POS = () => {
               />
               
               <div className="fixed inset-y-0 right-0 z-50 md:hidden w-full h-full flex flex-col bg-white dark:bg-gray-800 animate-in slide-in-from-right duration-300">
-                <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-                  <h2 className="text-lg font-bold text-gray-800 dark:text-white">Tu Orden</h2>
+                <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+                  <h2 className="text-base sm:text-lg font-bold text-gray-800 dark:text-white">Tu Orden</h2>
                   <button
                     onClick={() => setShowCartDrawer(false)}
                     className="p-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -409,36 +409,36 @@ const POS = () => {
 
       {/* Modal - Pregunta conteo de billetes */}
       {showOpenCashFlow && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-8 text-center space-y-6">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-4 sm:p-8 text-center space-y-4 sm:space-y-6">
             <div className="flex justify-center">
-              <div className="w-16 h-16 bg-green-100 dark:bg-green-900 dark:bg-opacity-30 rounded-full flex items-center justify-center">
-                <Check size={32} className="text-green-600 dark:text-green-400" />
+              <div className="w-14 sm:w-16 h-14 sm:h-16 bg-green-100 dark:bg-green-900 dark:bg-opacity-30 rounded-full flex items-center justify-center">
+                <Check size={28} className="sm:w-8 sm:h-8 text-green-600 dark:text-green-400" />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
+            <div className="space-y-1 sm:space-y-2">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white">
                 ✅ Caja Abierta
               </h2>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                 ¿Deseas hacer el conteo de billetes y monedas ahora?
               </p>
             </div>
 
-            <div className="flex flex-col gap-3 pt-4">
+            <div className="flex flex-col gap-2 sm:gap-3 pt-2 sm:pt-4">
               <button
                 onClick={() => {
                   setShowOpenCashFlow(false);
                   setShowFundModalFromPOS(true);
                 }}
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
+                className="px-4 sm:px-6 py-2 sm:py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors text-sm sm:text-base"
               >
                 Sí, Contar Ahora
               </button>
               <button
                 onClick={() => setShowOpenCashFlow(false)}
-                className="px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                className="px-4 sm:px-6 py-2 sm:py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm sm:text-base"
               >
                 No, Más Tarde
               </button>
@@ -467,28 +467,28 @@ const POS = () => {
 
       {/* ✅ PHASE 3: Modal - Caja no abierta */}
       {showNoCashModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-8 text-center space-y-6">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-4 sm:p-8 text-center space-y-4 sm:space-y-6">
             <div className="flex justify-center">
-              <div className="w-16 h-16 bg-orange-100 dark:bg-orange-900 dark:bg-opacity-30 rounded-full flex items-center justify-center">
-                <Lock size={32} className="text-orange-600 dark:text-orange-400" />
+              <div className="w-14 sm:w-16 h-14 sm:h-16 bg-orange-100 dark:bg-orange-900 dark:bg-opacity-30 rounded-full flex items-center justify-center">
+                <Lock size={28} className="sm:w-8 sm:h-8 text-orange-600 dark:text-orange-400" />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
+            <div className="space-y-1 sm:space-y-2">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white">
                 💰 Caja Cerrada
               </h2>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                 Debes abrir caja antes de crear órdenes
               </p>
             </div>
 
-            <div className="bg-orange-50 dark:bg-orange-900 dark:bg-opacity-20 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <AlertCircle size={20} className="text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0" />
+            <div className="bg-orange-50 dark:bg-orange-900 dark:bg-opacity-20 border border-orange-200 dark:border-orange-800 rounded-lg p-3 sm:p-4">
+              <div className="flex items-start gap-2 sm:gap-3">
+                <AlertCircle size={18} className="sm:w-5 sm:h-5 text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0" />
                 <div className="text-left">
-                  <p className="font-medium text-orange-900 dark:text-orange-300">
+                  <p className="font-medium text-orange-900 dark:text-orange-300 text-xs sm:text-sm">
                     {cashSession 
                       ? `Caja abierta: ${new Date(cashSession.openDate).toLocaleTimeString('es-CO')}`
                       : 'No hay sesión de caja activa. Accede a la sección de Caja para abrir.'}
@@ -497,20 +497,20 @@ const POS = () => {
               </div>
             </div>
 
-            <div className="flex flex-col gap-3 pt-4">
+            <div className="flex flex-col gap-2 sm:gap-3 pt-2 sm:pt-4">
               <button
                 onClick={() => {
                   setShowNoCashModal(false);
                   setShowOpenCashFlow(true);
                   openCash({ initialAmount: 0 });
                 }}
-                className="px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-lg transition-colors"
+                className="px-4 sm:px-6 py-2 sm:py-3 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-lg transition-colors text-sm sm:text-base"
               >
                 Abrir Caja Now
               </button>
               <button
                 onClick={() => setShowNoCashModal(false)}
-                className="px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                className="px-4 sm:px-6 py-2 sm:py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm sm:text-base"
               >
                 Cerrar
               </button>
