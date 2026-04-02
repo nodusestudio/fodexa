@@ -1,70 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { useCash } from '../context/CashContext';
-import { useAuth } from '../context/AuthContext';
-import { FileText, Calendar, TrendingUp, DollarSign, Filter, ChevronDown, Trash2 } from 'lucide-react';
-import { db } from '../config/firebase';
-import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { FileText, Calendar, TrendingUp, DollarSign, Filter, ChevronDown } from 'lucide-react';
 
 const Ledger = () => {
   const { sessionHistory } = useCash();
-  const { user } = useAuth();
-  const [isResetting, setIsResetting] = useState(false);
-  
-  // Función para resetear SOLO el Libro Contable
-  const handleResetLedger = async () => {
-    const confirmed = window.confirm(
-      '⚠️ ¿ESTÁS SEGURO?\n\n' +
-      'Se eliminará TODO el LIBRO CONTABLE\n' +
-      '✂️ Todas las sesiones de caja\n' +
-      '✂️ El saldo volverá a $0\n\n' +
-      '✅ Se preservarán: Órdenes, Tickets, Caja, Reportes\n\n' +
-      'Escribe "LIMPIAR LIBRO" para confirmar.'
-    );
-
-    if (!confirmed) return;
-
-    const secondConfirm = window.prompt(
-      'Escribe "LIMPIAR LIBRO" para confirmar definitivamente:'
-    );
-
-    if (secondConfirm !== 'LIMPIAR LIBRO') {
-      alert('❌ Operación cancelada');
-      return;
-    }
-
-    setIsResetting(true);
-    
-    try {
-      if (!user) throw new Error('Usuario no autenticado');
-      
-      console.log('🗑️ ELIMINANDO LIBRO CONTABLE...');
-      
-      // Obtener todas las sesiones de caja
-      const cashSessionsRef = collection(db, `users/${user.uid}/cashSessions`);
-      const querySnapshot = await getDocs(cashSessionsRef);
-      
-      console.log(`📊 Encontradas ${querySnapshot.docs.length} sesiones`);
-      
-      // Eliminar cada sesión
-      for (const docSnap of querySnapshot.docs) {
-        await deleteDoc(doc(db, `users/${user.uid}/cashSessions`, docSnap.id));
-        console.log(`  ✓ Eliminada sesión: ${docSnap.id}`);
-      }
-      
-      console.log('✅ LIBRO CONTABLE LIMPIO');
-      alert('✅ Libro Contable limpiado exitosamente\n\nEl saldo es ahora $0\n\nRecargando...');
-      
-      // Recargar la página
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
-      
-    } catch (error) {
-      console.error('❌ Error:', error);
-      alert('❌ Error al limpiar:\n' + error.message);
-      setIsResetting(false);
-    }
-  };
   
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const today = new Date();
@@ -287,15 +226,6 @@ const Ledger = () => {
                 {expandedView === 'daily' && 'Hoy'}
               </p>
             </div>
-            {/* Botón de Reset */}
-            <button
-              onClick={handleResetLedger}
-              disabled={isResetting}
-              className="px-3 sm:px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white rounded-lg font-semibold text-xs sm:text-sm transition-colors flex items-center justify-center gap-1.5 sm:gap-2"
-            >
-              {isResetting && <span className="animate-spin">⏳</span>}
-              {isResetting ? 'Limpiando Libro...' : '🗑️ Limpiar Libro'}
-            </button>
           </div>
         </div>
 
