@@ -346,9 +346,9 @@ const CashClosing = ({ onClose }) => {
           </div>
 
           {/* Conteo Final */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              📊 Conteo Físico del Día *
+          <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900 dark:from-opacity-20 dark:to-amber-900 dark:to-opacity-20 rounded-lg p-3 sm:p-4 border border-orange-200 dark:border-orange-800">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Conteo Físico del Día *
             </label>
             <input
               type="number"
@@ -356,25 +356,25 @@ const CashClosing = ({ onClose }) => {
               min="0"
               value={finalCount}
               onChange={(e) => setFinalCount(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-orange-500 text-lg"
+              className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-orange-500 text-sm sm:text-base"
               placeholder="0.00"
             />
           </div>
 
           {/* Diferencia */}
           {finalCount && (
-            <div className={`rounded-lg p-4 ${
+            <div className={`rounded-lg p-3 sm:p-4 border ${
               difference === 0 
-                ? 'bg-green-50 dark:bg-green-900 dark:bg-opacity-20' 
+                ? 'bg-green-50 dark:bg-green-900 dark:bg-opacity-20 border-green-200 dark:border-green-800' 
                 : difference > 0
-                ? 'bg-yellow-50 dark:bg-yellow-900 dark:bg-opacity-20'
-                : 'bg-red-50 dark:bg-red-900 dark:bg-opacity-20'
+                ? 'bg-yellow-50 dark:bg-yellow-900 dark:bg-opacity-20 border-yellow-200 dark:border-yellow-800'
+                : 'bg-red-50 dark:bg-red-900 dark:bg-opacity-20 border-red-200 dark:border-red-800'
             }`}>
-              <div className="flex justify-between items-center">
-                <span className="text-lg font-semibold">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 sm:gap-0">
+                <span className="text-sm sm:text-base font-semibold">
                   {difference === 0 ? '✅ Cuadre Perfecto' : difference > 0 ? '⚠️ Sobrante' : '❌ Faltante'}
                 </span>
-                <span className={`text-2xl font-bold ${
+                <span className={`text-lg sm:text-2xl font-bold ${
                   difference === 0 ? 'text-green-600 dark:text-green-400' :
                   difference > 0 ? 'text-yellow-600 dark:text-yellow-400' :
                   'text-red-600 dark:text-red-400'
@@ -387,32 +387,32 @@ const CashClosing = ({ onClose }) => {
 
           {/* Observaciones */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Observaciones del Cierre
             </label>
             <textarea
               rows="2"
               value={observations}
               onChange={(e) => setObservations(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-orange-500"
+              className="w-full px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-orange-500 text-sm sm:text-base"
               placeholder="Ej: Todo cuadra correctamente..."
             />
           </div>
 
           {/* Botones */}
-          <div className="flex gap-4 pt-4 border-t border-gray-200 dark:border-gray-700 sticky bottom-0 bg-white dark:bg-gray-800">
+          <div className="flex gap-2 sm:gap-4 pt-3 sm:pt-4 border-t border-gray-200 dark:border-gray-700 sticky bottom-0 bg-white dark:bg-gray-800">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              className="flex-1 px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium text-xs sm:text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-semibold transition-colors"
+              className="flex-1 px-3 sm:px-4 py-2 sm:py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium sm:font-semibold text-xs sm:text-sm transition-colors"
             >
-              🔒 Cerrar Caja
+              Cerrar Caja
             </button>
           </div>
         </form>
