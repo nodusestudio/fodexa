@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSettings } from '../context/SettingsContext';
-import { Settings as SettingsIcon, Building2, Receipt, Percent, DollarSign, Languages, Palette, Sliders } from 'lucide-react';
+import { Settings as SettingsIcon, Building2, Receipt, Percent, DollarSign, Languages, Palette, Sliders, Trash2 } from 'lucide-react';
 import CompanySettings from '../components/settings/CompanySettings';
 import TicketSettings from '../components/settings/TicketSettings';
 import TaxSettings from '../components/settings/TaxSettings';
@@ -9,6 +9,7 @@ import LanguageSettings from '../components/settings/LanguageSettings';
 import AppearanceSettings from '../components/settings/AppearanceSettings';
 import GeneralSettings from '../components/settings/GeneralSettings';
 import DeliverySettings from '../components/settings/DeliverySettings';
+import ResetDataSettings from '../components/settings/ResetDataSettings';
 
 const Settings = () => {
   const { settings, resetSettings, exportSettings, importSettings } = useSettings();
@@ -23,6 +24,7 @@ const Settings = () => {
     { id: 'language', label: 'Idioma', icon: Languages },
     { id: 'appearance', label: 'Apariencia', icon: Palette },
     { id: 'general', label: 'General', icon: Sliders },
+    { id: 'reset', label: 'Limpiar Datos', icon: Trash2 },
   ];
 
   const handleFileImport = (e) => {
@@ -105,6 +107,7 @@ const Settings = () => {
         {activeTab === 'language' && <LanguageSettings />}
         {activeTab === 'appearance' && <AppearanceSettings />}
         {activeTab === 'general' && <GeneralSettings />}
+        {activeTab === 'reset' && <ResetDataSettings />}
       </div>
     </div>
   );

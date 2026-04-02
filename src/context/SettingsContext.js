@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, getDocs, deleteDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
 const defaultSettings = {
@@ -135,8 +135,51 @@ export const SettingsProvider = ({ children }) => {
 
   const resetSettings = () => setSettings(defaultSettings);
 
+  // Resetear datos ficticios del usuario (órdenes, tickets, caja, reportes)
+  // NO toca: clientes, artículos, categorías, adicionales, settings
+  const resetUserData = async () => {
+    if (!user) return;
+
+    try {
+      console.log('🗑️ Iniciando reseteo de datos ficticios...');
+      
+      const collectionsToReset = [
+        'tickets',      // Órdenes completadas
+        'orders',       // Órdenes activas
+        'cash',         // Caja (aperturas, cierres, gastos)
+        'ledger',       // Libro contable
+        'reports',      // Reportes generados
+      ];
+
+      for (const collectionName of collectionsToReset) {
+        try {
+          const collRef = collection(db, `users/${user.uid}/${collectionName}`);
+          const snapshot = await getDocs(collRef);
+          
+          let deletedCount = 0;
+          for (const doc of snapshot.docs) {
+            await deleteDoc(doc.ref);
+            deletedCount++;
+          }
+          
+          console.log(`✅ ${collectionName}: ${deletedCount} documentos eliminados`);
+        } catch (error) {
+          console.warn(`⚠️ Error limpiando ${collectionName}:`, error.message);
+        }
+      }
+
+      console.log('✅ Reseteo completado exitosamente');
+      alert('✅ Datos ficticios eliminados correctamente\n\nClientes y artículos preservados');
+      return true;
+    } catch (error) {
+      console.error('❌ Error durante reseteo:', error);
+      alert('❌ Error al resetear datos');
+      return false;
+    }
+  };
+
   return (
-    <SettingsContext.Provider value={{ settings, updateSettings, resetSettings }}>
+    <SettingsContext.Provider value={{ settings, updateSettings, resetSettings, resetUserData }}>
       {children}
     </SettingsContext.Provider>
   );
