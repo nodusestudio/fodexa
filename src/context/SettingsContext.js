@@ -141,64 +141,89 @@ export const SettingsProvider = ({ children }) => {
     if (!user) return false;
 
     try {
-      console.log('🗑️ Iniciando reseteo completo de datos ficticios...');
+      console.log('🗑️ INICIANDO RESETEO AGRESIVO...');
       
+      // 1️⃣ LIMPIAR localStorage completamente
+      console.log('🧹 Limpiando localStorage...');
+      const keysToRemove = Object.keys(localStorage).filter(key => 
+        key.includes(user.uid) || 
+        key.includes('order') || 
+        key.includes('cart') || 
+        key.includes('cash') ||
+        key.includes('ticket')
+      );
+      keysToRemove.forEach(key => {
+        localStorage.removeItem(key);
+        console.log(`  ✓ Removed: ${key}`);
+      });
+
+      // 2️⃣ COLECCIONES A ELIMINAR (expandida)
       const collectionsToReset = [
-        'orders',       // Órdenes activas (PRIMERO - es la más importante)
-        'tickets',      // Órdenes completadas
-        'cash',         // Caja (aperturas, cierres, gastos)
-        'ledger',       // Libro contable
-        'reports',      // Reportes generados
+        'orders',        // Órdenes activas
+        'tickets',       // Órdenes completadas
+        'cash',          // Gastos
+        'cashSessions',  // Sesiones de caja
+        'ledger',        // Libro contable
+        'reports',       // Reportes generados
       ];
 
-      // Función auxiliar para eliminar colección recursivamente
+      // 3️⃣ Función auxiliar mejorada
       const deleteCollection = async (collectionPath) => {
         try {
           const collRef = collection(db, collectionPath);
           const snapshot = await getDocs(collRef);
           
+          if (snapshot.empty) {
+            console.log(`✓ ${collectionPath.split('/').pop()}: ya está vacío`);
+            return 0;
+          }
+
           let deletedCount = 0;
           const batch = [];
 
-          // Recolectar todos los documentos a eliminar
           for (const doc of snapshot.docs) {
             batch.push(deleteDoc(doc.ref));
             deletedCount++;
           }
 
-          // Ejecutar todas las eliminaciones en paralelo
-          if (batch.length > 0) {
-            await Promise.all(batch);
-          }
+          await Promise.all(batch);
           
-          console.log(`✅ ${collectionPath.split('/').pop()}: ${deletedCount} documentos eliminados`);
+          // Verificar que realmente se eliminaron
+          const verifySnapshot = await getDocs(collRef);
+          console.log(`✅ ${collectionPath.split('/').pop()}: ${deletedCount} docs eliminados (verificado: ${verifySnapshot.size} restantes)`);
           return deletedCount;
         } catch (error) {
-          console.warn(`⚠️ Error limpiando ${collectionPath}:`, error.message);
+          console.error(`❌ Error en ${collectionPath}:`, error.message);
           return 0;
         }
       };
 
-      // Eliminar cada colección
+      // 4️⃣ Eliminar colecciones SECUENCIALMENTE (asegurar que terminan antes de continuar)
       let totalDeleted = 0;
       for (const collectionName of collectionsToReset) {
         const collPath = `users/${user.uid}/${collectionName}`;
+        console.log(`🔄 Procesando ${collectionName}...`);
         totalDeleted += await deleteCollection(collPath);
+        // Pequeño delay entre colecciones
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
 
-      console.log(`✅ Total de documentos eliminados: ${totalDeleted}`);
-      console.log('✅ Reseteo completado exitosamente');
+      console.log(`\n✅ TOTAL ELIMINADO: ${totalDeleted} documentos`);
+      console.log('⏳ Esperando 2 segundos antes de recargar...');
       
-      // Forzar actualización del estado
+      // 5️⃣ RECARGAR CON DELAY MAYOR
       setTimeout(() => {
-        alert('✅ Datos ficticios eliminados correctamente\n\nClientes y artículos preservados\n\nRecargando...');
-        window.location.reload();
-      }, 500);
+        console.log('🔄 Recargando página...');
+        alert('✅ Sistema completamente limpio!\n\nClientes y artículos preservados\n\nRecargando en 3 segundos...');
+        setTimeout(() => {
+          window.location.href = window.location.href; // Reload completo
+        }, 3000);
+      }, 2000);
       
       return true;
     } catch (error) {
-      console.error('❌ Error durante reseteo:', error);
-      alert('❌ Error al resetear datos: ' + error.message);
+      console.error('❌ ERROR CRÍTICO:', error);
+      alert('❌ Error al resetear: ' + error.message + '\n\nRevisa la consola para detalles');
       return false;
     }
   };
