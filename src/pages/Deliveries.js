@@ -1,12 +1,59 @@
 import React, { useState, useMemo } from 'react';
 import { useTickets } from '../context/TicketContext';
 import { useSettings } from '../context/SettingsContext';
-import { Search, RefreshCw, Truck, ChevronDown, ChevronUp, Printer, Check } from 'lucide-react';
+import { Search, RefreshCw, Truck, ChevronDown, ChevronUp, Printer, Check, BookOpen, X } from 'lucide-react';
 import { formatCurrency } from '../utils/formatters';
 import DeliveryStatusSelector from '../components/deliveries/DeliveryStatusSelector';
 
+// Modal para asignar domiciliario
+const DomiAssignModal = ({ ticketId, domiName: initialDomiName, onSave, onClose }) => {
+  const [domiName, setDomiName] = useState(initialDomiName || '');
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 max-w-sm w-full mx-4">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <BookOpen size={20} />
+            Asignar Domiciliario
+          </h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+            <X size={20} />
+          </button>
+        </div>
+        <input
+          type="text"
+          placeholder="Nombre del domiciliario"
+          value={domiName}
+          onChange={(e) => setDomiName(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white mb-4 text-sm focus:ring-2 focus:ring-blue-500"
+          autoFocus
+        />
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              onSave(domiName);
+              onClose();
+            }}
+            className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium text-sm"
+          >
+            Guardar
+          </button>
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium text-sm"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Componente para fila de escritorio (grid de 12 columnas)
 const DeliveryRowDesktop = ({ ticket, onUpdateField, onMarkDelivered, onPrintGuide }) => {
+  const [showDomiModal, setShowDomiModal] = useState(false);
   const deliveryData = ticket.deliveryData || ticket.customer || {};
   const status = ticket.deliveryStatus || 'pending';
   
@@ -22,10 +69,11 @@ const DeliveryRowDesktop = ({ ticket, onUpdateField, onMarkDelivered, onPrintGui
     
     if (pendingAmount > 0) {
       return {
-        label: '⏳ Pendiente de Pago',
+        label: '⏳ Pendiente',
         amount: pendingAmount,
         color: 'bg-yellow-50 dark:bg-yellow-900/20',
-        textColor: 'text-yellow-700 dark:text-yellow-300'
+        textColor: 'text-yellow-700 dark:text-yellow-300',
+        paymentType: 'pending'
       };
     } else if (pago_efectivo > 0) {
       // Si pagó en efectivo, el domiciliario recibe la diferencia después de descuentos
@@ -33,21 +81,28 @@ const DeliveryRowDesktop = ({ ticket, onUpdateField, onMarkDelivered, onPrintGui
       return {
         label: '💵 Paga Domi',
         amount: domiAmount,
-        color: 'bg-green-50 dark:bg-green-900/20',
-        textColor: 'text-green-700 dark:text-green-300'
+        color: 'bg-green-100 dark:bg-green-900/40',
+        textColor: 'text-green-700 dark:text-green-300',
+        paymentType: 'paga_domi'
       };
     } else {
       // Si pagó digital, la empresa cobra
       return {
         label: '🏢 Paga Empresa',
         amount: total,
-        color: 'bg-blue-50 dark:bg-blue-900/20',
-        textColor: 'text-blue-700 dark:text-blue-300'
+        color: 'bg-red-100 dark:bg-red-900/40',
+        textColor: 'text-red-700 dark:text-red-300',
+        paymentType: 'paga_empresa'
       };
     }
   };
   
   const paymentInfo = calculatePaymentInfo();
+  
+  // Verificar si está esperando pago del domi
+  const domiName = ticket.domiName || null;
+  const domiPaid = ticket.domiPaid || false;
+  const isWaitingDomiPayment = domiName && !domiPaid;
   
   const statusConfig = {
     'solicitar-domi': { label: '🚨 Solicitar Domi', color: 'bg-red-50 dark:bg-red-900/20', textColor: 'text-red-700 dark:text-red-300' },
@@ -59,67 +114,105 @@ const DeliveryRowDesktop = ({ ticket, onUpdateField, onMarkDelivered, onPrintGui
   const statusInfo = statusConfig[status] || statusConfig['solicitar-domi'];
 
   return (
-    <div className={`grid grid-cols-12 gap-1 px-2 py-2 border-b border-gray-200 dark:border-gray-700 items-center hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-xs`}>
-      {/* TICKET - col-span-1 */}
-      <div className="col-span-1 text-center font-semibold text-gray-900 dark:text-white truncate">
-        {ticket.ticketNumber}
-      </div>
+    <>
+      {showDomiModal && (
+        <DomiAssignModal
+          ticketId={ticket.id}
+          domiName={domiName}
+          onSave={(name) => {
+            onUpdateField(ticket.id, 'domiName', name);
+            onUpdateField(ticket.id, 'domiPaid', false);
+          }}
+          onClose={() => setShowDomiModal(false)}
+        />
+      )}
+      <div className={`grid grid-cols-12 gap-1 px-2 py-2 border-b border-gray-200 dark:border-gray-700 items-center transition-colors text-xs ${
+        isWaitingDomiPayment 
+          ? 'bg-yellow-200 dark:bg-yellow-900/50 animate-pulse hover:bg-yellow-200 dark:hover:bg-yellow-900/50' 
+          : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
+      }`}>
+        {/* TICKET - col-span-1 */}
+        <div className="col-span-1 text-center font-semibold text-gray-900 dark:text-white truncate">
+          {ticket.ticketNumber}
+        </div>
 
-      {/* CLIENTE - col-span-2 */}
-      <div className="col-span-2 text-center truncate text-gray-900 dark:text-white font-medium">
-        {deliveryData.name || 'N/A'}
-      </div>
+        {/* CLIENTE - col-span-2 */}
+        <div className="col-span-2 text-center truncate text-gray-900 dark:text-white font-medium">
+          {deliveryData.name || 'N/A'}
+        </div>
 
-      {/* TELÉFONO - col-span-1 */}
-      <div className="col-span-1 text-center truncate text-gray-600 dark:text-gray-400">
-        {deliveryData.phone || 'N/A'}
-      </div>
+        {/* TELÉFONO - col-span-1 */}
+        <div className="col-span-1 text-center truncate text-gray-600 dark:text-gray-400">
+          {deliveryData.phone || 'N/A'}
+        </div>
 
-      {/* DIRECCIÓN - col-span-2 */}
-      <div className="col-span-2 text-center truncate text-gray-600 dark:text-gray-400">
-        {deliveryData.address || 'N/A'}
-      </div>
+        {/* DIRECCIÓN - col-span-2 */}
+        <div className="col-span-2 text-center truncate text-gray-600 dark:text-gray-400">
+          {deliveryData.address || 'N/A'}
+        </div>
 
-      {/* ESTADO - col-span-3 */}
-      <div className="col-span-3 flex justify-center">
-        <div className="w-full">
-          <DeliveryStatusSelector
-            ticketId={ticket.id}
-            ticketNumber={ticket.ticketNumber}
-            currentStatus={status}
-            deliveryData={deliveryData}
-            onStatusChange={(ticketId, newStatus) => {
-              onUpdateField(ticket.id, 'deliveryStatus', newStatus);
+        {/* ESTADO - col-span-3 */}
+        <div className="col-span-3 flex justify-center">
+          <div className="w-full">
+            <DeliveryStatusSelector
+              ticketId={ticket.id}
+              ticketNumber={ticket.ticketNumber}
+              currentStatus={status}
+              deliveryData={deliveryData}
+              onStatusChange={(ticketId, newStatus) => {
+                onUpdateField(ticket.id, 'deliveryStatus', newStatus);
+              }}
+            />
+          </div>
+        </div>
+
+        {/* PAGOS - col-span-1 */}
+        <div className={`col-span-1 text-center rounded px-1 py-1 ${paymentInfo.color} font-semibold ${paymentInfo.textColor}`}>
+          ${paymentInfo.amount.toLocaleString('es-CO', { maximumFractionDigits: 0 })}
+        </div>
+
+        {/* ACCIONES - col-span-1 */}
+        <div className="col-span-1 flex items-center justify-center gap-0.5">
+          <button
+            onClick={() => onPrintGuide(ticket)}
+            className="p-1 text-gray-600 dark:text-gray-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded transition-colors"
+            title="Imprimir guía"
+          >
+            <Printer size={14} />
+          </button>
+          
+          <button
+            onClick={() => {
+              if (isWaitingDomiPayment) {
+                // Confirmar pago del domi
+                onUpdateField(ticket.id, 'domiPaid', true);
+              } else {
+                // Abrir modal para asignar domi
+                setShowDomiModal(true);
+              }
             }}
-          />
+            className={`p-1 rounded transition-colors ${
+              isWaitingDomiPayment
+                ? 'text-green-600 hover:bg-green-100 dark:text-green-400 dark:hover:bg-green-900/30'
+                : 'text-gray-600 dark:text-gray-400 hover:bg-amber-100 dark:hover:bg-amber-900/30'
+            }`}
+            title={isWaitingDomiPayment ? 'Confirmar pago del domi' : 'Asignar domiciliario'}
+          >
+            <BookOpen size={14} />
+          </button>
+          
+          {status !== 'delivered' && (
+            <button
+              onClick={() => onMarkDelivered(ticket.id)}
+              className="p-1 text-gray-600 dark:text-gray-400 hover:bg-green-100 dark:hover:bg-green-900/30 rounded transition-colors"
+              title="Marcar como entregado"
+            >
+              <Check size={14} />
+            </button>
+          )}
         </div>
       </div>
-
-      {/* MONTO - col-span-1 */}
-      <div className={`col-span-1 text-center rounded px-1 py-1 ${paymentInfo.color} font-semibold`}>
-        ${paymentInfo.amount.toLocaleString('es-CO', { maximumFractionDigits: 0 })}
-      </div>
-
-      {/* ACCIONES - col-span-1 */}
-      <div className="col-span-1 flex items-center justify-center gap-0.5">
-        <button
-          onClick={() => onPrintGuide(ticket)}
-          className="p-1 text-gray-600 dark:text-gray-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded transition-colors"
-          title="Imprimir guía"
-        >
-          <Printer size={14} />
-        </button>
-        {status !== 'delivered' && (
-          <button
-            onClick={() => onMarkDelivered(ticket.id)}
-            className="p-1 text-gray-600 dark:text-gray-400 hover:bg-green-100 dark:hover:bg-green-900/30 rounded transition-colors"
-            title="Marcar como entregado"
-          >
-            <Check size={14} />
-          </button>
-        )}
-      </div>
-    </div>
+    </>
   );
 };
 
@@ -514,7 +607,7 @@ const Deliveries = () => {
                   <div className="col-span-1 text-center">TEL</div>
                   <div className="col-span-2 text-center">DIRECCIÓN</div>
                   <div className="col-span-3 text-center">ESTADO</div>
-                  <div className="col-span-1 text-center">$</div>
+                  <div className="col-span-1 text-center">PAGOS</div>
                   <div className="col-span-1 text-center">ACT</div>
                 </div>
               </div>
