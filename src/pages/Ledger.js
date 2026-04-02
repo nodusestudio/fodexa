@@ -1,9 +1,42 @@
 import React, { useState, useMemo } from 'react';
 import { useCash } from '../context/CashContext';
-import { FileText, Calendar, TrendingUp, DollarSign, Filter, ChevronDown } from 'lucide-react';
+import { useSettings } from '../context/SettingsContext';
+import { FileText, Calendar, TrendingUp, DollarSign, Filter, ChevronDown, Trash2 } from 'lucide-react';
 
 const Ledger = () => {
   const { getSessionsByDateRange, getPeriodSummary, sessionHistory } = useCash();
+  const { resetUserData } = useSettings();
+  const [isResetting, setIsResetting] = useState(false);
+  
+  // Función para resetear datos
+  const handleResetData = () => {
+    const confirmed = window.confirm(
+      '⚠️ ¿ESTÁS SEGURO?\n\n' +
+      'Se eliminarán TODOS los datos:\n' +
+      '✂️ Órdenes\n' +
+      '✂️ Tickets\n' +
+      '✂️ Caja y Gastos\n' +
+      '✂️ LIBRO CONTABLE\n' +
+      '✂️ Reportes\n\n' +
+      '✅ Se preservarán: Clientes y Artículos\n\n' +
+      'Escribe "ELIMINAR" para confirmar.'
+    );
+
+    if (!confirmed) return;
+
+    const secondConfirm = window.prompt(
+      'Escribe "ELIMINAR" para confirmar definitivamente:'
+    );
+
+    if (secondConfirm !== 'ELIMINAR') {
+      alert('❌ Operación cancelada');
+      return;
+    }
+
+    setIsResetting(true);
+    resetUserData();
+  };
+  
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const today = new Date();
     return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
@@ -259,17 +292,28 @@ const Ledger = () => {
               Estado detallado de caja por día
             </p>
           </div>
-          {/* Saldo Total - Compacto en Header */}
-          <div className="bg-gradient-to-br from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-900 rounded-xl p-3 sm:p-4 text-white shadow-lg flex flex-col items-center justify-center min-w-fit">
-            <p className="text-blue-100 text-xs font-medium mb-0.5 sm:mb-1">💰 Saldo Total</p>
-            <h2 className="text-xl sm:text-3xl md:text-4xl font-bold">${summary.balance.toLocaleString('es-CO')}</h2>
-            <p className="text-blue-100 text-xs mt-0.5 sm:mt-1">
-              {expandedView === 'mayor' && mayorFilterType === 'day' && 'Hoy'}
-              {expandedView === 'mayor' && mayorFilterType === 'week' && 'Esta semana'}
-              {expandedView === 'mayor' && mayorFilterType === 'month' && 'Este mes'}
-              {expandedView === 'mayor' && mayorFilterType === 'year' && 'Este año'}
-              {expandedView === 'daily' && 'Hoy'}
-            </p>
+          <div className="flex flex-col gap-2 sm:gap-3">
+            {/* Saldo Total - Compacto en Header */}
+            <div className="bg-gradient-to-br from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-900 rounded-xl p-3 sm:p-4 text-white shadow-lg flex flex-col items-center justify-center min-w-fit">
+              <p className="text-blue-100 text-xs font-medium mb-0.5 sm:mb-1">💰 Saldo Total</p>
+              <h2 className="text-xl sm:text-3xl md:text-4xl font-bold">${summary.balance.toLocaleString('es-CO')}</h2>
+              <p className="text-blue-100 text-xs mt-0.5 sm:mt-1">
+                {expandedView === 'mayor' && mayorFilterType === 'day' && 'Hoy'}
+                {expandedView === 'mayor' && mayorFilterType === 'week' && 'Esta semana'}
+                {expandedView === 'mayor' && mayorFilterType === 'month' && 'Este mes'}
+                {expandedView === 'mayor' && mayorFilterType === 'year' && 'Este año'}
+                {expandedView === 'daily' && 'Hoy'}
+              </p>
+            </div>
+            {/* Botón de Reset */}
+            <button
+              onClick={handleResetData}
+              disabled={isResetting}
+              className="px-3 sm:px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white rounded-lg font-semibold text-xs sm:text-sm transition-colors flex items-center justify-center gap-1.5 sm:gap-2"
+            >
+              {isResetting && <span className="animate-spin">⏳</span>}
+              {isResetting ? 'Limpiando...' : '🗑️ Limpiar Todo'}
+            </button>
           </div>
         </div>
 
