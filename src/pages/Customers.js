@@ -99,11 +99,11 @@ const Customers = () => {
   return (
     <div className="h-full flex flex-col bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-3 sm:px-6 py-3 sm:py-4">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-4 mb-4">
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-2 sm:px-6 py-2 sm:py-4">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-4 mb-2 sm:mb-4">
           <div>
-            <h1 className="text-lg sm:text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-1 sm:gap-2">
-              <Users size={24} className="text-blue-600 dark:text-blue-400 flex-shrink-0" />
+            <h1 className="text-base sm:text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-1 sm:gap-2">
+              <Users size={20} className="sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400 flex-shrink-0" />
               <span>Clientes</span>
             </h1>
             <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-0.5 sm:mt-1">
@@ -113,9 +113,9 @@ const Customers = () => {
           <div className="flex gap-1 sm:gap-3">
             <button
               onClick={handleExport}
-              className="px-2 sm:px-4 py-2 text-xs sm:text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-1 sm:gap-2"
+              className="px-1.5 sm:px-4 py-2 text-xs sm:text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-1 sm:gap-2"
             >
-              <Download size={16} />
+              <Download size={14} className="sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">Exportar</span>
             </button>
             <CustomerImport onImportResult={(result) => {
@@ -164,7 +164,7 @@ const Customers = () => {
       {selectedTab === 'listado' ? (
         <>
           {/* Filtros y Búsqueda */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-3 sm:px-6 py-3 sm:py-4">
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-2 sm:px-6 py-2 sm:py-4">
         <div className="flex flex-col gap-2 sm:gap-4">
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
             <div className="relative flex-1">
@@ -216,7 +216,7 @@ const Customers = () => {
       </div>
 
       {/* Tabla de Clientes */}
-      <div className="flex-1 overflow-auto p-2 sm:p-6">
+      <div className="flex-1 overflow-auto p-2 sm:p-4 md:p-6">
         <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow-md sm:shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-xs sm:text-sm">
@@ -315,7 +315,7 @@ const Customers = () => {
 
       {/* Controles de Paginación */}
       {filteredCustomers && filteredCustomers.length > PAGE_SIZE && (
-        <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-3 sm:px-6 py-3 sm:py-4">
+        <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-2 sm:px-6 py-2 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
               Mostrando {((currentPage - 1) * PAGE_SIZE) + 1}-{Math.min(currentPage * PAGE_SIZE, filteredCustomers.length)} de {filteredCustomers.length}
@@ -324,7 +324,7 @@ const Customers = () => {
               <button
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-2 text-xs sm:text-sm border border-gray-300 dark:border-gray-600 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                className="px-2 sm:px-3 py-2 text-xs sm:text-sm border border-gray-300 dark:border-gray-600 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 ← Anterior
               </button>
@@ -344,7 +344,7 @@ const Customers = () => {
                     <button
                       key={pageNum}
                       onClick={() => setCurrentPage(pageNum)}
-                      className={`px-2 sm:px-3 py-2 text-xs sm:text-sm rounded-lg transition-colors ${
+                      className={`px-1.5 sm:px-3 py-2 text-xs sm:text-sm rounded-lg transition-colors ${
                         currentPage === pageNum
                           ? 'bg-blue-600 text-white'
                           : 'border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
@@ -358,7 +358,7 @@ const Customers = () => {
               <button
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
-                className="px-3 py-2 text-xs sm:text-sm border border-gray-300 dark:border-gray-600 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                className="px-2 sm:px-3 py-2 text-xs sm:text-sm border border-gray-300 dark:border-gray-600 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 Siguiente →
               </button>
@@ -370,51 +370,51 @@ const Customers = () => {
       ) : (
         <>
           {/* Reportes de Clientes */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 space-y-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-3 sm:p-6 space-y-3 sm:space-y-6 m-2 sm:m-4 md:m-6">
             {/* Estadísticas generales */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-blue-50 dark:bg-blue-900 dark:bg-opacity-20 rounded-lg p-4">
-                <p className="text-sm text-blue-600 dark:text-blue-400 font-semibold">Total Clientes</p>
-                <p className="text-3xl font-bold text-blue-800 dark:text-blue-300 mt-2">{totalCustomers}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4">
+              <div className="bg-blue-50 dark:bg-blue-900 dark:bg-opacity-20 rounded-lg p-2 sm:p-4">
+                <p className="text-xs sm:text-sm text-blue-600 dark:text-blue-400 font-semibold">Total Clientes</p>
+                <p className="text-xl sm:text-3xl font-bold text-blue-800 dark:text-blue-300 mt-1 sm:mt-2">{totalCustomers}</p>
               </div>
-              <div className="bg-purple-50 dark:bg-purple-900 dark:bg-opacity-20 rounded-lg p-4">
-                <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold">👑 VIP</p>
-                <p className="text-3xl font-bold text-purple-800 dark:text-purple-300 mt-2">{vipCustomers}</p>
+              <div className="bg-purple-50 dark:bg-purple-900 dark:bg-opacity-20 rounded-lg p-2 sm:p-4">
+                <p className="text-xs sm:text-sm text-purple-600 dark:text-purple-400 font-semibold">👑 VIP</p>
+                <p className="text-xl sm:text-3xl font-bold text-purple-800 dark:text-purple-300 mt-1 sm:mt-2">{vipCustomers}</p>
               </div>
-              <div className="bg-green-50 dark:bg-green-900 dark:bg-opacity-20 rounded-lg p-4">
-                <p className="text-sm text-green-600 dark:text-green-400 font-semibold">⭐ Frecuentes</p>
-                <p className="text-3xl font-bold text-green-800 dark:text-green-300 mt-2">{frequentCustomers}</p>
+              <div className="bg-green-50 dark:bg-green-900 dark:bg-opacity-20 rounded-lg p-2 sm:p-4">
+                <p className="text-xs sm:text-sm text-green-600 dark:text-green-400 font-semibold">⭐ Frecuentes</p>
+                <p className="text-xl sm:text-3xl font-bold text-green-800 dark:text-green-300 mt-1 sm:mt-2">{frequentCustomers}</p>
               </div>
-              <div className="bg-orange-50 dark:bg-orange-900 dark:bg-opacity-20 rounded-lg p-4">
-                <p className="text-sm text-orange-600 dark:text-orange-400 font-semibold">Ingresos Totales</p>
-                <p className="text-3xl font-bold text-orange-800 dark:text-orange-300 mt-2">${totalRevenue.toLocaleString('es-CO')}</p>
+              <div className="bg-orange-50 dark:bg-orange-900 dark:bg-opacity-20 rounded-lg p-2 sm:p-4">
+                <p className="text-xs sm:text-sm text-orange-600 dark:text-orange-400 font-semibold">Ingresos Totales</p>
+                <p className="text-xl sm:text-3xl font-bold text-orange-800 dark:text-orange-300 mt-1 sm:mt-2">${totalRevenue.toLocaleString('es-CO')}</p>
               </div>
             </div>
 
             {/* Clasificación de clientes */}
             <div>
-              <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">Clasificación de Clientes</h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+              <h3 className="text-base sm:text-lg font-bold text-gray-800 dark:text-white mb-2 sm:mb-4">Clasificación de Clientes</h3>
+              <div className="space-y-2 sm:space-y-3">
+                <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 p-2 sm:p-3 rounded-lg">
                   <div className="flex items-center gap-2">
-                    <span className="text-2xl">👑</span>
-                    <span className="font-semibold text-gray-700 dark:text-gray-300">VIP</span>
+                    <span className="text-lg sm:text-2xl">👑</span>
+                    <span className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">VIP</span>
                   </div>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">{vipCustomers} clientes</span>
+                  <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{vipCustomers} clientes</span>
                 </div>
-                <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 p-2 sm:p-3 rounded-lg">
                   <div className="flex items-center gap-2">
-                    <span className="text-2xl">⭐</span>
-                    <span className="font-semibold text-gray-700 dark:text-gray-300">Frecuentes</span>
+                    <span className="text-lg sm:text-2xl">⭐</span>
+                    <span className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">Frecuentes</span>
                   </div>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">{frequentCustomers} clientes</span>
+                  <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{frequentCustomers} clientes</span>
                 </div>
-                <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 p-2 sm:p-3 rounded-lg">
                   <div className="flex items-center gap-2">
-                    <span className="text-2xl">👤</span>
-                    <span className="font-semibold text-gray-700 dark:text-gray-300">Ocasionales</span>
+                    <span className="text-lg sm:text-2xl">👤</span>
+                    <span className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">Ocasionales</span>
                   </div>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">{totalCustomers - vipCustomers - frequentCustomers} clientes</span>
+                  <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{totalCustomers - vipCustomers - frequentCustomers} clientes</span>
                 </div>
               </div>
             </div>
