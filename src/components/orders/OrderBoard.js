@@ -39,9 +39,9 @@ const OrderBoard = ({ onNewOrder, onEditOrder, onPayOrder, onDeleteOrder }) => {
     .filter(o => o.type === 'takeout' && o.status !== 'completed')
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   
-  // Incluir TODOS los deliveries (nunca se elimina, solo se marca como inactivo)
+  // ✅ Solo mostrar deliveries SIN COBRAR (status !== 'completed' y status !== 'waiting')
   const deliveryOrders = (orders || [])
-    .filter(o => o.type === 'delivery')
+    .filter(o => o.type === 'delivery' && o.status !== 'completed' && o.status !== 'waiting')
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
   // Calcular suma de TODOS los costos de delivery (incluyendo completados)
