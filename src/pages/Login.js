@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Mail, Lock, AlertCircle, Loader, Eye, EyeOff } from 'lucide-react';
-import { APP_VERSION } from '../config/version';
+import { APP_VERSION, VERSION_NUMBER } from '../config/version';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -264,7 +264,7 @@ export default function Login() {
         {/* Info */}
         <div className="mt-3 sm:mt-6 pt-2 sm:pt-6 border-t border-gray-200 dark:border-gray-700">
           <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-            Actualización n {APP_VERSION}
+            Actualización {APP_VERSION} v{VERSION_NUMBER}
           </p>
         </div>
       </div>
