@@ -285,12 +285,20 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
     });
     
     setSuccess(true);
+    
+    // ✅ Disparar AUTOMÁTICAMENTE el ticket de venta para imprimir
     setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('orderSaved', { 
+        detail: {
+          ...order,
+          ticketType: 'customer' // Tipo de ticket: recibo de cliente
+        }
+      }));
+      
       setSuccess(false);
       setShowPostOptions(true);
       setPostOrder(order);
       onComplete && onComplete(finalPaymentMethods);
-      // No cerrar aquí - dejar que el usuario use las opciones de post-pago
     }, 1000);
   };
 
