@@ -89,56 +89,9 @@ const Ledger = () => {
   const [dailyTempEndDate, setDailyTempEndDate] = useState(new Date());
   const [dailyCustomDateRange, setDailyCustomDateRange] = useState(null);
 
-  // Generar todas las sesiones con datos de ejemplo si no hay datos reales
+  // ✅ Usar sesiones reales de Firebase, SIN datos ficticios
   const allSessions = useMemo(() => {
-    if (!sessionHistory || sessionHistory.length === 0) {
-      // Datos de ejemplo para 7 últimos días
-      const mockSessions = [];
-      for (let i = 6; i >= 0; i--) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        date.setHours(Math.floor(Math.random() * 7) + 8, 0, 0, 0);
-        
-        const closeDate = new Date(date);
-        closeDate.setHours(closeDate.getHours() + (Math.floor(Math.random() * 10) + 8));
-
-        const sales = Math.floor(Math.random() * 2000) + 500;
-        const expenses = Math.floor(sales * 0.15);
-        
-        // Desglose detallado por método de pago
-        const cashAmount = Math.floor(sales * 0.5);
-        const bankAmount = Math.floor(sales * 0.25);
-        const nequiAmount = Math.floor(sales * 0.15);
-        const boldAmount = Math.floor(sales * 0.07);
-        const aliadoAmount = sales - cashAmount - bankAmount - nequiAmount - boldAmount;
-
-        mockSessions.push({
-          id: `mock_${i}`,
-          openDate: date,
-          closeDate: closeDate,
-          initialAmount: 500000,
-          sales: sales,
-          expenses: expenses,
-          difference: Math.floor(Math.random() * 10000) - 5000,
-          paymentBreakdown: {
-            cash: cashAmount,
-            card: bankAmount,
-            transfer: nequiAmount,
-          },
-          // Desglose detallado para vista diaria
-          paymentMethods: {
-            efectivo: { ingresos: cashAmount, egresos: Math.floor(expenses * 0.3) },
-            bancolombia: { ingresos: bankAmount, egresos: Math.floor(expenses * 0.25) },
-            nequi: { ingresos: nequiAmount, egresos: Math.floor(expenses * 0.2) },
-            bold: { ingresos: boldAmount, egresos: Math.floor(expenses * 0.15) },
-            aliado: { ingresos: aliadoAmount, egresos: Math.floor(expenses * 0.1) },
-          },
-          status: 'closed',
-        });
-      }
-      return mockSessions;
-    }
-    return sessionHistory;
+    return sessionHistory || [];
   }, [sessionHistory]);
 
   // Calcular rango de fechas para Libro Mayor según el filtro seleccionado
