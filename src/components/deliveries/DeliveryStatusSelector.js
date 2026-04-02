@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Clock, AlertTriangle, CheckCircle, Copy } from 'lucide-react';
 
-const DeliveryStatusSelector = ({ ticketId, currentStatus, deliveryData, onStatusChange }) => {
+const DeliveryStatusSelector = ({ ticketId, ticketNumber, currentStatus, deliveryData, onStatusChange }) => {
   const [status, setStatus] = useState(currentStatus || 'pending');
   const [timeLeft, setTimeLeft] = useState(null);
   const [showTimer, setShowTimer] = useState(false);
@@ -58,7 +58,7 @@ const DeliveryStatusSelector = ({ ticketId, currentStatus, deliveryData, onStatu
   // Copiar mensaje al portapapeles
   const copyToClipboard = (message) => {
     const processedMessage = message
-      .replace('TICKETNUM', ticketId || 'N/A')
+      .replace('TICKETNUM', ticketNumber || 'N/A')
       .replace('CLIENTENAME', deliveryData?.name || 'Cliente')
       .replace('CLIENTEPHONE', deliveryData?.phone || 'N/A')
       .replace('CLIENTEADDRESS', deliveryData?.address || 'N/A');
