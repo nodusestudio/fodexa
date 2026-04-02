@@ -50,9 +50,9 @@ function Header({ sidebarOpen, toggleSidebar }) {
       <div className="flex justify-between items-center gap-3 sm:gap-6">
         <button
           onClick={toggleSidebar}
-          className="md:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+          className="md:hidden p-2.5 sm:p-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors -ml-2" title="Abrir menú"
         >
-          <Menu className="w-5 h-5 text-gray-700 dark:text-gray-200" />
+          <Menu className="w-6 h-6 sm:w-5 sm:h-5 text-gray-700 dark:text-gray-200" />
         </button>
 
         <div className="min-w-0 flex-1">
