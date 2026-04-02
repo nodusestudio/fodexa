@@ -83,8 +83,8 @@ export const TicketProvider = ({ children }) => {
         const ticketsData = snapshot.docs.map(doc => {
           const data = doc.data();
           return {
-            id: doc.id,
             ...data,
+            id: doc.id,  // ✅ Asegurar que el ID de Firestore tiene prioridad (sobrescribir cualquier id local)
             createdAt: data.createdAt?.toDate?.() || data.createdAt,
             // Asegurar que transferType existe (migración para tickets antiguos)
             transferType: data.transferType || null,
@@ -193,6 +193,8 @@ export const TicketProvider = ({ children }) => {
 
   const updateTicket = async (ticketId, updates) => {
     try {
+      console.log('📝 Intentando actualizar ticket:', { ticketId, updates });
+      
       // Actualizar en estado local primero
       setTickets(prev => prev.map(t => 
         t.id === ticketId ? { ...t, ...updates, updatedAt: new Date() } : t
@@ -201,11 +203,21 @@ export const TicketProvider = ({ children }) => {
       // Actualizar en Firestore si el usuario está autenticado
       if (user?.uid) {
         const ticketRef = doc(db, `users/${user.uid}/tickets`, ticketId);
-        await updateDoc(ticketRef, {
-          ...updates,
-          updatedAt: new Date(),
-        });
-        console.log('✅ Ticket actualizado en Firestore:', ticketId, updates);
+        
+        // Verificar que el documento existe antes de actualizar
+        try {
+          await updateDoc(ticketRef, {
+            ...updates,
+            updatedAt: new Date(),
+          });
+          console.log('✅ Ticket actualizado en Firestore:', ticketId, updates);
+        } catch (firebaseError) {
+          if (firebaseError.code === 'not-found') {
+            console.error('❌ Documento no encontrado en Firestore. ID:', ticketId);
+            console.error('📋 Tickets disponibles:', tickets.map(t => ({ id: t.id, ticketNumber: t.ticketNumber })));
+          }
+          throw firebaseError;
+        }
       } else {
         console.warn('⚠️ Usuario no autenticado. Cambios solo locales.');
       }

@@ -3,11 +3,19 @@ import { Clock, AlertTriangle, CheckCircle, Copy } from 'lucide-react';
 
 const DeliveryStatusSelector = ({ ticketId, ticketNumber, currentStatus, deliveryData, onStatusChange }) => {
   const [status, setStatus] = useState(currentStatus || 'pending');
-  const [timeLeft, setTimeLeft] = useState(null);
+  const [timeLeft, setTimeLeft] = useState(null); // En segundos
   const [showTimer, setShowTimer] = useState(false);
   const [alertSounded, setAlertSounded] = useState(false);
   const audioRef = useRef(null);
   const timerRef = useRef(null);
+
+  // Función para formatear tiempo MM:SS
+  const formatTime = (seconds) => {
+    if (seconds === null) return '';
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
 
   // Configuración de estados
   const statusConfig = {
@@ -22,14 +30,14 @@ const DeliveryStatusSelector = ({ ticketId, ticketNumber, currentStatus, deliver
       color: 'bg-yellow-300 dark:bg-yellow-600 animate-pulse',
       textColor: 'text-yellow-900 dark:text-yellow-100',
       icon: '🚨',
-      message: '📲 *SOLICITUD DE DOMICILIARIO PENDIENTE* 📲\n\nPedido #TICKETNUM\nCliente: CLIENTENAME\nTelefono: CLIENTEPHONE\nDirección: CLIENTEADDRESS\n\n⏰ *¡SE REQUIERE DOMICILIARIO URGENTE!*\n\nContactar al domiciliario más cercano.',
+      message: 'me mandas un domicilio por favor, va para CLIENTEADDRESS',
     },
     entregado: {
       label: '✅ Entregado',
       color: 'bg-green-500 dark:bg-green-600',
       textColor: 'text-green-900 dark:text-green-100',
       icon: '✅',
-      message: '✅ *PEDIDO ENTREGADO* ✅\n\nPedido #TICKETNUM\nCliente: CLIENTENAME\nTelefono: CLIENTEPHONE\nDirección: CLIENTEADDRESS\n\n✏️ *Entregado correctamente*\n\nGracias por tu compra 🙏',
+      message: 'Hola CLIENTENAME tu pedido ya va en camino, que tengas muy buen provecho, te agradecemos por preferirnos, te esperamos pronto.\n\n📲 Síguenos en nuestras redes sociales y entérate de promociones, nuevos productos y contenido brutal 🔥🍔\n\nTikTok:\nhttps://www.tiktok.com/@roalburger?_r=1&_t=ZS-94kgEkN4aEH\n\nInstagram:\nhttps://www.instagram.com/roalburgerarmenia?igsh=cWE2eGRyNnlxaXgy&utm_source=qr\n\nFacebook:\nhttps://www.facebook.com/share/1B9MGGXh6h/?mibextid=wwXIfr\n\nROAL Burger\nComida rápida con acento venezolano 🇻🇪🔥',
     },
   };
 
@@ -76,9 +84,9 @@ const DeliveryStatusSelector = ({ ticketId, ticketNumber, currentStatus, deliver
     setShowTimer(false);
     setAlertSounded(false);
 
-    // Si es "solicitar-domi", iniciar cronómetro a 20 segundos
+    // Si es "solicitar-domi", iniciar cronómetro a 20 minutos (1200 segundos)
     if (newStatus === 'solicitar-domi') {
-      setTimeLeft(20);
+      setTimeLeft(1200); // 20 minutos en segundos
       setShowTimer(true);
       // Copiar mensaje automáticamente
       setTimeout(() => {
@@ -120,9 +128,9 @@ const DeliveryStatusSelector = ({ ticketId, ticketNumber, currentStatus, deliver
   }, [timeLeft, showTimer, alertSounded]);
 
   return (
-    <div className="flex flex-col gap-2 w-full">
+    <div className="flex flex-col gap-1 w-full">
       {/* Selector Principal */}
-      <div className="relative">
+      <div className="relative w-full">
         <button
           onClick={() => {
             // Alternar desplegable
@@ -131,15 +139,15 @@ const DeliveryStatusSelector = ({ ticketId, ticketNumber, currentStatus, deliver
               dropdown.classList.toggle('hidden');
             }
           }}
-          className={`w-full px-3 py-2 rounded-lg font-medium text-sm flex items-center justify-between border-2 border-transparent transition-all ${currentConfig.color} ${currentConfig.textColor}`}
+          className={`w-full px-2 py-1 rounded font-semibold text-xs flex items-center justify-between border border-transparent transition-all whitespace-nowrap ${currentConfig.color} ${currentConfig.textColor}`}
         >
-          <span className="flex items-center gap-2">
+          <span className="flex items-center gap-1 flex-shrink-0">
             {currentConfig.icon}
-            {currentConfig.label}
+            <span className="hidden sm:inline">{currentConfig.label}</span>
           </span>
           {showTimer && timeLeft !== null && (
-            <span className={`font-bold text-lg ${timeLeft <= 5 ? 'text-red-600 animate-pulse' : ''}`}>
-              ⏱️ {timeLeft}s
+            <span className={`font-bold text-xs inline-flex items-center gap-1 ${timeLeft <= 60 ? 'text-red-600 animate-pulse' : 'text-gray-700'}`}>
+              ⏱️ {formatTime(timeLeft)}
             </span>
           )}
         </button>
@@ -147,17 +155,17 @@ const DeliveryStatusSelector = ({ ticketId, ticketNumber, currentStatus, deliver
         {/* Dropdown Menu */}
         <div
           id={`dropdown-${ticketId}`}
-          className="hidden absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10"
+          className="hidden absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg z-10"
         >
           <button
             onClick={() => {
               handleStatusChange('solicitar-domi');
               document.getElementById(`dropdown-${ticketId}`).classList.add('hidden');
             }}
-            className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2"
+            className="w-full text-left px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2 text-xs"
           >
             <span className="text-lg">🚨</span>
-            <span className="font-medium text-gray-800 dark:text-white">Solicitar Domicilio</span>
+            <span className="font-medium text-gray-800 dark:text-white">Solicitar Domi</span>
           </button>
 
           <button
@@ -165,23 +173,13 @@ const DeliveryStatusSelector = ({ ticketId, ticketNumber, currentStatus, deliver
               handleStatusChange('entregado');
               document.getElementById(`dropdown-${ticketId}`).classList.add('hidden');
             }}
-            className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+            className="w-full text-left px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-xs"
           >
             <span className="text-lg">✅</span>
             <span className="font-medium text-gray-800 dark:text-white">Entregado</span>
           </button>
         </div>
       </div>
-
-      {/* Indicador de Alerta */}
-      {showTimer && timeLeft !== null && timeLeft <= 0 && (
-        <div className="bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg p-2 flex items-center gap-2">
-          <AlertTriangle size={16} className="text-red-600 dark:text-red-400 flex-shrink-0" />
-          <span className="text-xs font-semibold text-red-700 dark:text-red-300">
-            ⏰ Domicilio DEMORADO - Tiempo agotado
-          </span>
-        </div>
-      )}
     </div>
   );
 };

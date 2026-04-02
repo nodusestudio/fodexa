@@ -59,63 +59,63 @@ const DeliveryRowDesktop = ({ ticket, onUpdateField, onMarkDelivered, onPrintGui
   const statusInfo = statusConfig[status] || statusConfig['solicitar-domi'];
 
   return (
-    <div className={`grid grid-cols-11 gap-2 px-3 py-3 border-b border-gray-200 dark:border-gray-700 items-center hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors`}>
+    <div className={`grid grid-cols-12 gap-1 px-2 py-2 border-b border-gray-200 dark:border-gray-700 items-center hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-xs`}>
       {/* TICKET - col-span-1 */}
-      <div className="col-span-1 text-center">
-        <p className="text-xs font-semibold text-gray-900 dark:text-white">{ticket.ticketNumber}</p>
+      <div className="col-span-1 text-center font-semibold text-gray-900 dark:text-white truncate">
+        {ticket.ticketNumber}
       </div>
 
-      {/* CLIENTE - col-span-1.5 */}
-      <div className="col-span-1 truncate text-center">
-        <p className="text-xs font-medium text-gray-900 dark:text-white truncate">{deliveryData.name || 'N/A'}</p>
+      {/* CLIENTE - col-span-2 */}
+      <div className="col-span-2 text-center truncate text-gray-900 dark:text-white font-medium">
+        {deliveryData.name || 'N/A'}
       </div>
 
-      {/* TELÉFONO - col-span-1.5 */}
-      <div className="col-span-1 truncate text-center">
-        <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{deliveryData.phone || 'N/A'}</p>
+      {/* TELÉFONO - col-span-1 */}
+      <div className="col-span-1 text-center truncate text-gray-600 dark:text-gray-400">
+        {deliveryData.phone || 'N/A'}
       </div>
 
       {/* DIRECCIÓN - col-span-2 */}
-      <div className="col-span-2 truncate text-center">
-        <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{deliveryData.address || 'N/A'}</p>
+      <div className="col-span-2 text-center truncate text-gray-600 dark:text-gray-400">
+        {deliveryData.address || 'N/A'}
       </div>
 
-      {/* ESTADO - col-span-2 */}
-      <div className="col-span-2 flex justify-center px-1">
-        <DeliveryStatusSelector
-          ticketId={ticket.id}
-          ticketNumber={ticket.ticketNumber}
-          currentStatus={status}
-          deliveryData={deliveryData}
-          onStatusChange={(ticketId, newStatus) => {
-            onUpdateField(ticket.id, 'deliveryStatus', newStatus);
-          }}
-        />
+      {/* ESTADO - col-span-3 */}
+      <div className="col-span-3 flex justify-center">
+        <div className="w-full">
+          <DeliveryStatusSelector
+            ticketId={ticket.id}
+            ticketNumber={ticket.ticketNumber}
+            currentStatus={status}
+            deliveryData={deliveryData}
+            onStatusChange={(ticketId, newStatus) => {
+              onUpdateField(ticket.id, 'deliveryStatus', newStatus);
+            }}
+          />
+        </div>
       </div>
 
-      {/* TOTAL/COBRAR-PAGAR - col-span-1.5 */}
-      <div className={`col-span-1 rounded px-2 py-1 ${paymentInfo.color} text-center`}>
-        <p className={`text-xs font-semibold ${paymentInfo.textColor}`}>
-          ${paymentInfo.amount.toLocaleString('es-CO', { maximumFractionDigits: 0 })}
-        </p>
+      {/* MONTO - col-span-1 */}
+      <div className={`col-span-1 text-center rounded px-1 py-1 ${paymentInfo.color} font-semibold`}>
+        ${paymentInfo.amount.toLocaleString('es-CO', { maximumFractionDigits: 0 })}
       </div>
 
       {/* ACCIONES - col-span-1 */}
-      <div className="col-span-1 flex items-center justify-center gap-1">
+      <div className="col-span-1 flex items-center justify-center gap-0.5">
         <button
           onClick={() => onPrintGuide(ticket)}
-          className="p-1.5 text-gray-600 dark:text-gray-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded transition-colors"
+          className="p-1 text-gray-600 dark:text-gray-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded transition-colors"
           title="Imprimir guía"
         >
-          <Printer size={16} />
+          <Printer size={14} />
         </button>
         {status !== 'delivered' && (
           <button
             onClick={() => onMarkDelivered(ticket.id)}
-            className="p-1.5 text-gray-600 dark:text-gray-400 hover:bg-green-100 dark:hover:bg-green-900/30 rounded transition-colors"
+            className="p-1 text-gray-600 dark:text-gray-400 hover:bg-green-100 dark:hover:bg-green-900/30 rounded transition-colors"
             title="Marcar como entregado"
           >
-            <Check size={16} />
+            <Check size={14} />
           </button>
         )}
       </div>
@@ -504,18 +504,18 @@ const Deliveries = () => {
           </div>
         ) : (
           <div>
-            {/* DESKTOP VIEW (lg+) - Tabla con Grid 11 columnas */}
+            {/* DESKTOP VIEW (lg+) - Tabla con Grid 12 columnas */}
             <div className="hidden lg:block">
               {/* Header */}
               <div className="sticky top-0 bg-gray-100 dark:bg-gray-700 border-b border-gray-300 dark:border-gray-600 z-10">
-                <div className="grid grid-cols-11 gap-2 px-3 py-2 text-xs font-bold text-gray-700 dark:text-gray-300">
-                  <div className="col-span-1 text-center">TICKET</div>
-                  <div className="col-span-1 text-center">CLIENTE</div>
-                  <div className="col-span-1 text-center">TELÉFONO</div>
+                <div className="grid grid-cols-12 gap-1 px-2 py-2 text-xs font-bold text-gray-700 dark:text-gray-300">
+                  <div className="col-span-1 text-center">TKT</div>
+                  <div className="col-span-2 text-center">CLIENTE</div>
+                  <div className="col-span-1 text-center">TEL</div>
                   <div className="col-span-2 text-center">DIRECCIÓN</div>
-                  <div className="col-span-2 text-center">ESTADO</div>
-                  <div className="col-span-1 text-center">MONTO</div>
-                  <div className="col-span-1 text-center">ACC.</div>
+                  <div className="col-span-3 text-center">ESTADO</div>
+                  <div className="col-span-1 text-center">$</div>
+                  <div className="col-span-1 text-center">ACT</div>
                 </div>
               </div>
 
