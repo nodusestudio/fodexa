@@ -133,7 +133,71 @@ export const SettingsProvider = ({ children }) => {
     });
   };
 
-  const resetSettings = () => setSettings(defaultSettings);
+  const hardResetSystem = () => {
+    if (!user) return false;
+
+    try {
+      console.log('🔄 HARD RESET - Limpiando sistema completamente...');
+      
+      // 1️⃣ Limpiar localStorage
+      console.log('🧹 Limpiando localStorage...');
+      const keysToRemove = Object.keys(localStorage).filter(key => {
+        const shouldRemove = key.includes(user.uid) || 
+                            key.includes('order') || 
+                            key.includes('cart') || 
+                            key.includes('cash') ||
+                            key.includes('ticket') ||
+                            key.includes('delivery') ||
+                            key.includes('domain');
+        if (shouldRemove) {
+          console.log(`  ✓ Removing: ${key}`);
+        }
+        return shouldRemove;
+      });
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+
+      // 2️⃣ Limpiar sessionStorage
+      console.log('🧹 Limpiando sessionStorage...');
+      sessionStorage.clear();
+
+      // 3️⃣ Limpiar IndexedDB (si lo hay)
+      console.log('🧹 Limpiando IndexedDB...');
+      if (window.indexedDB) {
+        const databases = await new Promise((resolve) => {
+          const dbList = [];
+          try {
+            // Intentar limpiar bases de datos conocidas
+            ['fodexa', 'firebase', 'orders', 'tickets'].forEach(dbName => {
+              try {
+                indexedDB.deleteDatabase(dbName);
+                console.log(`  ✓ Deleted IndexedDB: ${dbName}`);
+              } catch (err) {
+                // Ignorar si no existe
+              }
+            });
+            resolve(dbList);
+          } catch (err) {
+            resolve(dbList);
+          }
+        });
+      }
+
+      console.log('✅ Sistema limpio. Recargando...');
+      
+      setTimeout(() => {
+        alert('✅ Sistema restaurado e inicializado\n\nRecargando en 2 segundos...');
+        setTimeout(() => {
+          window.location.href = window.location.href;
+        }, 2000);
+      }, 500);
+      
+      return true;
+    } catch (error) {
+      console.error('❌ Error en hard reset:', error);
+      alert('❌ Error: ' + error.message);
+      return false;
+    }
+  };
 
   // Resetear datos ficticios del usuario (órdenes, tickets, caja, reportes)
   // NO toca: clientes, artículos, categorías, adicionales, settings
@@ -229,7 +293,7 @@ export const SettingsProvider = ({ children }) => {
   };
 
   return (
-    <SettingsContext.Provider value={{ settings, updateSettings, resetSettings, resetUserData }}>
+    <SettingsContext.Provider value={{ settings, updateSettings, resetSettings, resetUserData, hardResetSystem }}>
       {children}
     </SettingsContext.Provider>
   );

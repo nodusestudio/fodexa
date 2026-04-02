@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useSettings } from '../../context/SettingsContext';
-import { AlertTriangle, Loader } from 'lucide-react';
+import { AlertTriangle, Loader, RefreshCw } from 'lucide-react';
 
 export default function ResetDataSettings() {
-  const { resetUserData } = useSettings();
+  const { resetUserData, hardResetSystem } = useSettings();
   const [isLoading, setIsLoading] = useState(false);
+  const [isHardResetLoading, setIsHardResetLoading] = useState(false);
 
   const handleReset = async () => {
     const confirmed = window.confirm(
@@ -45,6 +46,22 @@ export default function ResetDataSettings() {
       alert('❌ Error al resetear: ' + error.message);
       setIsLoading(false);
     }
+  };
+
+  const handleHardReset = () => {
+    const confirmed = window.confirm(
+      '⚠️ RESTAURAR SISTEMA\n\n' +
+      'Se limpiarán TODOS los datos locales y se recargará la aplicación.\n\n' +
+      '✅ Clientes, productos y configuración se mantienen\n' +
+      '✂️ Se limpiarán: órdenes, tickets, caja, reportes\n\n' +
+      '¿Continuar?'
+    );
+
+    if (!confirmed) return;
+
+    setIsHardResetLoading(true);
+    hardResetSystem();
+    // La función ya hace reload, pero asegurar timeout
   };
 
   return (
@@ -109,12 +126,28 @@ export default function ResetDataSettings() {
           {isLoading && <Loader size={18} className="animate-spin" />}
           {isLoading ? '⏳ Limpiando...' : '🗑️ Eliminar Datos Ficticios'}
         </button>
+
+        {/* Hard Reset Button - Más Simple y Directo */}
+        <button
+          onClick={handleHardReset}
+          disabled={isHardResetLoading}
+          className="w-full sm:w-auto px-6 py-3 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 mt-3"
+        >
+          {isHardResetLoading && <Loader size={18} className="animate-spin" />}
+          {isHardResetLoading ? '🔄 Restaurando...' : '🔄 Restaurar Sistema'}
+        </button>
       </div>
 
       {/* Info Card */}
-      <div className="bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 p-4 rounded">
+      <div className="bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 p-4 rounded space-y-2">
         <p className="text-sm text-blue-800 dark:text-blue-200">
-          💡 <strong>Tip:</strong> Después de eliminar los datos ficticios, haz login nuevamente para cargar un sistema limpio.
+          <strong>📌 Opciones de Limpieza:</strong>
+        </p>
+        <p className="text-sm text-blue-800 dark:text-blue-200">
+          🗑️ <strong>Eliminar Datos:</strong> Intenta eliminar todo de Firestore (envía a nube)
+        </p>
+        <p className="text-sm text-blue-800 dark:text-blue-200">
+          🔄 <strong>Restaurar Sistema:</strong> Limpia tu navegador completamente y recarga (más rápido)
         </p>
       </div>
     </div>
