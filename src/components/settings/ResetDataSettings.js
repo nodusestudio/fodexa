@@ -8,26 +8,42 @@ export default function ResetDataSettings() {
 
   const handleReset = async () => {
     const confirmed = window.confirm(
-      '⚠️ ¿Estás seguro de que quieres eliminar todos los datos ficticios?\n\n' +
-      'Se eliminarán:\n' +
-      '✅ Órdenes y Domicilios\n' +
-      '✅ Tickets\n' +
-      '✅ Caja y Gastos\n' +
-      '✅ Reportes\n' +
-      '✅ Libro Contable\n\n' +
-      '❌ NO se borrará: Clientes ni Artículos\n\n' +
-      'Esta acción NO se puede deshacer.'
+      '⚠️ ¿ESTÁS COMPLETAMENTE SEGURO?\n\n' +
+      'Se eliminarán TODOS estos datos:\n' +
+      '✂️ Órdenes (mesas, para llevar, domicilios)\n' +
+      '✂️ Tickets de Venta\n' +
+      '✂️ Caja y Gastos\n' +
+      '✂️ Reportes\n' +
+      '✂️ Libro Contable\n\n' +
+      '✅ SE GUARDARÁN: Clientes y Artículos\n\n' +
+      'Esta acción NO SE PUEDE DESHACER.\n\n' +
+      'Escribe "ELIMINAR" para confirmar.'
     );
 
-    if (confirmed) {
-      setIsLoading(true);
+    if (!confirmed) return;
+
+    // Segunda confirmación con input
+    const secondConfirm = window.prompt(
+      'Escribe "ELIMINAR" para confirmar definitivamente:'
+    );
+
+    if (secondConfirm !== 'ELIMINAR') {
+      alert('❌ Operación cancelada');
+      return;
+    }
+
+    setIsLoading(true);
+    
+    try {
       const success = await resetUserData();
-      setIsLoading(false);
       
       if (success) {
-        // Recargar página después del reset exitoso
-        setTimeout(() => window.location.reload(), 2000);
+        // resetUserData recarga automáticamente
       }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('❌ Error al resetear: ' + error.message);
+      setIsLoading(false);
     }
   };
 
@@ -49,12 +65,13 @@ export default function ResetDataSettings() {
       {/* Reset Data Section */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
         <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-          🗑️ Limpiar Datos Ficticios
+          🗑️ Limpiar Sistema (Resetear Todo)
         </h2>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+          <strong className="text-red-600 dark:text-red-400">⚠️ ATENCIÓN:</strong> Eliminará TODA la información de órdenes, tickets, caja y reportes.
+        </p>
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-          Elimina todos los datos de ejemplo que fueron cargados para pruebas. 
-          <br />
-          <strong>Tus clientes y artículos se preservarán.</strong>
+          <strong className="text-green-600 dark:text-green-400">✅ Preservará:</strong> Clientes y Artículos
         </p>
 
         <div className="space-y-2 mb-6 text-sm">

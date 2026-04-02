@@ -138,42 +138,67 @@ export const SettingsProvider = ({ children }) => {
   // Resetear datos ficticios del usuario (órdenes, tickets, caja, reportes)
   // NO toca: clientes, artículos, categorías, adicionales, settings
   const resetUserData = async () => {
-    if (!user) return;
+    if (!user) return false;
 
     try {
-      console.log('🗑️ Iniciando reseteo de datos ficticios...');
+      console.log('🗑️ Iniciando reseteo completo de datos ficticios...');
       
       const collectionsToReset = [
+        'orders',       // Órdenes activas (PRIMERO - es la más importante)
         'tickets',      // Órdenes completadas
-        'orders',       // Órdenes activas
         'cash',         // Caja (aperturas, cierres, gastos)
         'ledger',       // Libro contable
         'reports',      // Reportes generados
       ];
 
-      for (const collectionName of collectionsToReset) {
+      // Función auxiliar para eliminar colección recursivamente
+      const deleteCollection = async (collectionPath) => {
         try {
-          const collRef = collection(db, `users/${user.uid}/${collectionName}`);
+          const collRef = collection(db, collectionPath);
           const snapshot = await getDocs(collRef);
           
           let deletedCount = 0;
+          const batch = [];
+
+          // Recolectar todos los documentos a eliminar
           for (const doc of snapshot.docs) {
-            await deleteDoc(doc.ref);
+            batch.push(deleteDoc(doc.ref));
             deletedCount++;
           }
+
+          // Ejecutar todas las eliminaciones en paralelo
+          if (batch.length > 0) {
+            await Promise.all(batch);
+          }
           
-          console.log(`✅ ${collectionName}: ${deletedCount} documentos eliminados`);
+          console.log(`✅ ${collectionPath.split('/').pop()}: ${deletedCount} documentos eliminados`);
+          return deletedCount;
         } catch (error) {
-          console.warn(`⚠️ Error limpiando ${collectionName}:`, error.message);
+          console.warn(`⚠️ Error limpiando ${collectionPath}:`, error.message);
+          return 0;
         }
+      };
+
+      // Eliminar cada colección
+      let totalDeleted = 0;
+      for (const collectionName of collectionsToReset) {
+        const collPath = `users/${user.uid}/${collectionName}`;
+        totalDeleted += await deleteCollection(collPath);
       }
 
+      console.log(`✅ Total de documentos eliminados: ${totalDeleted}`);
       console.log('✅ Reseteo completado exitosamente');
-      alert('✅ Datos ficticios eliminados correctamente\n\nClientes y artículos preservados');
+      
+      // Forzar actualización del estado
+      setTimeout(() => {
+        alert('✅ Datos ficticios eliminados correctamente\n\nClientes y artículos preservados\n\nRecargando...');
+        window.location.reload();
+      }, 500);
+      
       return true;
     } catch (error) {
       console.error('❌ Error durante reseteo:', error);
-      alert('❌ Error al resetear datos');
+      alert('❌ Error al resetear datos: ' + error.message);
       return false;
     }
   };
