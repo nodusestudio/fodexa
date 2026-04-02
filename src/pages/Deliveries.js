@@ -3,6 +3,7 @@ import { useTickets } from '../context/TicketContext';
 import { useSettings } from '../context/SettingsContext';
 import { Search, RefreshCw, Truck, ChevronDown, ChevronUp, Printer, Check } from 'lucide-react';
 import { formatCurrency } from '../utils/formatters';
+import DeliveryStatusSelector from '../components/deliveries/DeliveryStatusSelector';
 
 // Componente para fila de escritorio (grid de 12 columnas)
 const DeliveryRowDesktop = ({ ticket, onUpdateField, onMarkDelivered, onPrintGuide }) => {
@@ -80,17 +81,15 @@ const DeliveryRowDesktop = ({ ticket, onUpdateField, onMarkDelivered, onPrintGui
       </div>
 
       {/* ESTADO - col-span-2 (17%) */}
-      <div className="col-span-2 flex justify-center">
-        <select
-          value={status}
-          onChange={(e) => onUpdateField(ticket.id, 'deliveryStatus', e.target.value)}
-          className={`w-full px-3 py-1 rounded text-xs font-medium border-0 cursor-pointer ${statusInfo.color} ${statusInfo.textColor} text-center`}
-        >
-          <option value="solicitar-domi">🚨 Solicitar Domi</option>
-          <option value="en-camino">🛵 En camino</option>
-          <option value="delivered">✅ Entregado</option>
-          <option value="cancelled">❌ Cancelado</option>
-        </select>
+      <div className="col-span-2 flex justify-center px-2">
+        <DeliveryStatusSelector
+          ticketId={ticket.ticketNumber}
+          currentStatus={status}
+          deliveryData={deliveryData}
+          onStatusChange={(ticketId, newStatus) => {
+            onUpdateField(ticket.id, 'deliveryStatus', newStatus);
+          }}
+        />
       </div>
 
       {/* TOTAL/COBRAR-PAGAR - col-span-2 (17%) */}
