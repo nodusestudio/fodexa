@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import TicketPrint from '../components/tickets/TicketPrint';
 import { useOrder } from '../context/OrderContext';
 import { useCart } from '../context/CartContext';
@@ -10,17 +11,21 @@ import ProductGrid from '../components/products/ProductGrid';
 import CartPanel from '../components/cart/CartPanel';
 import OrderInfo from '../components/orders/OrderInfo';
 import PaymentModal from '../components/payments/PaymentModal';
+import CashFundControl from '../components/cash/CashFundControl';
 import tables from '../data/tables';
 import { useProducts } from '../context/ProductContext';
 import { useCash } from '../context/CashContext';
-import { ShoppingCart, Lock, AlertCircle } from 'lucide-react';
+import { ShoppingCart, Lock, AlertCircle, Check } from 'lucide-react';
 
 const POS = () => {
+  const navigate = useNavigate();
   const [localOrderType, setLocalOrderType] = useState(null);
   const { currentOrderType, selectedTable, deliveryData, setOrderType, selectTable, setDeliveryData, clearCurrentOrder } = useOrder();
   const { addItem, clearCart, items } = useCart();
-  const { isCashOpen, cashSession } = useCash();
+  const { isCashOpen, cashSession, openCash } = useCash();
   const [showNoCashModal, setShowNoCashModal] = useState(false);
+  const [showOpenCashFlow, setShowOpenCashFlow] = useState(false);
+  const [showFundModalFromPOS, setShowFundModalFromPOS] = useState(false);
   const [view, setView] = useState('board');
   const [currentOrder, setCurrentOrder] = useState(null);
   const [showTableSelector, setShowTableSelector] = useState(false);
@@ -402,6 +407,58 @@ const POS = () => {
         />
       )}
 
+      {/* Modal - Pregunta conteo de billetes */}
+      {showOpenCashFlow && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-8 text-center space-y-6">
+            <div className="flex justify-center">
+              <div className="w-16 h-16 bg-green-100 dark:bg-green-900 dark:bg-opacity-30 rounded-full flex items-center justify-center">
+                <Check size={32} className="text-green-600 dark:text-green-400" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
+                ✅ Caja Abierta
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400">
+                ¿Deseas hacer el conteo de billetes y monedas ahora?
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-3 pt-4">
+              <button
+                onClick={() => {
+                  setShowOpenCashFlow(false);
+                  setShowFundModalFromPOS(true);
+                }}
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
+              >
+                Sí, Contar Ahora
+              </button>
+              <button
+                onClick={() => setShowOpenCashFlow(false)}
+                className="px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                No, Más Tarde
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal CashFundControl desde POS */}
+      {showFundModalFromPOS && (
+        <CashFundControl
+          fundAmount={cashSession?.fundAmount || 0}
+          onClose={() => setShowFundModalFromPOS(false)}
+          onUpdate={(amount) => {
+            setShowFundModalFromPOS(false);
+          }}
+          isStandalone={true}
+        />
+      )}
+
       {/* ✅ PHASE 3: Modal - Caja no abierta */}
       {showNoCashModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -437,8 +494,9 @@ const POS = () => {
             <div className="flex flex-col gap-3 pt-4">
               <button
                 onClick={() => {
-                  window.location.href = '/#/cash';
                   setShowNoCashModal(false);
+                  setShowOpenCashFlow(true);
+                  openCash({ initialAmount: 0 });
                 }}
                 className="px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-lg transition-colors"
               >

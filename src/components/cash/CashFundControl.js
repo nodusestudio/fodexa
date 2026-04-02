@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { X } from 'lucide-react';
 import { formatCurrency } from '../../utils/formatters';
 
-const CashFundControl = ({ fundAmount = 0, onClose, onUpdate }) => {
+const CashFundControl = ({ fundAmount = 0, onClose, onUpdate, isStandalone = true }) => {
   const [bills, setBills] = useState({
     '100000': 0,
     '50000': 0,
@@ -64,20 +64,19 @@ const CashFundControl = ({ fundAmount = 0, onClose, onUpdate }) => {
     onClose();
   };
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg">
-        {/* Header */}
-        <div className="flex justify-between items-center p-3 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800">
-          <h2 className="text-lg font-bold text-gray-800 dark:text-white">
-            💵 Fondo de Caja
-          </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <X size={20} />
-          </button>
-        </div>
+  const content = (
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg">
+      {/* Header */}
+      <div className="flex justify-between items-center p-3 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800">
+        <h2 className="text-lg font-bold text-gray-800 dark:text-white">
+          💵 Fondo de Caja
+        </h2>
+        <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <X size={20} />
+        </button>
+      </div>
 
-        <div className="p-3 space-y-3">
+      <div className="p-3 space-y-3">
           {/* Grid de Billetes - Ultra compacto */}
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
             {billDenominations.map(denom => (
@@ -180,8 +179,19 @@ const CashFundControl = ({ fundAmount = 0, onClose, onUpdate }) => {
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+
+  // Si es standalone, renderizar como modal completo
+  if (isStandalone) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        {content}
+      </div>
+    );
+  }
+
+  // Si no es standalone, solo renderizar el contenido sin modal wrapper
+  return content;
 };
 
 export default CashFundControl;
