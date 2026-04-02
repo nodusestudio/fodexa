@@ -67,24 +67,24 @@ const CashFundControl = ({ fundAmount = 0, onClose, onUpdate, isStandalone = tru
   const content = (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg">
       {/* Header */}
-      <div className="flex justify-between items-center p-3 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800">
-        <h2 className="text-lg font-bold text-gray-800 dark:text-white">
-          💵 Fondo de Caja
+      <div className="flex justify-between items-center p-2 sm:p-3 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800">
+        <h2 className="text-sm sm:text-lg font-bold text-gray-800 dark:text-white">
+          Fondo de Caja
         </h2>
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-          <X size={20} />
+        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1">
+          <X size={18} className="sm:w-5 sm:h-5" />
         </button>
       </div>
 
-      <div className="p-3 space-y-3">
+      <div className="p-2 sm:p-3 space-y-2 sm:space-y-3 max-h-[80vh] overflow-y-auto">
           {/* Grid de Billetes - Ultra compacto */}
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-1 sm:gap-2">
             {billDenominations.map(denom => (
               <div
                 key={denom.value}
-                className="bg-gray-50 dark:bg-gray-700 rounded p-2"
+                className="bg-gray-50 dark:bg-gray-700 rounded p-1 sm:p-2"
               >
-                <div className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1 text-center">
+                <div className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-0.5 sm:mb-1 text-center">
                   {denom.label}
                 </div>
                 <input
@@ -97,7 +97,7 @@ const CashFundControl = ({ fundAmount = 0, onClose, onUpdate, isStandalone = tru
                       [String(denom.value)]: Math.max(0, parseInt(e.target.value) || 0)
                     }))
                   }
-                  className="w-full text-center bg-white dark:bg-gray-600 text-gray-800 dark:text-white border border-gray-300 dark:border-gray-500 rounded py-1 text-xs"
+                  className="w-full text-center bg-white dark:bg-gray-600 text-gray-800 dark:text-white border border-gray-300 dark:border-gray-500 rounded py-0.5 sm:py-1 text-xs"
                   placeholder="0"
                 />
                 <div className="text-xs text-gray-600 dark:text-gray-400 text-center mt-0.5">
@@ -108,8 +108,8 @@ const CashFundControl = ({ fundAmount = 0, onClose, onUpdate, isStandalone = tru
           </div>
 
           {/* Monto Adicional */}
-          <div className="bg-gray-50 dark:bg-gray-700 rounded p-2">
-            <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+          <div className="bg-gray-50 dark:bg-gray-700 rounded p-2 sm:p-3">
+            <label className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
               Monto Adicional
             </label>
             <input
@@ -117,13 +117,13 @@ const CashFundControl = ({ fundAmount = 0, onClose, onUpdate, isStandalone = tru
               min="0"
               value={additionalAmount || ''}
               onChange={(e) => setAdditionalAmount(parseInt(e.target.value) || 0)}
-              className="w-full bg-white dark:bg-gray-600 text-gray-800 dark:text-white border border-gray-300 dark:border-gray-500 rounded py-2 px-2 text-sm"
+              className="w-full bg-white dark:bg-gray-600 text-gray-800 dark:text-white border border-gray-300 dark:border-gray-500 rounded py-1.5 sm:py-2 px-2 text-xs sm:text-sm"
               placeholder="Ingresa monto exacto"
             />
           </div>
 
           {/* Resumen */}
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900 dark:from-opacity-30 dark:to-purple-900 dark:to-opacity-30 rounded p-2 border border-blue-200 dark:border-blue-800 space-y-1">
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900 dark:from-opacity-30 dark:to-purple-900 dark:to-opacity-30 rounded p-2 sm:p-3 border border-blue-200 dark:border-blue-800 space-y-1">
             <div className="flex justify-between items-center text-xs">
               <span className="text-gray-700 dark:text-gray-400">Billetes:</span>
               <span className="font-bold text-blue-600 dark:text-blue-400">
@@ -138,7 +138,7 @@ const CashFundControl = ({ fundAmount = 0, onClose, onUpdate, isStandalone = tru
             </div>
             <div className="border-t border-blue-200 dark:border-blue-700 pt-1 flex justify-between items-center">
               <span className="text-gray-700 dark:text-gray-400 font-semibold text-xs">Total:</span>
-              <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
+              <span className="text-lg sm:text-xl font-bold text-blue-600 dark:text-blue-400">
                 {formatCurrency(totalCalculated)}
               </span>
             </div>
@@ -157,22 +157,22 @@ const CashFundControl = ({ fundAmount = 0, onClose, onUpdate, isStandalone = tru
           </div>
 
           {/* Botones */}
-          <div className="flex gap-2 pt-1">
+          <div className="flex gap-1 sm:gap-2 pt-2 sm:pt-1">
             <button
               onClick={handleReset}
-              className="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 rounded font-semibold transition-colors text-sm"
+              className="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-1.5 sm:py-2 rounded font-medium transition-colors text-xs sm:text-sm"
             >
               Limpiar
             </button>
             <button
               onClick={onClose}
-              className="flex-1 bg-gray-400 hover:bg-gray-500 text-white py-2 rounded font-semibold transition-colors text-sm"
+              className="flex-1 bg-gray-400 hover:bg-gray-500 text-white py-1.5 sm:py-2 rounded font-medium transition-colors text-xs sm:text-sm"
             >
               Cancelar
             </button>
             <button
               onClick={handleSave}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded font-semibold transition-colors text-sm"
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-1.5 sm:py-2 rounded font-medium transition-colors text-xs sm:text-sm"
             >
               Guardar
             </button>
