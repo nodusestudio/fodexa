@@ -133,7 +133,7 @@ export const SettingsProvider = ({ children }) => {
     });
   };
 
-  const hardResetSystem = () => {
+  const hardResetSystem = async () => {
     if (!user) return false;
 
     try {
