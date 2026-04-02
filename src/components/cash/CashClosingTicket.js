@@ -84,29 +84,29 @@ function CashClosingTicket({ isOpen, onClose, sessionId }) {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-800 dark:to-blue-900 px-6 py-4 text-white">
-          <h2 className="text-2xl font-bold">🧾 Ticket de Cierre de Caja</h2>
+        <div className="flex items-center justify-between bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-800 dark:to-blue-900 px-3 sm:px-6 py-3 sm:py-4 text-white">
+          <h2 className="text-lg sm:text-2xl font-bold">Ticket de Cierre de Caja</h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-blue-500 rounded-full transition-colors"
+            className="p-1 sm:p-2 hover:bg-blue-500 rounded-full transition-colors"
           >
-            <X size={24} />
+            <X size={20} className="sm:w-6 sm:h-6" />
           </button>
         </div>
 
         {/* Contenido del Ticket */}
-        <div className="flex-1 overflow-y-auto p-6 bg-gray-50 dark:bg-gray-800">
-          <div className="bg-white dark:bg-gray-900 rounded-xl p-8 space-y-6 print:shadow-none">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-6 bg-gray-50 dark:bg-gray-800">
+          <div className="bg-white dark:bg-gray-900 rounded-xl p-3 sm:p-8 space-y-3 sm:space-y-6 print:shadow-none">
             {/* Logo y Empresa */}
-            <div className="text-center border-b border-gray-300 dark:border-gray-700 pb-4">
-              <h1 className="text-3xl font-bold text-gray-800 dark:text-white">🏢</h1>
-              <h2 className="text-xl font-bold text-gray-800 dark:text-white mt-2">FODEXA POS</h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Sistema de Gestión de Caja</p>
+            <div className="text-center border-b border-gray-300 dark:border-gray-700 pb-3 sm:pb-4">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white">🏢</h1>
+              <h2 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white mt-2">FODEXA POS</h2>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Sistema de Gestión de Caja</p>
               <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Sesión: <span className="font-bold">{session?.id?.toString().slice(-6) || 'N/A'}</span></p>
             </div>
 
             {/* Información de Sesión */}
-            <div className="grid grid-cols-2 gap-4 text-sm border-b border-gray-300 dark:border-gray-700 pb-4">
+            <div className="grid grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm border-b border-gray-300 dark:border-gray-700 pb-3 sm:pb-4">
               <div>
                 <p className="text-gray-600 dark:text-gray-400">Apertura</p>
                 <p className="font-bold text-gray-800 dark:text-white text-xs">{formatDateTime(session?.openDate)}</p>
@@ -117,32 +117,32 @@ function CashClosingTicket({ isOpen, onClose, sessionId }) {
               </div>
               <div>
                 <p className="text-gray-600 dark:text-gray-400">Abierto por</p>
-                <p className="font-bold text-gray-800 dark:text-white">{session?.openUser || 'Sistema'}</p>
+                <p className="font-bold text-gray-800 dark:text-white text-xs sm:text-sm">{session?.openUser || 'Sistema'}</p>
               </div>
               <div>
                 <p className="text-gray-600 dark:text-gray-400">Cerrado por</p>
-                <p className="font-bold text-gray-800 dark:text-white">{session?.closeUser || 'Sistema'}</p>
+                <p className="font-bold text-gray-800 dark:text-white text-xs sm:text-sm">{session?.closeUser || 'Sistema'}</p>
               </div>
             </div>
 
             {/* Movimientos */}
-            <div className="space-y-4 border-b border-gray-300 dark:border-gray-700 pb-4">
+            <div className="space-y-3 sm:space-y-4 border-b border-gray-300 dark:border-gray-700 pb-3 sm:pb-4">
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">Monto Inicial</p>
-                  <p className="text-2xl font-bold text-green-600">{formatCurrency(session?.initialAmount)}</p>
+                  <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">Monto Inicial</p>
+                  <p className="text-xl sm:text-2xl font-bold text-green-600">{formatCurrency(session?.initialAmount)}</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
-                  <p className="text-gray-600 dark:text-gray-400 text-xs font-semibold uppercase">📈 Ventas Totales</p>
-                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">{formatCurrency(sales)}</p>
+              <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-2 sm:p-4 border border-blue-200 dark:border-blue-700">
+                  <p className="text-gray-600 dark:text-gray-400 text-xs font-semibold uppercase">Ventas Totales</p>
+                  <p className="text-lg sm:text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">{formatCurrency(sales)}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">{saleCount} venta{saleCount !== 1 ? 's' : ''}</p>
                 </div>
-                <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 border border-red-200 dark:border-red-700">
-                  <p className="text-gray-600 dark:text-gray-400 text-xs font-semibold uppercase">📉 Egresos Totales</p>
-                  <p className="text-2xl font-bold text-red-600 dark:text-red-400 mt-1">{formatCurrency(expenses)}</p>
+                <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-2 sm:p-4 border border-red-200 dark:border-red-700">
+                  <p className="text-gray-600 dark:text-gray-400 text-xs font-semibold uppercase">Egresos Totales</p>
+                  <p className="text-lg sm:text-2xl font-bold text-red-600 dark:text-red-400 mt-1">{formatCurrency(expenses)}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">{expenseCount} egreso{expenseCount !== 1 ? 's' : ''}</p>
                 </div>
               </div>
@@ -150,20 +150,20 @@ function CashClosingTicket({ isOpen, onClose, sessionId }) {
 
             {/* Desglose por Tipo de Pago */}
             {(session?.paymentBreakdown && Object.keys(session.paymentBreakdown).length > 0) && (
-              <div className="border-b border-gray-300 dark:border-gray-700 pb-4">
-                <p className="font-bold text-gray-800 dark:text-white mb-3 text-sm">💳 DESGLOSE POR TIPO DE PAGO</p>
-                <div className="space-y-2 bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg">
+              <div className="border-b border-gray-300 dark:border-gray-700 pb-3 sm:pb-4">
+                <p className="font-bold text-gray-800 dark:text-white mb-2 sm:mb-3 text-xs sm:text-sm">DESGLOSE POR TIPO DE PAGO</p>
+                <div className="space-y-1 sm:space-y-2 bg-gray-50 dark:bg-gray-700/50 p-2 sm:p-3 rounded-lg">
                   {Object.entries(session.paymentBreakdown).map(([type, amount]) => {
                     const typeLabels = {
-                      'cash': '💵 Efectivo',
-                      'card': '💳 Tarjeta',
-                      'transfer': '📱 Transferencia',
-                      'efectivo': '💵 Efectivo',
-                      'tarjeta': '💳 Tarjeta',
-                      'transferencia': '📱 Transferencia'
+                      'cash': 'Efectivo',
+                      'card': 'Tarjeta',
+                      'transfer': 'Transferencia',
+                      'efectivo': 'Efectivo',
+                      'tarjeta': 'Tarjeta',
+                      'transferencia': 'Transferencia'
                     };
                     return (
-                      <div key={type} className="flex justify-between text-sm">
+                      <div key={type} className="flex justify-between text-xs sm:text-sm">
                         <span className="text-gray-600 dark:text-gray-300 font-medium">{typeLabels[type] || type}</span>
                         <span className="font-bold text-gray-800 dark:text-white">{formatCurrency(amount)}</span>
                       </div>
@@ -175,10 +175,10 @@ function CashClosingTicket({ isOpen, onClose, sessionId }) {
 
             {/* Egresos en Efectivo */}
             {session?.expensesInCash > 0 && (
-              <div className="border-b border-gray-300 dark:border-gray-700 pb-4">
-                <p className="font-bold text-gray-800 dark:text-white mb-2 text-sm">💸 EGRESOS EN EFECTIVO</p>
-                <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-3">
-                  <div className="flex justify-between">
+              <div className="border-b border-gray-300 dark:border-gray-700 pb-3 sm:pb-4">
+                <p className="font-bold text-gray-800 dark:text-white mb-2 text-xs sm:text-sm">EGRESOS EN EFECTIVO</p>
+                <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-2 sm:p-3">
+                  <div className="flex justify-between text-xs sm:text-sm">
                     <span className="text-gray-600 dark:text-gray-300">Total Egresos</span>
                     <span className="font-bold text-red-600 dark:text-red-400">{formatCurrency(session.expensesInCash)}</span>
                   </div>
@@ -188,19 +188,19 @@ function CashClosingTicket({ isOpen, onClose, sessionId }) {
             )}
 
             {/* Cuadre de Caja */}
-            <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg p-4 border-l-4 border-purple-600 dark:border-purple-400 space-y-3">
-              <div className="flex justify-between">
+            <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg p-3 sm:p-4 border-l-4 border-purple-600 dark:border-purple-400 space-y-2 sm:space-y-3">
+              <div className="flex justify-between text-xs sm:text-sm">
                 <span className="text-gray-600 dark:text-gray-400">Inicial + Ventas - Egresos</span>
                 <span className="font-bold text-gray-800 dark:text-white">{formatCurrency(session?.expectedAmount)}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between text-xs sm:text-sm">
                 <span className="text-gray-600 dark:text-gray-400">Monto Contado</span>
                 <span className="font-bold text-gray-800 dark:text-white">{formatCurrency(session?.finalCount)}</span>
               </div>
-              <div className="border-t border-gray-300 dark:border-gray-600 pt-3 flex justify-between">
-                <span className="font-bold text-gray-800 dark:text-white">Diferencia</span>
+              <div className="border-t border-gray-300 dark:border-gray-600 pt-2 sm:pt-3 flex justify-between">
+                <span className="font-bold text-gray-800 dark:text-white text-xs sm:text-sm">Diferencia</span>
                 <div className="text-right">
-                  <p className={`text-2xl font-bold ${differenceColor}`}>{formatCurrency(Math.abs(session?.difference))}</p>
+                  <p className={`text-lg sm:text-2xl font-bold ${differenceColor}`}>{formatCurrency(Math.abs(session?.difference))}</p>
                   <p className={`text-xs font-semibold ${differenceColor}`}>{differenceStatus}</p>
                 </div>
               </div>
@@ -208,36 +208,36 @@ function CashClosingTicket({ isOpen, onClose, sessionId }) {
 
             {/* Observaciones */}
             {session?.observations && (
-              <div className="border-l-4 border-orange-500 bg-orange-50 dark:bg-orange-900/20 p-4 rounded">
-                <p className="text-sm font-bold text-gray-800 dark:text-white mb-1">📝 Observaciones</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">{session.observations}</p>
+              <div className="border-l-4 border-orange-500 bg-orange-50 dark:bg-orange-900/20 p-2 sm:p-4 rounded">
+                <p className="text-xs sm:text-sm font-bold text-gray-800 dark:text-white mb-1">Observaciones</p>
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{session.observations}</p>
               </div>
             )}
 
             {/* Pie de página */}
-            <div className="text-center border-t border-gray-300 dark:border-gray-700 pt-4 text-xs text-gray-500 dark:text-gray-500 space-y-1">
+            <div className="text-center border-t border-gray-300 dark:border-gray-700 pt-2 sm:pt-4 text-xs text-gray-500 dark:text-gray-500 space-y-1">
               <p>Gracias por usar FODEXA POS</p>
               <p>{new Date().toLocaleString('es-CO')}</p>
-              <p className="print:hidden">Este documento es válido como comprobante de cierre de caja</p>
+              <p className="print:hidden text-xs">Este documento es válido como comprobante de cierre de caja</p>
             </div>
           </div>
         </div>
 
         {/* Footer con Botones */}
-        <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-6 py-4 flex gap-3 justify-end print:hidden">
+        <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 sm:px-6 py-3 sm:py-4 flex gap-2 sm:gap-3 justify-end print:hidden">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-lg bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-semibold transition-colors"
+            className="px-3 sm:px-4 py-2 sm:py-2 rounded-lg bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-medium sm:font-semibold transition-colors text-xs sm:text-sm"
           >
-            <X size={18} className="inline mr-2" />
+            <X size={16} className="inline mr-1 sm:mr-2" />
             Cerrar
           </button>
           <button
             onClick={handlePrint}
-            className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white font-semibold transition-colors flex items-center gap-2"
+            className="px-3 sm:px-4 py-2 sm:py-2 rounded-lg bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white font-medium sm:font-semibold transition-colors flex items-center gap-1 sm:gap-2 text-xs sm:text-sm"
           >
-            <Printer size={18} />
-            Imprimir Ticket
+            <Printer size={16} className="sm:w-5 sm:h-5" />
+            Imprimir
           </button>
         </div>
       </div>
