@@ -246,24 +246,24 @@ const Ledger = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-6 lg:p-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-2 sm:p-4 md:p-6 lg:p-8">
       {/* Header */}
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 mb-4 sm:mb-8">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-              <FileText size={36} className="text-blue-600 dark:text-blue-400" />
+            <h1 className="text-xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white flex items-center gap-2 sm:gap-3">
+              <FileText size={24} className="sm:w-9 sm:h-9 text-blue-600 dark:text-blue-400" />
               Libro Mayor
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-0.5 sm:mt-2">
               Estado detallado de caja por día
             </p>
           </div>
           {/* Saldo Total - Compacto en Header */}
-          <div className="bg-gradient-to-br from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-900 rounded-xl p-4 text-white shadow-lg flex flex-col items-center justify-center min-w-fit">
-            <p className="text-blue-100 text-xs font-medium mb-1">💰 Saldo Total</p>
-            <h2 className="text-3xl md:text-4xl font-bold">${summary.balance.toLocaleString('es-CO')}</h2>
-            <p className="text-blue-100 text-xs mt-1">
+          <div className="bg-gradient-to-br from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-900 rounded-xl p-3 sm:p-4 text-white shadow-lg flex flex-col items-center justify-center min-w-fit">
+            <p className="text-blue-100 text-xs font-medium mb-0.5 sm:mb-1">💰 Saldo Total</p>
+            <h2 className="text-xl sm:text-3xl md:text-4xl font-bold">${summary.balance.toLocaleString('es-CO')}</h2>
+            <p className="text-blue-100 text-xs mt-0.5 sm:mt-1">
               {expandedView === 'mayor' && mayorFilterType === 'day' && 'Hoy'}
               {expandedView === 'mayor' && mayorFilterType === 'week' && 'Esta semana'}
               {expandedView === 'mayor' && mayorFilterType === 'month' && 'Este mes'}
@@ -274,10 +274,10 @@ const Ledger = () => {
         </div>
 
         {/* Vista Tabs */}
-        <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex gap-2 mb-4 sm:mb-6 border-b border-gray-200 dark:border-gray-700">
           <button
             onClick={() => setExpandedView('mayor')}
-            className={`px-4 py-3 font-medium border-b-2 transition-colors ${
+            className={`px-2 sm:px-4 py-2 sm:py-3 font-medium border-b-2 transition-colors text-xs sm:text-sm ${
               expandedView === 'mayor'
                 ? 'border-blue-600 text-blue-600 dark:text-blue-400'
                 : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
@@ -287,7 +287,7 @@ const Ledger = () => {
           </button>
           <button
             onClick={() => setExpandedView('daily')}
-            className={`px-4 py-3 font-medium border-b-2 transition-colors ${
+            className={`px-2 sm:px-4 py-2 sm:py-3 font-medium border-b-2 transition-colors text-xs sm:text-sm ${
               expandedView === 'daily'
                 ? 'border-blue-600 text-blue-600 dark:text-blue-400'
                 : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
@@ -299,18 +299,18 @@ const Ledger = () => {
 
         {/* Selector de Rango para Libro Mayor */}
         {expandedView === 'mayor' && (
-          <div className="mb-6">
+          <div className="mb-4 sm:mb-6">
             <button
               onClick={() => setShowDatePicker(!showDatePicker)}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm transition-colors flex items-center gap-2"
+              className="px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-xs sm:text-sm transition-colors flex items-center gap-1.5 sm:gap-2"
             >
-              <Calendar size={16} />
+              <Calendar size={14} className="sm:w-4 sm:h-4" />
               Seleccionar Rango
             </button>
 
             {/* Modal de Selector de Rango */}
             {showDatePicker && (
-              <div className="mt-3 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 p-4">
+              <div className="mt-2 sm:mt-3 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 p-2 sm:p-4">
                 <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
                   {/* Calendario Compacto */}
                   <div className="sm:col-span-2">
