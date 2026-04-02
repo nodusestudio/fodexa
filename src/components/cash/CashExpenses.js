@@ -32,20 +32,20 @@ const CashExpenses = ({ onClose }) => {
   const totalExpenses = todayExpenses.reduce((sum, e) => sum + e.amount, 0);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
-          <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
-            <MinusCircle size={24} className="text-red-600 dark:text-red-400" />
-            Registrar Egreso
+        <div className="flex justify-between items-center p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+            <MinusCircle size={20} className="sm:w-6 sm:h-6 text-red-600 dark:text-red-400" />
+            Egreso
           </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1">
             <X size={20} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+        <form onSubmit={handleSubmit} className="p-3 sm:p-4 space-y-3 sm:space-y-4">
           {/* Monto */}
           <div>
             <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -57,7 +57,7 @@ const CashExpenses = ({ onClose }) => {
               min="0"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-red-500 text-sm"
+              className="w-full px-3 py-2 sm:py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-red-500 text-sm"
               placeholder="0.00"
               autoFocus
             />
@@ -72,8 +72,8 @@ const CashExpenses = ({ onClose }) => {
               type="text"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-red-500 text-sm"
-              placeholder="Ej: Suministros, Mantenimiento..."
+              className="w-full px-3 py-2 sm:py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-red-500 text-sm"
+              placeholder="Ej: Suministros..."
             />
           </div>
 
@@ -85,7 +85,7 @@ const CashExpenses = ({ onClose }) => {
             <select
               value={paymentType}
               onChange={(e) => setPaymentType(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-red-500 text-sm"
+              className="w-full px-3 py-2 sm:py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-red-500 text-sm"
             >
               <option value="efectivo">💵 Efectivo</option>
               <option value="bancolombia">🏦 Bancolombia</option>
@@ -94,9 +94,9 @@ const CashExpenses = ({ onClose }) => {
           </div>
 
           {/* Resumen del día */}
-          <div className="bg-red-50 dark:bg-red-900 dark:bg-opacity-20 rounded-lg p-3 mt-4">
+          <div className="bg-red-50 dark:bg-red-900 dark:bg-opacity-20 rounded-lg p-3 mt-3 sm:mt-4">
             <p className="text-xs text-red-600 dark:text-red-400 mb-1">Egresos del día</p>
-            <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+            <p className="text-xl sm:text-2xl font-bold text-red-600 dark:text-red-400">
               ${totalExpenses.toLocaleString()}
             </p>
             <p className="text-xs text-red-600 dark:text-red-400 mt-1">
@@ -105,17 +105,17 @@ const CashExpenses = ({ onClose }) => {
           </div>
 
           {/* Botones */}
-          <div className="flex gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex gap-2 pt-2 sm:pt-3 border-t border-gray-200 dark:border-gray-700">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700"
+              className="flex-1 px-3 py-2 text-xs sm:text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="flex-1 px-3 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold"
+              className="flex-1 px-3 py-2 text-xs sm:text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold"
             >
               Registrar
             </button>

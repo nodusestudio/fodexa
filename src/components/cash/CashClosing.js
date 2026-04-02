@@ -149,57 +149,55 @@ const CashClosing = ({ onClose }) => {
   const difference = finalCount ? (parseFloat(finalCount) - (cashSession?.initialAmount + totalPayments - totalExpensesByType)) : 0;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[95vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
-          <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
-            <Lock size={28} className="text-orange-600 dark:text-orange-400" />
-            Cierre de Caja
+        <div className="flex justify-between items-center p-3 sm:p-6 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
+          <h2 className="text-lg sm:text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+            <Lock size={24} className="sm:w-7 sm:h-7 text-orange-600 dark:text-orange-400" />
+            <span>Cierre</span>
           </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <X size={24} />
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1">
+            <X size={20} className="sm:w-6 sm:h-6" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="p-3 sm:p-6 space-y-3 sm:space-y-6">
           {/* ✅ PHASE 5: Timestamps */}
-          <div className="bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-900 dark:from-opacity-20 dark:to-yellow-900 dark:to-opacity-20 rounded-lg p-4 border border-orange-200 dark:border-orange-800">
-            <div className="grid grid-cols-3 gap-4">
+          <div className="bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-900 dark:from-opacity-20 dark:to-yellow-900 dark:to-opacity-20 rounded-lg p-3 sm:p-4 border border-orange-200 dark:border-orange-800">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4">
               <div>
                 <p className="text-xs text-gray-600 dark:text-gray-400 font-medium mb-1">Apertura</p>
-                <p className="font-bold text-gray-900 dark:text-white">
+                <p className="text-sm sm:text-base font-bold text-gray-900 dark:text-white truncate">
                   {new Date(cashSession?.openDate).toLocaleTimeString('es-CO')}
                 </p>
               </div>
               <div>
                 <p className="text-xs text-gray-600 dark:text-gray-400 font-medium mb-1">Cierre</p>
-                <p className="font-bold text-gray-900 dark:text-white">
+                <p className="text-sm sm:text-base font-bold text-gray-900 dark:text-white truncate">
                   {closeTime.toLocaleTimeString('es-CO')}
                 </p>
               </div>
-              <div className="flex items-start justify-end text-right">
-                <div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 font-medium mb-1 flex items-center gap-1 justify-end">
-                    <Clock size={14} /> Duración
-                  </p>
-                  <p className="font-bold text-orange-600 dark:text-orange-400">
-                    {sessionDuration?.hours}h {sessionDuration?.minutes}m
-                  </p>
-                </div>
+              <div className="col-span-2 sm:col-span-1 text-right">
+                <p className="text-xs text-gray-600 dark:text-gray-400 font-medium mb-1 flex items-center gap-1 justify-end">
+                  <Clock size={14} /> Duración
+                </p>
+                <p className="text-sm sm:text-base font-bold text-orange-600 dark:text-orange-400">
+                  {sessionDuration?.hours}h {sessionDuration?.minutes}m
+                </p>
               </div>
             </div>
           </div>
 
           {/* Info de sesión */}
-          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-2">
-            <div className="flex justify-between">
+          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 sm:p-4 space-y-2">
+            <div className="flex justify-between text-sm">
               <span className="text-gray-600 dark:text-gray-400">Capital Inicial:</span>
               <span className="font-medium text-gray-800 dark:text-white">
                 ${cashSession?.initialAmount.toLocaleString()}
               </span>
             </div>
-            <div className="flex justify-between">
+            <div className="flex justify-between text-sm">
               <span className="text-gray-600 dark:text-gray-400">Fondo de Caja:</span>
               <span className="font-medium text-blue-600 dark:text-blue-400">
                 ${cashSession?.fundAmount.toLocaleString()}
