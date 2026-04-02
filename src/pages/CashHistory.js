@@ -326,34 +326,6 @@ function CashHistory() {
                     </tr>
                   ))}
                 </tbody>
-                      <td className="px-4 py-3 text-sm text-right font-semibold text-gray-800 dark:text-white">
-                        {formatCurrency(session.expectedAmount)}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-right font-semibold text-gray-800 dark:text-white">
-                        {formatCurrency(session.finalCount)}
-                      </td>
-                      <td className={`px-4 py-3 text-sm text-right ${getDifferenceClass(session.difference)}`}>
-                        {formatCurrency(Math.abs(session.difference || 0))}
-                        <br />
-                        <span className="text-xs">
-                          {session.difference < 0 ? '❌ Falta' : session.difference > 0 ? '✅ Sobra' : '✅ Exacto'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <button
-                          onClick={() => {
-                            setSelectedSessionId(session.id);
-                            setShowTicketModal(true);
-                          }}
-                          className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors text-xs font-semibold"
-                        >
-                          <Eye size={14} />
-                          Ver
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
               </table>
             </div>
           </div>

@@ -296,8 +296,13 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
 
   // Opciones post-pago
   const printReceipt = (order) => {
-    // Integrar con el sistema real de impresión de tickets
-    window.dispatchEvent(new CustomEvent('orderSaved', { detail: order }));
+    // Integrar con el sistema real de impresión de tickets (RECIBO DE VENTA)
+    window.dispatchEvent(new CustomEvent('orderSaved', { 
+      detail: {
+        ...order,
+        ticketType: 'customer' // Tipo de ticket: recibo de cliente
+      }
+    }));
   };
 
   const copyToClipboard = (order) => {

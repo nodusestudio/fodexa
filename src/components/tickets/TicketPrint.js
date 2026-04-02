@@ -71,7 +71,7 @@ const TicketPrint = ({ ticket, onClose }) => {
         <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
             <Printer size={24} className="text-blue-600 dark:text-blue-400" />
-            Imprimir Ticket
+            {ticket.ticketType === 'kitchen' ? 'Imprimir Ticket de Cocina' : 'Imprimir Recibo de Venta'}
           </h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
             <X size={24} />
@@ -85,17 +85,28 @@ const TicketPrint = ({ ticket, onClose }) => {
             className="bg-white text-black p-4 font-mono text-sm"
             style={{ maxWidth: '300px', margin: '0 auto' }}
           >
+            {/* Tipo de Ticket */}
+            <div className="text-center border-bottom pb-2">
+              <h1 className="font-bold text-lg">
+                {ticket.ticketType === 'kitchen' ? '🍳 TICKET COCINA 🍳' : '🧾 RECIBO DE VENTA 🧾'}
+              </h1>
+            </div>
+
             {/* Empresa */}
             <div className="text-center border-bottom pb-2">
               {ticketConfig.showLogo && companyData.logo && (
                 <img src={companyData.logo} alt="Logo" className="w-20 h-20 mx-auto mb-2" />
               )}
               {ticketConfig.showCompanyName && <h2 className="font-bold text-xl mb-1">{companyData.name}</h2>}
-              {companyData.address && <div>{companyData.address}</div>}
-              {companyData.city && <div>{companyData.city}</div>}
-              {companyData.nit && <div>NIT: {companyData.nit}</div>}
-              {companyData.phone && <div>Tel: {companyData.phone}</div>}
-              {companyData.email && <div>{companyData.email}</div>}
+              {ticket.ticketType === 'customer' && (
+                <>
+                  {companyData.address && <div>{companyData.address}</div>}
+                  {companyData.city && <div>{companyData.city}</div>}
+                  {companyData.nit && <div>NIT: {companyData.nit}</div>}
+                  {companyData.phone && <div>Tel: {companyData.phone}</div>}
+                  {companyData.email && <div>{companyData.email}</div>}
+                </>
+              )}
             </div>
 
             {/* Info Ticket */}
@@ -112,7 +123,7 @@ const TicketPrint = ({ ticket, onClose }) => {
                   <span>{formatDate(ticket.createdAt)}</span>
                 </div>
               )}
-              {ticket.employee && (
+              {ticket.employee && ticket.ticketType === 'customer' && (
                 <div className="flex justify-between">
                   <span>Empleado:</span>
                   <span>{ticket.employee}</span>
@@ -216,31 +227,56 @@ const TicketPrint = ({ ticket, onClose }) => {
                 <span>TOTAL:</span>
                 <span>{formatCurrency(total, currencyCode, useDecimals)}</span>
               </div>
-              {/* Mostrar efectivo y cambio si existen */}
-              {ticket.paymentType && (
-                <div className="flex justify-between mt-1">
-                  <span>Pago:</span>
-                  <span className="capitalize">{ticket.paymentType}</span>
-                </div>
-              )}
-              {ticket.cashReceived && (
-                <div className="flex justify-between mt-1">
-                  <span>Efectivo:</span>
-                  <span>{formatCurrency(ticket.cashReceived, currencyCode, useDecimals)}</span>
-                </div>
-              )}
-              {ticket.change && (
-                <div className="flex justify-between mt-1">
-                  <span>Cambio:</span>
-                  <span>{formatCurrency(ticket.change, currencyCode, useDecimals)}</span>
-                </div>
+              
+              {/* Mostrar datos de pago SOLO en recibo de cliente */}
+              {ticket.ticketType === 'customer' && (
+                <>
+                  {ticket.paymentType && (
+                    <div className="flex justify-between mt-1">
+                      <span>Pago:</span>
+                      <span className="capitalize">{ticket.paymentType}</span>
+                    </div>
+                  )}
+                  {ticket.paymentMethods && ticket.paymentMethods.length > 0 && (
+                    <div className="mt-1">
+                      <span className="text-xs">Métodos:</span>
+                      {ticket.paymentMethods.map((method, idx) => (
+                        <div key={idx} className="flex justify-between text-xs">
+                          <span><span className="capitalize">{method.type}:</span></span>
+                          <span>{formatCurrency(method.amount, currencyCode, useDecimals)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {ticket.cashReceived && (
+                    <div className="flex justify-between mt-1">
+                      <span>Efectivo:</span>
+                      <span>{formatCurrency(ticket.cashReceived, currencyCode, useDecimals)}</span>
+                    </div>
+                  )}
+                  {ticket.change && (
+                    <div className="flex justify-between mt-1 font-bold">
+                      <span>Cambio:</span>
+                      <span>{formatCurrency(ticket.change, currencyCode, useDecimals)}</span>
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
             {/* Footer */}
             <div className="text-center text-xs text-gray-600 mt-2">
-              <p>{companyData.footer || 'Gracias por preferirnos'}</p>
-              <p className="mt-1">{companyData.name ? companyData.name : ''}</p>
+              {ticket.ticketType === 'kitchen' ? (
+                <>
+                  <p className="font-bold">¡PREPARACION EN COCINA!</p>
+                  <p className="mt-1">Pedido #{ticket.ticketNumber}</p>
+                </>
+              ) : (
+                <>
+                  <p>{companyData.footer || 'Gracias por preferirnos'}</p>
+                  <p className="mt-1">{companyData.name ? companyData.name : ''}</p>
+                </>
+              )}
               <p className="mt-2">{formatDate(ticket.createdAt)} {ticket.ticketNumber && `#${ticket.ticketNumber}`}</p>
             </div>
           </div>

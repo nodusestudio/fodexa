@@ -150,8 +150,14 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp, c
 				onCloseCart();
 			}
 			
-			// ✅ Disparar evento para guardar ORDEN (sin imprimir ticket)
-			window.dispatchEvent(new CustomEvent('orderSaved', { detail: { ...savedOrder, status: 'pending' } }));
+			// ✅ Disparar evento para IMPRIMIR TICKET DE COCINA
+			window.dispatchEvent(new CustomEvent('orderSaved', { 
+				detail: { 
+					...savedOrder, 
+					status: 'pending',
+					ticketType: 'kitchen' // Tipo de ticket: cocina
+				} 
+			}));
 			
 			// Mostrar notificación automática
 			window.dispatchEvent(new CustomEvent('push-message', {
