@@ -75,29 +75,29 @@ const Dashboard = () => {
   return (
     <div className="h-full flex flex-col bg-gray-50 dark:bg-gray-900 overflow-auto">
       {/* Header - Responsive */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-3 sm:px-6 py-3 sm:py-4 sticky top-0 z-10">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-4 mb-3 sm:mb-4">
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-2 sm:px-6 py-2 sm:py-4 sticky top-0 z-10">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-4 mb-2 sm:mb-4">
           <div>
-            <h1 className="text-xl sm:text-3xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+            <h1 className="text-lg sm:text-3xl font-bold text-gray-800 dark:text-white flex items-center gap-1 sm:gap-2">
               📊 Dashboard
             </h1>
             <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-0.5 sm:mt-1">
               Rendimiento de tu negocio
             </p>
           </div>
-          <div className="flex gap-2 sm:gap-3">
+          <div className="flex gap-1 sm:gap-3">
             <button
               onClick={handleRefresh}
-              className="px-2 sm:px-4 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-1 sm:gap-2 font-medium text-xs sm:text-sm"
+              className="px-1.5 sm:px-4 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-1 sm:gap-2 font-medium text-xs sm:text-sm"
             >
-              <RefreshCw size={16} className="sm:w-4 sm:h-4" />
+              <RefreshCw size={14} className="sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">Actualizar</span>
             </button>
             <button
               onClick={handleExport}
-              className="px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors flex items-center gap-1 sm:gap-2 text-xs sm:text-sm"
+              className="px-1.5 sm:px-4 py-1.5 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors flex items-center gap-1 sm:gap-2 text-xs sm:text-sm"
             >
-              <Download size={16} className="sm:w-4 sm:h-4" />
+              <Download size={14} className="sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">Exportar</span>
             </button>
           </div>
@@ -114,7 +114,7 @@ const Dashboard = () => {
             <button
               key={key}
               onClick={() => setPeriod(key)}
-              className={`px-2 sm:px-4 py-1 sm:py-2 rounded-lg font-medium transition-colors text-xs sm:text-sm whitespace-nowrap ${
+              className={`px-1.5 sm:px-4 py-1 sm:py-2 rounded-lg font-medium transition-colors text-xs sm:text-sm whitespace-nowrap ${
                 period === key
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
@@ -128,20 +128,20 @@ const Dashboard = () => {
         {/* Rango Personalizado */}
         {period === 'custom' && (
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mt-2 sm:mt-3">
-            <div className="flex items-center gap-1 sm:gap-2">
-              <Calendar size={16} className="text-gray-600 dark:text-gray-400 flex-shrink-0" />
+            <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <Calendar size={14} className="text-gray-600 dark:text-gray-400 flex-shrink-0 sm:w-4 sm:h-4" />
               <input
                 type="date"
                 value={customRange.start}
                 onChange={(e) => setCustomRange({ ...customRange, start: e.target.value })}
-                className="px-2 sm:px-3 py-1 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs sm:text-sm"
+                className="px-1.5 sm:px-3 py-1 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs sm:text-sm"
               />
               <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">a</span>
               <input
                 type="date"
                 value={customRange.end}
                 onChange={(e) => setCustomRange({ ...customRange, end: e.target.value })}
-                className="px-2 sm:px-3 py-1 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs sm:text-sm"
+                className="px-1.5 sm:px-3 py-1 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs sm:text-sm"
               />
             </div>
           </div>
@@ -149,9 +149,9 @@ const Dashboard = () => {
       </div>
 
       {/* Contenido - Responsive */}
-      <div className="flex-1 overflow-auto p-2 sm:p-4 md:p-6 space-y-3 sm:space-y-6">
+      <div className="flex-1 overflow-auto p-2 sm:p-4 md:p-6 space-y-2 sm:space-y-6">
         {/* Métricas Principales */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1 sm:gap-4">
           <MetricCard
             title="💰 Ventas"
             value={`$${metrics.totalSales.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`}
@@ -194,13 +194,13 @@ const Dashboard = () => {
 
         {/* Últimos Pedidos - Responsive Table */}
         <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow-md sm:shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-200 dark:border-gray-700">
-            <h3 className="text-base sm:text-lg font-bold text-gray-800 dark:text-white">
+          <div className="px-2 sm:px-6 py-2 sm:py-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 className="text-sm sm:text-lg font-bold text-gray-800 dark:text-white">
               🛒 Últimos Pedidos
             </h3>
           </div>
           {recentOrders.length === 0 ? (
-            <div className="p-4 sm:p-6 text-center text-gray-500 dark:text-gray-400 text-sm">
+            <div className="p-3 sm:p-6 text-center text-gray-500 dark:text-gray-400 text-xs sm:text-sm">
               No hay pedidos registrados
             </div>
           ) : (
@@ -225,7 +225,7 @@ const Dashboard = () => {
                         {new Date(order.createdAt || order.date || Date.now()).toLocaleDateString('es-CO')}
                       </td>
                       <td className="px-2 sm:px-6 py-2 sm:py-4 whitespace-nowrap">
-                        <span className={`px-2 sm:px-3 py-0.5 sm:py-1 text-xs font-semibold rounded-full ${
+                        <span className={`px-1.5 sm:px-3 py-0.5 sm:py-1 text-xs font-semibold rounded-full ${
                           order.orderType === 'table' ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200' :
                           order.orderType === 'delivery' ? 'bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200' :
                           'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
