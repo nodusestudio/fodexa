@@ -141,49 +141,6 @@ export const mockAddons = [
   { name: 'Toronja', price: 0, category: 'bebidas-combo', status: 'active' },
 ];
 
-export const mockOrders = [
-  {
-    id: 'order_0',
-    type: 'table',
-    tableNumber: 5,
-    items: [
-      { id: 1, name: 'Cordillera', price: 34000, quantity: 1, addons: [] },
-      { id: 11, name: 'Coca Cola 400ml', price: 5500, quantity: 2, addons: [] },
-    ],
-    status: 'pending',
-    notes: 'Sin picante',
-    timestamp: new Date(),
-    total: 45000,
-  },
-  {
-    id: 'order_1',
-    type: 'delivery',
-    deliveryData: { name: 'Juan Pérez', phone: '300 123 4567', address: 'Calle 123 #45', cost: 5000 },
-    items: [
-      { id: 2, name: 'Ranchera', price: 30000, quantity: 2, addons: [{ name: 'Queso Extra', price: 2500 }] },
-      { id: 12, name: 'Agua 600ml', price: 3500, quantity: 3, addons: [] },
-    ],
-    status: 'preparing',
-    notes: 'Entregar después de las 7pm',
-    timestamp: new Date(),
-    total: 75000,
-  },
-  {
-    id: 'order_2',
-    type: 'takeout',
-    items: [
-      { id: 3, name: 'Combo 1 Burger Clásica Normal', price: 21000, quantity: 1, addons: [] },
-      { id: 10, name: 'Combo 2 Perros', price: 25000, quantity: 1, addons: [{ name: 'Salsa Extra', price: 1000 }] },
-    ],
-    status: 'ready',
-    notes: 'Para llevar',
-    timestamp: new Date(),
-    total: 47000,
-  },
-];
+export const mockOrders = [];
 
-export const mockExpenses = [
-  { amount: 50000, category: 'supplies', description: 'Compra de pan para hamburguesas' },
-  { amount: 25000, category: 'utilities', description: 'Pago parcial de electricidad' },
-  { amount: 10000, category: 'maintenance', description: 'Limpieza de equipos' },
-];
+export const mockExpenses = [];

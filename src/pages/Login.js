@@ -5,8 +5,8 @@ import { Mail, Lock, AlertCircle, Loader, Eye, EyeOff } from 'lucide-react';
 import { APP_VERSION } from '../config/version';
 
 export default function Login() {
-  const [email, setEmail] = useState('test@example.com');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [isRecovery, setIsRecovery] = useState(false);
@@ -82,12 +82,9 @@ export default function Login() {
         {/* Logo/Title */}
         <div className="text-center mb-4 sm:mb-8">
           <div className="flex items-center justify-center gap-1 sm:gap-2 mb-1 sm:mb-2">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-5xl sm:text-6xl font-bold text-gray-900 dark:text-white">
               FODEXA
             </h1>
-            <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 text-xs rounded-full font-medium">
-              Demo
-            </span>
           </div>
           <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
             Sistema POS - Punto de Venta

@@ -8,62 +8,7 @@ const TicketContext = createContext();
 
 export const TicketProvider = ({ children }) => {
   const { user } = useAuth();
-  const [tickets, setTickets] = useState([
-    {
-      id: 1,
-      userId: 'shared',
-      ticketNumber: 'TKT-000001',
-      orderId: 1,
-      orderType: 'table',
-      tableNumber: 3,
-      customer: null,
-      items: [{ name: 'Hamburguesa', quantity: 2, price: 10, addons: [] }],
-      subtotal: 20,
-      iva: 3.2,
-      deliveryCost: 0,
-      total: 23.2,
-      paymentType: 'cash',
-      transferType: null,
-      status: 'completed',
-      createdAt: new Date(Date.now() - 30 * 60000),
-    },
-    {
-      id: 2,
-      userId: 'shared',
-      ticketNumber: 'TKT-000002',
-      orderId: 2,
-      orderType: 'takeout',
-      tableNumber: null,
-      customer: null,
-      items: [{ name: 'Pizza', quantity: 1, price: 15, addons: [] }],
-      subtotal: 15,
-      iva: 2.4,
-      deliveryCost: 0,
-      total: 17.4,
-      paymentType: 'card',
-      transferType: null,
-      status: 'completed',
-      createdAt: new Date(Date.now() - 60 * 60000),
-    },
-    {
-      id: 3,
-      userId: 'shared',
-      ticketNumber: 'TKT-000003',
-      orderId: 3,
-      orderType: 'delivery',
-      tableNumber: null,
-      customer: { name: 'Juan Pérez', phone: '300 123 4567', address: 'Calle 123' },
-      items: [{ name: 'Refresco', quantity: 3, price: 3, addons: [] }],
-      subtotal: 9,
-      iva: 1.44,
-      deliveryCost: 5,
-      total: 15.44,
-      paymentType: 'cash',
-      transferType: null,
-      status: 'completed',
-      createdAt: new Date(Date.now() - 120 * 60000),
-    },
-  ]);
+  const [tickets, setTickets] = useState([]);
 
   // Cargar tickets desde Firestore en tiempo real
   useEffect(() => {
