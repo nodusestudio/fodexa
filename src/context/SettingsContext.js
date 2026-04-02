@@ -356,7 +356,7 @@ export const SettingsProvider = ({ children }) => {
   };
 
   return (
-    <SettingsContext.Provider value={{ settings, updateSettings, resetSettings, resetUserData, hardResetSystem }}>
+    <SettingsContext.Provider value={{ settings, updateSettings, resetUserData, hardResetSystem }}>
       {children}
     </SettingsContext.Provider>
   );
