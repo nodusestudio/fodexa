@@ -22,7 +22,7 @@ const POS = () => {
   const [localOrderType, setLocalOrderType] = useState(null);
   const { currentOrderType, selectedTable, deliveryData, setOrderType, selectTable, setDeliveryData, clearCurrentOrder } = useOrder();
   const { addItem, clearCart, items } = useCart();
-  const { isCashOpen, cashSession, openCash } = useCash();
+  const { isCashOpen, cashSession, openCash, setCashSession } = useCash();
   const [showNoCashModal, setShowNoCashModal] = useState(false);
   const [showOpenCashFlow, setShowOpenCashFlow] = useState(false);
   const [showFundModalFromPOS, setShowFundModalFromPOS] = useState(false);
@@ -452,7 +452,13 @@ const POS = () => {
         <CashFundControl
           fundAmount={cashSession?.fundAmount || 0}
           onClose={() => setShowFundModalFromPOS(false)}
-          onUpdate={(amount) => {
+          onUpdate={(newAmount) => {
+            if (cashSession) {
+              setCashSession({
+                ...cashSession,
+                fundAmount: newAmount
+              });
+            }
             setShowFundModalFromPOS(false);
           }}
           isStandalone={true}
