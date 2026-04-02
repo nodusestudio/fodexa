@@ -14,6 +14,7 @@ export const mockCategories = [
   { name: 'Combos Temporada', description: 'Combos especiales de temporada con los mejores sabores venezolanos', color: '#F59E0B', status: 'active' },
   { name: 'Adicionales', description: 'Ingredientes y agregados extras para personalizar tu orden', color: '#A78BFA', status: 'active' },
   { name: 'Bebidas', description: 'Gaseosas, jugos naturales y agua embotellada', color: '#3B82F6', status: 'active' },
+  { name: 'Cuponera', description: 'Cupones y opciones de combos por paquete', color: '#F97316', status: 'active' },
 ];
 
 export const mockProducts = [
@@ -124,6 +125,19 @@ export const mockProducts = [
   { name: 'Queso Tipo Mozarella', category: 'Adicionales', price: 3000, cost: 1200, description: 'Queso tipo mozarella fresco, perfecto para gratinar', stock: 100, status: 'active', image: null },
   { name: 'Huevo de Gallina', category: 'Adicionales', price: 2000, cost: 800, description: 'Huevo de gallina a la plancha o como lo prefieras', stock: 100, status: 'active', image: null },
   { name: 'Huevos de Codorniz (5 und.)', category: 'Adicionales', price: 4000, cost: 1600, description: 'Huevos de codorniz 5 unidades, delicados y nutritivos', stock: 100, status: 'active', image: null },
+  
+  // Cuponera
+  { name: 'CUPON A - CARACAS', category: 'Cuponera', price: 33000, cost: 13200, description: 'Cupón A - Caracas', stock: 100, status: 'active', image: null },
+  { name: 'CUPON A - CORDILLERA', category: 'Cuponera', price: 41000, cost: 16400, description: 'Cupón A - Cordillera', stock: 100, status: 'active', image: null },
+  { name: 'CUPON A - PAPUDA', category: 'Cuponera', price: 27000, cost: 10800, description: 'Cupón A - Papuda', stock: 100, status: 'active', image: null },
+  { name: 'CUPON A - PLUS', category: 'Cuponera', price: 37000, cost: 14800, description: 'Cupón A - Plus', stock: 100, status: 'active', image: null },
+  { name: 'CUPON A - RANCHERA', category: 'Cuponera', price: 37000, cost: 14800, description: 'Cupón A - Ranchera', stock: 100, status: 'active', image: null },
+  { name: 'CUPON A - TRUPLETE', category: 'Cuponera', price: 36000, cost: 14400, description: 'Cupón A - Truplete', stock: 100, status: 'active', image: null },
+  { name: 'CUPON B - MIX', category: 'Cuponera', price: 36000, cost: 14400, description: 'Cupón B - Mix', stock: 100, status: 'active', image: null },
+  { name: 'CUPON B - PLUS', category: 'Cuponera', price: 43000, cost: 17200, description: 'Cupón B - Plus', stock: 100, status: 'active', image: null },
+  { name: 'CUPON B - RANCHERO', category: 'Cuponera', price: 41000, cost: 16400, description: 'Cupón B - Ranchero', stock: 100, status: 'active', image: null },
+  { name: 'CUPON B - URBANO', category: 'Cuponera', price: 37000, cost: 14800, description: 'Cupón B - Urbano', stock: 100, status: 'active', image: null },
+  { name: 'Cupon de bienvenida', category: 'Cuponera', price: 4500, cost: 1800, description: 'Cupón de bienvenida', stock: 100, status: 'active', image: null },
 ];
 
 export const mockAddons = [
