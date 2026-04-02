@@ -77,54 +77,54 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-600 to-blue-600 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl max-w-md w-full p-8">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-600 to-blue-600 flex items-center justify-center p-2 sm:p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl max-w-md w-full p-4 sm:p-8">
         {/* Logo/Title */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              🍔 FODEXA
+        <div className="text-center mb-4 sm:mb-8">
+          <div className="flex items-center justify-center gap-1 sm:gap-2 mb-1 sm:mb-2">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+              FODEXA
             </h1>
-            <span className="px-2 py-1 bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 text-xs rounded-full font-medium">
+            <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 text-xs rounded-full font-medium">
               Demo
             </span>
           </div>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
             Sistema POS - Punto de Venta
           </p>
         </div>
 
         {/* Error Message */}
         {error && (
-          <div className="mb-4 p-3 bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
-            <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
+          <div className="mb-2 sm:mb-4 p-2 sm:p-3 bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded flex items-start gap-2">
+            <AlertCircle className="w-4 sm:w-5 h-4 sm:h-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+            <p className="text-xs sm:text-sm text-red-800 dark:text-red-200">{error}</p>
           </div>
         )}
 
         {/* Success Message */}
         {recoveryMessage && (
-          <div className="mb-4 p-3 bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 rounded flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
-            <p className="text-sm text-green-800 dark:text-green-200">{recoveryMessage}</p>
+          <div className="mb-2 sm:mb-4 p-2 sm:p-3 bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 rounded flex items-start gap-2">
+            <AlertCircle className="w-4 sm:w-5 h-4 sm:h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+            <p className="text-xs sm:text-sm text-green-800 dark:text-green-200">{recoveryMessage}</p>
           </div>
         )}
 
         {/* Password Recovery Form */}
         {isRecovery && (
-          <form onSubmit={handlePasswordReset} className="space-y-4">
+          <form onSubmit={handlePasswordReset} className="space-y-2 sm:space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Email para recuperación
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                <Mail className="absolute left-3 top-2.5 sm:top-3 w-4 sm:w-5 h-4 sm:h-5 text-gray-400" />
                 <input
                   type="email"
                   value={recoveryEmail}
                   onChange={(e) => setRecoveryEmail(e.target.value)}
                   placeholder="tu@email.com"
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white transition"
+                  className="w-full pl-9 sm:pl-10 pr-4 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white transition text-xs sm:text-sm"
                   required
                 />
               </div>
@@ -133,9 +133,9 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition"
+              className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-medium py-1.5 sm:py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition text-xs sm:text-sm"
             >
-              {loading && <Loader className="w-4 h-4 animate-spin" />}
+              {loading && <Loader className="w-3 sm:w-4 h-3 sm:h-4 animate-spin" />}
               {loading ? 'Enviando...' : 'Enviar Email de Recuperación'}
             </button>
           </form>
@@ -143,20 +143,20 @@ export default function Login() {
 
         {/* Login/Signup Form */}
         {!isRecovery && (
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-2 sm:space-y-4">
             {/* Email */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Email
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                <Mail className="absolute left-3 top-2.5 sm:top-3 w-4 sm:w-5 h-4 sm:h-5 text-gray-400" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="tu@email.com"
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white transition"
+                  className="w-full pl-9 sm:pl-10 pr-4 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white transition text-xs sm:text-sm"
                   required
                 />
               </div>
@@ -164,28 +164,28 @@ export default function Login() {
 
             {/* Password */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Contraseña
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                <Lock className="absolute left-3 top-2.5 sm:top-3 w-4 sm:w-5 h-4 sm:h-5 text-gray-400" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white transition"
+                  className="w-full pl-9 sm:pl-10 pr-10 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white transition text-xs sm:text-sm"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  className="absolute right-3 top-2.5 sm:top-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                 >
                   {showPassword ? (
-                    <EyeOff className="w-5 h-5" />
+                    <EyeOff className="w-4 sm:w-5 h-4 sm:h-5" />
                   ) : (
-                    <Eye className="w-5 h-5" />
+                    <Eye className="w-4 sm:w-5 h-4 sm:h-5" />
                   )}
                 </button>
               </div>
@@ -195,30 +195,30 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition"
+              className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white font-medium py-1.5 sm:py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition text-xs sm:text-sm"
             >
-              {loading && <Loader className="w-4 h-4 animate-spin" />}
+              {loading && <Loader className="w-3 sm:w-4 h-3 sm:h-4 animate-spin" />}
               {loading ? 'Procesando...' : isSignUp ? 'Crear Cuenta' : 'Iniciar Sesión'}
             </button>
           </form>
         )}
 
         {/* Demo Info */}
-        <div className="mt-6 p-3 bg-blue-50 dark:bg-blue-900 rounded">
+        <div className="mt-3 sm:mt-6 p-2 sm:p-3 bg-blue-50 dark:bg-blue-900 rounded">
           <p className="text-xs text-blue-800 dark:text-blue-200">
-            <strong>📝 Datos de prueba:</strong>
+            <strong>Datos de prueba:</strong>
             <br />
             Email: <code className="bg-blue-100 dark:bg-blue-800 px-1">test@example.com</code>
             <br />
-            Contraseña: <code className="bg-blue-100 dark:bg-blue-800 px-1">password123</code>
+            Pwd: <code className="bg-blue-100 dark:bg-blue-800 px-1">password123</code>
           </p>
         </div>
 
         {/* Toggle Sign Up / Forgot Password */}
-        <div className="mt-4 text-center space-y-2">
+        <div className="mt-3 sm:mt-4 text-center space-y-1 sm:space-y-2">
           {!isRecovery && (
             <>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                 {isSignUp ? '¿Ya tienes cuenta?' : '¿No tienes cuenta?'}{' '}
                 <button
                   type="button"
@@ -232,7 +232,7 @@ export default function Login() {
                 </button>
               </p>
               {!isSignUp && (
-                <p className="text-sm">
+                <p className="text-xs sm:text-sm">
                   <button
                     type="button"
                     onClick={() => {
@@ -248,7 +248,7 @@ export default function Login() {
             </>
           )}
           {isRecovery && (
-            <p className="text-sm">
+            <p className="text-xs sm:text-sm">
               <button
                 type="button"
                 onClick={() => {
@@ -265,9 +265,9 @@ export default function Login() {
         </div>
 
         {/* Info */}
-        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+        <div className="mt-3 sm:mt-6 pt-2 sm:pt-6 border-t border-gray-200 dark:border-gray-700">
           <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-            ℹ️ actualización n {APP_VERSION}
+            Actualización n {APP_VERSION}
           </p>
         </div>
       </div>
