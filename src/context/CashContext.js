@@ -48,25 +48,43 @@ export const CashProvider = ({ children }) => {
     return totalDeliveryCost;
   };
 
-  // Cargar gastos de prueba cuando hay usuario
+  // Cargar gastos desde Firestore en tiempo real
   useEffect(() => {
     if (!user) {
       setExpenses([]);
-      setSessionHistory([]);
       setLoading(false);
       return;
     }
 
-    // Agregar userId e id a los mockExpenses
-    const expensesWithId = mockExpenses.map((expense, i) => ({
-      id: `expense_${i}`,
-      userId: user.uid,
-      timestamp: new Date(),
-      ...expense
-    }));
+    console.log('💸 Cargando gastos desde Firestore...');
+    setLoading(true);
 
-    setExpenses(expensesWithId);
-    setLoading(false);
+    const q = query(
+      collection(db, `users/${user.uid}/cash`),
+      orderBy('timestamp', 'desc')
+    );
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const expensesData = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          timestamp: doc.data().timestamp?.toDate?.() || doc.data().timestamp,
+        }));
+        setExpenses(expensesData);
+        console.log('✅ Gastos cargados desde la nube:', expensesData.length);
+        setLoading(false);
+      },
+      (error) => {
+        console.warn('⚠️ Error cargando gastos:', error.message);
+        // Para usuarios autenticados: arreglo vacío (sin fallback a mock)
+        setExpenses([]);
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
   }, [user]);
 
   // ✅ Cargar sesiones cerradas desde Firestore (Libro Contable)

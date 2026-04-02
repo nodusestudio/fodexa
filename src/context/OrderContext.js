@@ -54,14 +54,10 @@ export const OrderProvider = ({ children }) => {
         setLoading(false);
       },
       (error) => {
-        console.warn('⚠️ Error al cargar órdenes (usando datos locales):', error.message);
-        // Fallback a datos mock si Firestore falla
-        const ordersWithUserId = mockOrders.map(order => ({
-          ...order,
-          userId: user.uid,
-          timestamp: order.timestamp || new Date(),
-        }));
-        setOrders(ordersWithUserId);
+        console.warn('⚠️ Error al cargar órdenes:', error.message);
+        // Para usuarios autenticados: arreglo vacío (sin fallback a mock)
+        // Solo mostrar mock para desarrollo/demo sin usuario
+        setOrders([]);
         setLoading(false);
       }
     );
