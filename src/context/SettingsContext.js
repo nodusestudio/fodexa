@@ -225,13 +225,13 @@ export const SettingsProvider = ({ children }) => {
       const collectionsToReset = [
         'orders',        // Órdenes activas
         'tickets',       // Órdenes completadas
-        'cash',          // Gastos
-        'cashSessions',  // Sesiones de caja
-        'ledger',        // Libro contable
+        'cash',          // Gastos/movimientos de caja
+        'cashSessions',  // Sesiones de caja (LIBRO CONTABLE)
+        'ledger',        // Reportes contables
         'reports',       // Reportes generados
       ];
 
-      // 3️⃣ Función auxiliar mejorada
+      // 3️⃣ Función auxiliar mejorada - ELIMINA RECURSIVAMENTE todo
       const deleteCollection = async (collectionPath) => {
         try {
           const collRef = collection(db, collectionPath);
@@ -245,31 +245,63 @@ export const SettingsProvider = ({ children }) => {
           let deletedCount = 0;
           const batch = [];
 
+          // Eliminar TODOS los documentos
           for (const doc of snapshot.docs) {
             batch.push(deleteDoc(doc.ref));
             deletedCount++;
+            console.log(`  - Deleting: ${doc.id}`);
           }
 
-          await Promise.all(batch);
+          if (batch.length > 0) {
+            await Promise.all(batch);
+            console.log(`✅ ${collectionPath.split('/').pop()}: ${deletedCount} docs ELIMINADOS`);
+          }
           
-          // Verificar que realmente se eliminaron
+          // Verificar que realmente se eliminaron (importante para Libro Contable)
           const verifySnapshot = await getDocs(collRef);
-          console.log(`✅ ${collectionPath.split('/').pop()}: ${deletedCount} docs eliminados (verificado: ${verifySnapshot.size} restantes)`);
+          if (verifySnapshot.size > 0) {
+            console.warn(`⚠️ ADVERTENCIA: ${collectionPath} aún tiene ${verifySnapshot.size} docs`);
+            // Intentar eliminarlos nuevamente
+            for (const doc of verifySnapshot.docs) {
+              await deleteDoc(doc.ref);
+              deletedCount++;
+              console.log(`  - 2nd attempt: Deletando ${doc.id}`);
+            }
+          }
+          
           return deletedCount;
         } catch (error) {
           console.error(`❌ Error en ${collectionPath}:`, error.message);
-          return 0;
+          throw error;
         }
       };
 
-      // 4️⃣ Eliminar colecciones SECUENCIALMENTE (asegurar que terminan antes de continuar)
+      // 4️⃣ Eliminar colecciones SECUENCIALMENTE
       let totalDeleted = 0;
       for (const collectionName of collectionsToReset) {
         const collPath = `users/${user.uid}/${collectionName}`;
-        console.log(`🔄 Procesando ${collectionName}...`);
+        console.log(`\n🔄 Procesando ${collectionName}...`);
         totalDeleted += await deleteCollection(collPath);
         // Pequeño delay entre colecciones
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+
+      // 5️⃣ GARANTÍA EXTRA: Verificar que cashSessions (Libro Contable) está COMPLETAMENTE VACÍO
+      console.log('\n🔐 VERIFICACIÓN FINAL DEL LIBRO CONTABLE...');
+      const cashSessionsRef = collection(db, `users/${user.uid}/cashSessions`);
+      const finalCheck = await getDocs(cashSessionsRef);
+      if (finalCheck.size > 0) {
+        console.warn(`⚠️ ALERTA: Libro Contable aún tiene ${finalCheck.size} registros! Eliminando...`);
+        let extraDeleted = 0;
+        for (const doc of finalCheck.docs) {
+          await deleteDoc(doc.ref);
+          extraDeleted++;
+          console.log(`  ✓ Eliminado: ${doc.id}`);
+        }
+        totalDeleted += extraDeleted;
+        console.log(`✅ Libro Contable limpiado: ${extraDeleted} registros eliminados`);
+      } else {
+        console.log('✅ Libro Contable: 100% LIMPIO');
       }
 
       console.log(`\n✅ TOTAL ELIMINADO: ${totalDeleted} documentos`);
