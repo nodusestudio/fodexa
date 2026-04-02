@@ -73,16 +73,20 @@ const POS = () => {
         setShowPrintModal(true);
       }
       
-      // Siempre volver al tablero después de guardar cualquier orden
-      setView('board');
-      setLocalOrderType(null);
-      setShowTableSelector(false);
-      setShowCustomerSelector(false);
-      setShowOrderInfo(false);
-      setShowProducts(false);
-      setShowCartDrawer(false);
-      clearCart();
-      clearCurrentOrder();
+      // Si es KITCHEN ticket (al guardar orden sin pagar), volver al tablero y cerrar modal de pago
+      if (order?.ticketType === 'kitchen') {
+        setView('board');
+        setLocalOrderType(null);
+        setShowTableSelector(false);
+        setShowCustomerSelector(false);
+        setShowOrderInfo(false);
+        setShowProducts(false);
+        setShowCartDrawer(false);
+        setShowPaymentModal(false); // ✅ Cerrar PaymentModal si estaba abierto
+        clearCart();
+        clearCurrentOrder();
+      }
+      // Si es CUSTOMER ticket (después de pagar), NO cerrar nada - dejar que el usuario vea el recibo
     };
     window.addEventListener('orderSaved', handleOrderSaved);
     return () => {
