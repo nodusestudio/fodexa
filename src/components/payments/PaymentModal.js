@@ -155,7 +155,7 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
   // Calcular total pagado desde selectedTypes y amounts (nuevo sistema)
   const totalPaid = selectedTypes.reduce((sum, key) => sum + (parseFloat(amounts[key]) || 0), 0);
 
-  const handleCompletePayment = () => {
+  const handleCompletePayment = async () => {
     if (totalPaid < total) {
       alert(`⚠️ Falta pagar: ${(total - totalPaid).toLocaleString()}`);
       return;
@@ -258,25 +258,27 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
     const newTicket = createTicket(orderWithPayment);
     
     // Actualizar orden en Firebase para persistir el estado
+    // ✅ IMPORTANTE: Esperar a que updateOrder se complete antes de continuar
     if (orderData.id) {
       const paymentType = finalPaymentMethods.length === 1 ? finalPaymentMethods[0].type : 'mixed';
       
-      console.log('💾 [ORDEN] Guardando orden con:', {
-        type: orderData.type,
-        pago_efectivo,
-        pago_digital,
-        paymentType,
-      });
+      console.log('💾 [ORDEN] Actualizando orden con status:', orderStatus);
       
-      updateOrder(orderData.id, {
-        status: orderStatus,
-        paymentMethods: finalPaymentMethods,
-        paymentType: paymentType,
-        transferType: transferMethod?.transferType || null,
-        deliveryData: orderData.type === 'delivery' ? deliveryData : undefined,
-        pago_efectivo,
-        pago_digital,
-      });
+      try {
+        // ✅ ESPERAR a que se actualice en Firestore
+        await updateOrder(orderData.id, {
+          status: orderStatus,
+          paymentMethods: finalPaymentMethods,
+          paymentType: paymentType,
+          transferType: transferMethod?.transferType || null,
+          deliveryData: orderData.type === 'delivery' ? deliveryData : undefined,
+          pago_efectivo,
+          pago_digital,
+        });
+        console.log('✅ Orden actualizada en Firestore - Status:', orderStatus);
+      } catch (error) {
+        console.error('❌ Error al actualizar orden:', error);
+      }
     }
     
     console.log('✅ Ticket + Orden actualizados:', {
