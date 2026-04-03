@@ -10,7 +10,6 @@ import CustomerSelector from '../components/customers/CustomerSelector';
 import ProductGrid from '../components/products/ProductGrid';
 import CartPanel from '../components/cart/CartPanel';
 import OrderInfo from '../components/orders/OrderInfo';
-import PaymentModal from '../components/payments/PaymentModal';
 import CashFundControl from '../components/cash/CashFundControl';
 import tables from '../data/tables';
 import { useProducts } from '../context/ProductContext';
@@ -32,7 +31,6 @@ const POS = () => {
   const [showCustomerSelector, setShowCustomerSelector] = useState(false);
   const [showOrderInfo, setShowOrderInfo] = useState(false);
   const [showProducts, setShowProducts] = useState(false);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [category, setCategory] = useState('all');
   const [showCartDrawer, setShowCartDrawer] = useState(false);
@@ -82,7 +80,6 @@ const POS = () => {
         setShowOrderInfo(false);
         setShowProducts(false);
         setShowCartDrawer(false);
-        setShowPaymentModal(false); // ✅ Cerrar PaymentModal si estaba abierto
         clearCart();
         clearCurrentOrder();
       }
@@ -165,18 +162,10 @@ const POS = () => {
     }
   };
 
-  const handlePayOrder = (order) => {
-    setCurrentOrder(order);
-    setShowPaymentModal(true);
-  };
-
   const handlePaymentComplete = (paymentData) => {
-    // ✅ PaymentModal ya actualizó la orden con status 'completed' o 'waiting'
-    // No necesitamos actualizar nuevamente aquí
-    
+    // ✅ PaymentModal (de CartPanel) ya actualizó la orden con status 'completed' o 'waiting'
     // Solo limpiar la UI y volver al tablero
     setCurrentOrder(null);
-    setShowPaymentModal(false);
     clearCart();
     setView('board');
     setLocalOrderType(null);
@@ -230,7 +219,6 @@ const POS = () => {
         <OrderBoard 
           onNewOrder={handleNewOrder}
           onEditOrder={handleEditOrder}
-          onPayOrder={handlePayOrder}
           onDeleteOrder={handleDeleteOrder}
         />
       )}
@@ -384,15 +372,6 @@ const POS = () => {
             </>
           )}
         </div>
-      )}
-
-      {showPaymentModal && (
-        <PaymentModal
-          isOpen={showPaymentModal}
-          onClose={() => setShowPaymentModal(false)}
-          orderData={currentOrder}
-          onComplete={handlePaymentComplete}
-        />
       )}
 
       {showPrintModal && ticketToPrint && (

@@ -273,15 +273,24 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
       
       try {
         // ✅ ESPERAR a que se actualice en Firestore - Crítico para persistencia
-        await updateOrder(orderData.id, {
+        // Construir objeto de actualización SIN campos undefined
+        const updateData = {
           status: orderStatus,
           paymentMethods: finalPaymentMethods,
           paymentType: paymentType,
           transferType: transferMethod?.transferType || null,
-          deliveryData: orderData.type === 'delivery' ? deliveryData : undefined,
           pago_efectivo,
           pago_digital,
-        });
+        };
+        
+        // Solo agregar deliveryData si es una orden de delivery y existe
+        if (orderData.type === 'delivery' && deliveryData) {
+          updateData.deliveryData = deliveryData;
+        }
+        
+        console.log('💾 [FIRESTORE] Datos a actualizar:', updateData);
+        
+        await updateOrder(orderData.id, updateData);
         console.log('✅ [ÉXITO] Orden actualizada en Firestore con status:', orderStatus);
       } catch (error) {
         console.error('❌ [CRÍTICO] Error al actualizar orden en Firestore:', error);

@@ -53,7 +53,8 @@ service cloud.firestore {
     
     // 🛡️ TODOS los otros documentos: DENEGADO por defecto
     match /{document=**} {
-      allow read, write: false;
+      allow read: false;
+      allow write: false;
     }
   }
 }
