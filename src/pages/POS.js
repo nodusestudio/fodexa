@@ -178,6 +178,11 @@ const POS = () => {
     console.log('✅ Pago completado - volviendo al tablero');
   };
 
+  const handlePayOrder = (order) => {
+    // ✅ CartPanel maneja el modal de pago - esta función es un stub
+    console.log('✅ Pago iniciado desde OrderBoard');
+  };
+
   const handleDeleteOrder = (order) => {
     if (window.confirm('¿Eliminar pedido?')) {
       deleteOrder(order.id);
@@ -219,6 +224,7 @@ const POS = () => {
         <OrderBoard 
           onNewOrder={handleNewOrder}
           onEditOrder={handleEditOrder}
+          onPayOrder={handlePayOrder}
           onDeleteOrder={handleDeleteOrder}
         />
       )}
