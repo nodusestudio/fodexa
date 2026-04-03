@@ -4,6 +4,12 @@ import { Edit2, CreditCard, Trash2, User, MapPin, Utensils, Truck } from 'lucide
 
 const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitchen }) => {
   if (!order) return null;
+  
+  // ✅ Protección: No renderizar órdenes pagadas en el tablero
+  if (order.status === 'completed') {
+    console.log(`🚫 Ocultando orden ${order.id} con status 'completed'`);
+    return null;
+  }
 
   const [elapsedTime, setElapsedTime] = useState(0);
   const [alarmTriggered, setAlarmTriggered] = useState(false);
