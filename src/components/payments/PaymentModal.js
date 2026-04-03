@@ -167,6 +167,11 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
       return;
     }
     
+    console.log('🛒 [PAGO] Iniciando processamiento de pago...');
+    console.log('  Orden ID:', orderData.id);
+    console.log('  Tipo:', orderData.type);
+    console.log('  Total:', total);
+    
     // Construir paymentMethods desde selectedTypes y amounts
     const finalPaymentMethods = selectedTypes.map(key => {
       const amount = parseFloat(amounts[key]) || 0;
@@ -286,7 +291,10 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
       pago_efectivo,
       pago_digital,
       type: orderData.type,
+      newStatus: orderStatus,
     });
+    
+    console.log('🎉 [PAGO EXITOSO] Orden actualizada a status:', orderStatus);
     
     setSuccess(true);
     

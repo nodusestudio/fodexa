@@ -50,6 +50,9 @@ export const OrderProvider = ({ children }) => {
           timestamp: doc.data().timestamp?.toDate?.() || doc.data().timestamp,
         }));
         
+        console.log('🔄 [FIRESTORE] Órdenes cargadas desde Firestore:', allOrdersData.length);
+        allOrdersData.forEach(o => console.log(`  - ${o.id}: type=${o.type}, status=${o.status}`));
+        
         // ✅ FILTRADO EN LA CARGA: Solo mostrar órdenes ACTIVAS (no completadas)
         // Las órdenes completadas deben desaparecer automáticamente del tablero
         const activeOrders = allOrdersData.filter(order => {
@@ -58,13 +61,13 @@ export const OrderProvider = ({ children }) => {
           const isActive = order.status && ['pending', 'waiting', 'preparing'].includes(order.status);
           
           if (!isActive) {
-            console.log(`🔍 Filtrando orden completada/vieja ${order.id}: status="${order.status}"`);
+            console.log(`🔍 [FILTRO] Orden ${order.id} exclusiva (status="${order.status}")`);
           }
           
           return isActive;
         });
         
-        console.log(`✅ Órdenes cargadas: ${allOrdersData.length} total, ${activeOrders.length} activas`);
+        console.log(`✅ [RESULTADO] Órdenes activas: ${activeOrders.length} de ${allOrdersData.length}`);
         setOrders(activeOrders);
         setLoading(false);
       },
