@@ -452,6 +452,9 @@ const Deliveries = () => {
     if (window.confirm('¿Confirmar que este pedido fue entregado?')) {
       await handleUpdateField(ticketId, 'deliveryStatus', 'delivered');
       await handleUpdateField(ticketId, 'deliveredAt', new Date().toISOString());
+      // ✅ IMPORTANTE: También marcar la orden como completada para que desaparezca del tablero
+      await handleUpdateField(ticketId, 'status', 'completed');
+      console.log('✅ Pedido marcado como entregado y completado');
     }
   };
 
