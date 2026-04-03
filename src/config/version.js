@@ -2,8 +2,8 @@
 // Format: f-XXXX (starts at f-1001 and increments with each change)
 
 export const APP_VERSION = 'f-2026';
-export const VERSION_NUMBER = '1.7';
-export const FULL_VERSION = `f-2026 v1.7`;
+export const VERSION_NUMBER = '1.8';
+export const FULL_VERSION = `f-2026 v1.8`;
 export const LAST_UPDATE = new Date('2026-04-02').toLocaleDateString('es-CO');
 
 export const getVersionInfo = () => ({
