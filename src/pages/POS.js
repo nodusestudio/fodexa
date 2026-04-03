@@ -8,7 +8,7 @@ import OrderBoard from '../components/orders/OrderBoard';
 import TableSelector from '../components/orders/TableSelector';
 import CustomerSelector from '../components/customers/CustomerSelector';
 import ProductGrid from '../components/products/ProductGrid';
-import CartPanel from '../components/cart/CartPanel';
+import CartContainer from '../components/cart/CartContainer';
 import OrderInfo from '../components/orders/OrderInfo';
 import CashFundControl from '../components/cash/CashFundControl';
 import tables from '../data/tables';
@@ -33,7 +33,6 @@ const POS = () => {
   const [showProducts, setShowProducts] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [category, setCategory] = useState('all');
-  const [showCartDrawer, setShowCartDrawer] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [ticketToPrint, setTicketToPrint] = useState(null);
 
@@ -79,7 +78,6 @@ const POS = () => {
         setShowCustomerSelector(false);
         setShowOrderInfo(false);
         setShowProducts(false);
-        setShowCartDrawer(false);
         clearCart();
         clearCurrentOrder();
       }
@@ -120,7 +118,6 @@ const POS = () => {
     setOrderType(type);
     clearCart();
     clearCurrentOrder();
-    setShowCartDrawer(false);
     
     if (type === 'table') {
       setShowTableSelector(true);
@@ -172,7 +169,6 @@ const POS = () => {
     setShowTableSelector(false);
     setShowCustomerSelector(false);
     setShowProducts(false);
-    setShowCartDrawer(false);
     clearCurrentOrder();
     
     console.log('✅ Pago completado - volviendo al tablero');
@@ -209,7 +205,6 @@ const POS = () => {
     setShowCustomerSelector(false);
     setShowOrderInfo(false);
     setShowProducts(false);
-    setShowCartDrawer(false);
     clearCurrentOrder();
   };
 
@@ -323,49 +318,15 @@ const POS = () => {
             )}
           </div>
 
-          {/* Mobile Cart Button - Fixed floating button */}
-          {showProducts && items && items.length > 0 && (
-            <button
-              onClick={() => setShowCartDrawer(true)}
-              className="fixed bottom-4 right-4 md:hidden z-40 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-full w-12 sm:w-14 h-12 sm:h-14 flex items-center justify-center shadow-lg font-bold text-xs sm:text-sm transition-all hover:scale-110 active:scale-95 flex-col gap-0.5"
-            >
-              <ShoppingCart size={18} className="sm:w-5 sm:h-5" />
-              <span className="text-xs">{items.length}</span>
-            </button>
-          )}
-
-          {/* Mobile Cart Drawer */}
-          {showCartDrawer && (
-            <>
-              <div 
-                className="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity"
-                onClick={() => setShowCartDrawer(false)}
-              />
-              
-              <div className="fixed inset-y-0 right-0 z-50 md:hidden w-full h-full flex flex-col bg-white dark:bg-gray-800 animate-in slide-in-from-right duration-300">
-                <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-                  <h2 className="text-base sm:text-lg font-bold text-gray-800 dark:text-white">Tu Orden</h2>
-                  <button
-                    onClick={() => setShowCartDrawer(false)}
-                    className="p-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-                  >
-                    ✕
-                  </button>
-                </div>
-
-                <div className="flex-1 overflow-hidden">
-                  <CartPanel 
-                    orderType={localOrderType}
-                    selectedTable={selectedTable}
-                    deliveryData={deliveryData}
-                    currentOrder={currentOrder}
-                    onPayOrder={handlePayOrder}
-                    onCloseCart={() => setShowCartDrawer(false)}
-                  />
-                </div>
-              </div>
-            </>
-          )}
+          {/* Unified Responsive Cart */}
+          <CartContainer
+            orderType={localOrderType}
+            selectedTable={selectedTable}
+            deliveryData={deliveryData}
+            currentOrder={currentOrder}
+            onPayOrder={handlePayOrder}
+            items={items}
+          />
         </div>
       )}
 
