@@ -179,21 +179,45 @@ export const TicketProvider = ({ children }) => {
       // Convertir ID a string para asegurar compatibilidad
       const stringId = String(ticketId);
       
+      // Obtener el ticket para conseguir el orderId
+      const ticketToDelete = tickets.find(t => String(t.id) === stringId);
+      
+      if (!ticketToDelete) {
+        throw new Error('Ticket no encontrado');
+      }
+
+      console.log('🗑️ [ELIMINAR TICKET]', {
+        ticketId: stringId,
+        orderId: ticketToDelete.orderId
+      });
+      
       // Eliminar del estado local primero
       setTickets(prev => prev.filter(t => String(t.id) !== stringId));
       
       // Eliminar de Firestore si el usuario está autenticado
       if (user?.uid) {
+        // 1️⃣ Eliminar el ticket
         const ticketRef = doc(db, `users/${user.uid}/tickets`, stringId);
         await deleteDoc(ticketRef);
         console.log('✅ Ticket eliminado de Firestore:', stringId);
+        
+        // 2️⃣ Eliminar la orden asociada también
+        if (ticketToDelete.orderId) {
+          try {
+            const orderRef = doc(db, `users/${user.uid}/orders`, ticketToDelete.orderId);
+            await deleteDoc(orderRef);
+            console.log('✅ Orden asociada eliminada de Firestore:', ticketToDelete.orderId);
+          } catch (orderError) {
+            console.warn('⚠️ La orden podría no existir o ya fue eliminada:', orderError.message);
+          }
+        }
       } else {
         console.warn('⚠️ Usuario no autenticado. Cambios solo locales.');
       }
       
       return true;
     } catch (error) {
-      console.error('❌ Error eliminando ticket en Firebase:', error.message);
+      console.error('❌ Error eliminando ticket:', error.message);
       throw error;
     }
   };
