@@ -52,6 +52,19 @@ const TicketPrint = ({ ticket, onClose }) => {
     });
   };
 
+  const getPaymentLabel = (paymentType) => {
+    const labels = {
+      'cash': 'Efectivo',
+      'card': 'Tarjeta',
+      'transfer': 'Transferencia',
+      'nequi': 'Nequi',
+      'bold': 'Bold',
+      'aliado': 'Aliado',
+      'mixed': 'Mixto'
+    };
+    return labels[paymentType] || paymentType;
+  };
+
   // Calcular IVA y totales usando settings.taxes
   const taxEnabled = taxesConfig && taxesConfig.enabled === true;
   const taxValue = taxesConfig && taxesConfig.value ? parseFloat(taxesConfig.value) : 0;
@@ -233,16 +246,16 @@ const TicketPrint = ({ ticket, onClose }) => {
                 <>
                   {ticket.paymentType && (
                     <div className="flex justify-between mt-1">
-                      <span>Pago:</span>
-                      <span className="capitalize">{ticket.paymentType}</span>
+                      <span>Método de pago:</span>
+                      <span>{getPaymentLabel(ticket.paymentType)}</span>
                     </div>
                   )}
                   {ticket.paymentMethods && ticket.paymentMethods.length > 0 && (
                     <div className="mt-1">
-                      <span className="text-xs">Métodos:</span>
+                      <span className="text-xs">Detalles de pago:</span>
                       {ticket.paymentMethods.map((method, idx) => (
                         <div key={idx} className="flex justify-between text-xs">
-                          <span><span className="capitalize">{method.type}:</span></span>
+                          <span>{getPaymentLabel(method.type)}:</span>
                           <span>{formatCurrency(method.amount, currencyCode, useDecimals)}</span>
                         </div>
                       ))}
@@ -250,7 +263,7 @@ const TicketPrint = ({ ticket, onClose }) => {
                   )}
                   {ticket.cashReceived && (
                     <div className="flex justify-between mt-1">
-                      <span>Efectivo:</span>
+                      <span>Efectivo recibido:</span>
                       <span>{formatCurrency(ticket.cashReceived, currencyCode, useDecimals)}</span>
                     </div>
                   )}
