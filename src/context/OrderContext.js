@@ -163,28 +163,26 @@ export const OrderProvider = ({ children }) => {
       
       if (user?.uid) {
         try {
-          console.log('🔥 Guardando en Firestore con datos:', {
+          console.log('🔥 [CREAR] Guardando en Firestore...', {
             status: orderData.status,
             type: orderData.type,
-            timestamp: new Date()
           });
-          // Guardar en Firestore y obtener el ID real
           const docRef = await addDoc(collection(db, `users/${user.uid}/orders`), {
             ...orderData,
           });
           finalOrderId = docRef.id;
           finalOrderData = { id: finalOrderId, ...orderData };
-          console.log('✅ Orden guardada en Firestore con ID:', finalOrderId, 'Status:', orderData.status);
+          console.log('✅ [CREAR] Orden en Firestore:', finalOrderId, 'Status:', orderData.status);
         } catch (firestoreError) {
-          console.warn('⚠️ Firestore falló, usando ID local como fallback:', firestoreError.message);
-          // Mantener el ID local si Firestore falla
+          console.error('❌ [CREAR] Firestore falló:', firestoreError.message);
+          console.error('   Usando ID local como fallback:', finalOrderId);
         }
       }
       
       // 4️⃣ Guardar en estado local con el ID real (de Firestore) o local (si Firestore falló)
       setOrders(prev => {
         const updated = [...prev, finalOrderData];
-        console.log('✅ Orden agregada al estado con ID:', finalOrderId);
+        console.log('✅ [CREAR] En estado local. Total órdenes:', updated.length);
         return updated;
       });
       
@@ -197,35 +195,100 @@ export const OrderProvider = ({ children }) => {
 
   // Actualiza un pedido existente y actualiza estado local
   const updateOrder = async (id, data) => {
+    console.group(`🔄 [UPDATE] Iniciando actualización de orden: ${id}`);
+    console.log('  Datos a actualizar:', data);
+    
     try {
-      console.log('✏️ updateOrder llamado - ID:', id, 'Status:', data.status);
+      // SIEMPRE actualizar estado local PRIMERO
+      console.log('  1️⃣ Actualizando estado local...');
+      const stateBefore = orders.find(o => o.id === id);
+      console.log('     Status anterior:', stateBefore?.status);
       
-      // 1️⃣ Actualizar SIEMPRE en estado local primero
-      setOrders(prev => prev.map(order => 
-        order.id === id ? { ...order, ...data, updatedAt: new Date() } : order
-      ));
-      console.log('✅ Pedido actualizado en estado local');
+      setOrders(prev => {
+        const updated = prev.map(order => 
+          order.id === id ? { ...order, ...data, updatedAt: new Date() } : order
+        );
+        const updatedOrder = updated.find(o => o.id === id);
+        console.log('     ✅ Status ahora:', updatedOrder?.status);
+        return updated;
+      });
       
-      // 2️⃣ Si es un ID local, NO puede actualizar en Firestore (no existe ahí)
-      // Si es un ID real de Firestore, actualizar directamente
-      if (!id.startsWith('local_') && user?.uid) {
+      if (!user?.uid) {
+        console.warn('⚠️ SIN USUARIO - No se actualizará Firestore');
+        console.groupEnd();
+        return;
+      }
+
+      // ✅ CASO 1: ID local - MIGRAR A FIRESTORE con los datos actualizados
+      if (id.startsWith('local_')) {
+        console.log(`  2️⃣ ID LOCAL DETECTADO: ${id}`);
+        console.log('     Migrando a Firestore con status:', data.status);
+        
+        const orderToMigrate = orders.find(o => o.id === id);
+        console.log('     Orden a migrar encontrada:', !!orderToMigrate);
+        
+        if (!orderToMigrate) {
+          console.error('❌ Orden local no encontrada en estado');
+          console.groupEnd();
+          return;
+        }
+
+        try {
+          console.log('     📤 Guardando en Firestore...');
+          const newDocRef = await addDoc(collection(db, `users/${user.uid}/orders`), {
+            ...orderToMigrate,
+            ...data, // ← Incluir el status actualizado
+            localId: id,
+            createdAt: orderToMigrate.timestamp || new Date(),
+          });
+          
+          const newId = newDocRef.id;
+          console.log(`     ✅ Guardado en Firestore ID: ${newId}`);
+          console.log(`     Status en Firestore: ${data.status}`);
+          
+          // Actualizar estado local con el nuevo ID
+          console.log('     📥 Actualizando estado local con ID de Firestore...');
+          setOrders(prev => {
+            const updated = prev.map(order => {
+              if (order.id === id) {
+                console.log(`       ${id} → ${newId}`);
+                return { ...order, ...data, id: newId, updatedAt: new Date() };
+              }
+              return order;
+            });
+            const migrated = updated.find(o => o.id === newId);
+            console.log(`     ✅ Estado actualizado, nuevo ID: ${migrated?.id}`);
+            return updated;
+          });
+        } catch (migrateError) {
+          console.error('❌ Error al migrar orden:', migrateError.message);
+          console.error('   Stack:', migrateError.stack);
+        }
+      } 
+      // ✅ CASO 2: ID real de Firestore - ACTUALIZAR directamente
+      else {
+        console.log(`  2️⃣ ID FIREBASE DETECTADO`);
+        console.log('     Actualizando documento en Firestore...');
+        
         try {
           const orderRef = doc(db, `users/${user.uid}/orders`, id);
           await updateDoc(orderRef, {
             ...data,
             updatedAt: new Date(),
           });
-          console.log('📦 Orden actualizada en Firestore - Status:', data.status);
-        } catch (firestoreError) {
-          console.error('❌ Error al actualizar en Firestore:', firestoreError.message);
-          // El estado local ya se actualizó, así que no es crítico
+          console.log(`     ✅ Actualizado en Firestore`);
+          console.log(`     Status en Firestore: ${data.status}`);
+        } catch (error) {
+          console.error('❌ Error al actualizar en Firestore:', error.message);
+          console.error('   Stack:', error.stack);
         }
-      } else if (id.startsWith('local_')) {
-        console.warn('⚠️ ID local detectado - no se puede actualizar en Firestore, solo en estado local');
       }
     } catch (error) {
-      console.error('❌ Error updating order:', error);
+      console.error('❌ Error en updateOrder:', error.message);
+      console.error('   Stack:', error.stack);
       throw error;
+    } finally {
+      console.groupEnd();
     }
   };
 

@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import DebugOrderStatus from '../common/DebugOrderStatus';
 
 function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -44,6 +45,9 @@ function Layout() {
           <Outlet />
         </main>
       </div>
+
+      {/* Debug Panel - Solo visible en desarrollo */}
+      <DebugOrderStatus />
     </div>
   );
 }
