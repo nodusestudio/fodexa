@@ -30,20 +30,32 @@ const OrderBoard = ({ onNewOrder, onEditOrder, onPayOrder, onDeleteOrder }) => {
   const tableOrders = (orders || [])
     .filter(o => {
       const isVisible = o.type === 'table' && o.status !== 'completed';
-      if (!isVisible) {
-        console.log(`🔍 Ocultando orden mesa ${o.id}: type=${o.type}, status=${o.status}`);
+      if (!isVisible && o.type === 'table') {
+        console.log(`🔍 Ocultando orden mesa ${o.id}: status="${o.status}" (debe ser ≠ 'completed')`);
       }
       return isVisible;
     })
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   
   const takeoutOrders = (orders || [])
-    .filter(o => o.type === 'takeout' && o.status !== 'completed')
+    .filter(o => {
+      const isVisible = o.type === 'takeout' && o.status !== 'completed';
+      if (!isVisible && o.type === 'takeout') {
+        console.log(`🔍 Ocultando orden para llevar ${o.id}: status="${o.status}"`);
+      }
+      return isVisible;
+    })
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   
   // ✅ Solo mostrar deliveries SIN COBRAR (excluir 'completed' y 'waiting')
   const deliveryOrders = (orders || [])
-    .filter(o => o.type === 'delivery' && o.status !== 'completed' && o.status !== 'waiting')
+    .filter(o => {
+      const isVisible = o.type === 'delivery' && o.status !== 'completed' && o.status !== 'waiting';
+      if (!isVisible && o.type === 'delivery') {
+        console.log(`🔍 Ocultando orden delivery ${o.id}: status="${o.status}"`);
+      }
+      return isVisible;
+    })
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
   // ✅ Sumar costos de TODOS los domicilios (incluyendo completados) para mostrar referencia
@@ -51,7 +63,7 @@ const OrderBoard = ({ onNewOrder, onEditOrder, onPayOrder, onDeleteOrder }) => {
     .filter(o => o.type === 'delivery')
     .reduce((sum, o) => sum + (o.deliveryCost || 0), 0);
 
-  console.log('📌 Órdenes filtradas - Mesa:', tableOrders, 'Para Llevar:', takeoutOrders, 'Domicilio:', deliveryOrders, 'Total delivery:', deliveryTotal);
+  console.log(`📌 FILTRADO: Mesa(${tableOrders.length}), Para Llevar(${takeoutOrders.length}), Domicilio(${deliveryOrders.length}) | TOTAL órdenes cargadas: ${orders.length}`);
 
   const Column = ({ title, Icon, orders, type, color, totalCost }) => {
     console.log(`🔶 Column ${title} - Órdenes recibidas:`, orders);

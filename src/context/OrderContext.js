@@ -160,45 +160,56 @@ export const OrderProvider = ({ children }) => {
       
       // Obtener la orden que se está actualizando
       const orderToUpdate = orders.find(o => o.id === id);
+      if (!orderToUpdate) {
+        console.warn('⚠️ Orden no encontrada:', id);
+        return;
+      }
       
-      // 1️⃣ ✅ Actualizar PRIMERO en estado local
-      setOrders(prev => prev.map(order => 
-        order.id === id ? { ...order, ...data, updatedAt: new Date() } : order
-      ));
-      console.log('✅ Pedido actualizado en estado local');
-      
-      // 2️⃣ Actualizar en Firestore - para órdenes locales o normales
+      // 2️⃣ IMPORTANTE: Actualizar PRIMERO en Firestore (especialmente para IDs locales)
       if (user?.uid) {
-        (async () => {
-          try {
-            // Si es un ID local, crear un documento nuevo en Firestore
-            if (id.startsWith('local_')) {
-              console.log('🔄 Migrando orden local a Firestore...');
-              const newDocRef = await addDoc(collection(db, `users/${user.uid}/orders`), {
-                ...orderToUpdate,
-                ...data,
-                localId: id, // Guardar referencia al ID local anterior
-                updatedAt: new Date(),
-              });
-              console.log('✅ Orden local migrada a Firestore con nuevo ID:', newDocRef.id);
-              
-              // Actualizar el estado con el nuevo ID de Firestore
-              setOrders(prev => prev.map(order => 
-                order.id === id ? { ...order, ...data, id: newDocRef.id, updatedAt: new Date() } : order
-              ));
-            } else {
-              // Para órdenes que ya existen en Firestore, actualizar directamente
-              const orderRef = doc(db, `users/${user.uid}/orders`, id);
-              await updateDoc(orderRef, {
-                ...data,
-                updatedAt: new Date(),
-              });
-              console.log('📦 Orden actualizada en Firestore');
-            }
-          } catch (firestoreError) {
-            console.warn('⚠️ Error en Firestore pero orden actualizada localmente:', firestoreError.message);
+        try {
+          // Si es un ID local, HAY QUE migrar a Firestore ANTES de actualizar
+          if (id.startsWith('local_')) {
+            console.log('🔄 Migrando orden local a Firestore con datos actualizados...');
+            const newDocRef = await addDoc(collection(db, `users/${user.uid}/orders`), {
+              ...orderToUpdate,
+              ...data, // ← Incluir los datos actualizados (status, etc)
+              localId: id, // Guardar referencia al ID local anterior
+              updatedAt: new Date(),
+            });
+            const newId = newDocRef.id;
+            console.log('✅ Orden local migrada a Firestore con nuevo ID:', newId, 'Status:', data.status);
+            
+            // Actualizar LUEGO en estado local con el nuevo ID
+            setOrders(prev => prev.map(order => 
+              order.id === id ? { ...order, ...data, id: newId, updatedAt: new Date() } : order
+            ));
+          } else {
+            // Para órdenes que ya existen en Firestore, actualizar directamente
+            const orderRef = doc(db, `users/${user.uid}/orders`, id);
+            await updateDoc(orderRef, {
+              ...data,
+              updatedAt: new Date(),
+            });
+            console.log('📦 Orden actualizada en Firestore - Status:', data.status);
+            
+            // Actualizar estado local
+            setOrders(prev => prev.map(order => 
+              order.id === id ? { ...order, ...data, updatedAt: new Date() } : order
+            ));
           }
-        })();
+        } catch (firestoreError) {
+          console.error('❌ Error crítico en Firestore al actualizar orden:', firestoreError.message);
+          // Aún así actualizar localmente como fallback
+          setOrders(prev => prev.map(order => 
+            order.id === id ? { ...order, ...data, updatedAt: new Date() } : order
+          ));
+        }
+      } else {
+        // Sin autenticación, solo actualizar localmente
+        setOrders(prev => prev.map(order => 
+          order.id === id ? { ...order, ...data, updatedAt: new Date() } : order
+        ));
       }
     } catch (error) {
       console.error('❌ Error updating order:', error);

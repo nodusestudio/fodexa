@@ -171,31 +171,22 @@ const POS = () => {
   };
 
   const handlePaymentComplete = (paymentData) => {
-    if (currentOrder) {
-      // No actualizar status aquí - PaymentModal ya lo hizo
-      // Solo actualizar si es un tipo que no sea delivery (que ya maneja su status en PaymentModal)
-      const updateData = { payment: paymentData };
-      
-      // Solo actualizar status para orders que NO son delivery
-      // Los delivery ya tienen status = 'waiting' desde PaymentModal
-      if (currentOrder.type !== 'delivery') {
-        updateData.status = 'completed';
-      }
-      
-      updateOrder(currentOrder.id, updateData);
-      
-      // Limpiar e ir al tablero
-      setCurrentOrder(null);
-      setShowPaymentModal(false);
-      clearCart();
-      setView('board');
-      setLocalOrderType(null);
-      setShowTableSelector(false);
-      setShowCustomerSelector(false);
-      setShowProducts(false);
-      setShowCartDrawer(false);
-      clearCurrentOrder();
-    }
+    // ✅ PaymentModal ya actualizó la orden con status 'completed' o 'waiting'
+    // No necesitamos actualizar nuevamente aquí
+    
+    // Solo limpiar la UI y volver al tablero
+    setCurrentOrder(null);
+    setShowPaymentModal(false);
+    clearCart();
+    setView('board');
+    setLocalOrderType(null);
+    setShowTableSelector(false);
+    setShowCustomerSelector(false);
+    setShowProducts(false);
+    setShowCartDrawer(false);
+    clearCurrentOrder();
+    
+    console.log('✅ Pago completado - volviendo al tablero');
   };
 
   const handleDeleteOrder = (order) => {
