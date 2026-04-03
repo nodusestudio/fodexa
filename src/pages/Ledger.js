@@ -158,18 +158,24 @@ const Ledger = () => {
     const totalDifference = filteredSessions.reduce((sum, s) => sum + (s.difference || 0), 0);
     const balance = totalSales - totalExpenses;
 
-    // Breakdown por método de pago
+    // Breakdown por método de pago - desde paymentMethods guardado en Firestore
+    // paymentMethods tiene estructura: { efectivo: { ingresos, egresos }, ... }
     const paymentBreakdown = {
-      cash: 0,
-      card: 0,
-      transfer: 0,
+      efectivo: 0,
+      bancolombia: 0,
+      nequi: 0,
+      bold: 0,
+      aliado: 0,
     };
 
     filteredSessions.forEach(session => {
-      if (session.paymentBreakdown) {
-        paymentBreakdown.cash += session.paymentBreakdown.cash || 0;
-        paymentBreakdown.card += session.paymentBreakdown.card || 0;
-        paymentBreakdown.transfer += session.paymentBreakdown.transfer || 0;
+      if (session.paymentMethods) {
+        // Acceder directamente a los ingresos de cada método (calculado al cerrarcaja)
+        paymentBreakdown.efectivo += (session.paymentMethods.efectivo?.ingresos || 0);
+        paymentBreakdown.bancolombia += (session.paymentMethods.bancolombia?.ingresos || 0);
+        paymentBreakdown.nequi += (session.paymentMethods.nequi?.ingresos || 0);
+        paymentBreakdown.bold += (session.paymentMethods.bold?.ingresos || 0);
+        paymentBreakdown.aliado += (session.paymentMethods.aliado?.ingresos || 0);
       }
     });
 

@@ -233,7 +233,9 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
       finalPaymentMethods.forEach(method => {
         // Preparar descripción y metadata
         let description = `Venta ${method.type} - Ticket #${Date.now().toString().slice(-6)}`;
-        const metadata = {};
+        const metadata = {
+          paymentType: method.type // IMPORTANTE: Guardar el tipo de pago
+        };
         
         // Si es transferencia, agregar el subtipo a la descripción y metadata
         if (method.type === 'transfer' && method.transferType) {
