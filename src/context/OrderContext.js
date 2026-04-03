@@ -44,30 +44,34 @@ export const OrderProvider = ({ children }) => {
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        const allOrdersData = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          timestamp: doc.data().timestamp?.toDate?.() || doc.data().timestamp,
-        }));
+        const allOrdersData = snapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            timestamp: data.timestamp?.toDate?.() || data.timestamp,
+          };
+        });
         
-        console.log('🔄 [FIRESTORE] Órdenes cargadas desde Firestore:', allOrdersData.length);
-        allOrdersData.forEach(o => console.log(`  - ${o.id}: type=${o.type}, status=${o.status}`));
+        console.log('🔄 [FIRESTORE] Órdenes cargadas:', allOrdersData.length);
+        allOrdersData.forEach((o, idx) => {
+          console.log(`  [${idx}] ID=${o.id.substring(0,8)}... type=${o.type} status=${o.status}`);
+        });
         
-        // ✅ FILTRADO EN LA CARGA: Solo mostrar órdenes ACTIVAS (no completadas)
-        // Las órdenes completadas deben desaparecer automáticamente del tablero
+        // ✅ FILTRADO ESTRICTO: Solo status válidos
+        const validStatuses = ['pending', 'waiting', 'preparing'];
         const activeOrders = allOrdersData.filter(order => {
-          // Solo mostrar si status es 'pending', 'waiting' o 'preparing'
-          // Excluir completadas automáticamente
-          const isActive = order.status && ['pending', 'waiting', 'preparing'].includes(order.status);
+          const isActive = order.status && validStatuses.includes(order.status);
           
           if (!isActive) {
-            console.log(`🔍 [FILTRO] Orden ${order.id} exclusiva (status="${order.status}")`);
+            const reason = !order.status ? 'sin status' : `status="${order.status}" (inválido)`;
+            console.log(`  🚫 Excluida: ${order.id.substring(0,8)}... (${reason})`);
           }
           
           return isActive;
         });
         
-        console.log(`✅ [RESULTADO] Órdenes activas: ${activeOrders.length} de ${allOrdersData.length}`);
+        console.log(`✅ [RESULTADO] ${activeOrders.length} órdenes activas de ${allOrdersData.length} totales`);
         setOrders(activeOrders);
         setLoading(false);
       },
@@ -142,14 +146,18 @@ export const OrderProvider = ({ children }) => {
       
       if (user?.uid) {
         try {
-          console.log('🔥 Guardando DIRECTAMENTE en Firestore (sin await inicial)...');
+          console.log('🔥 Guardando en Firestore con datos:', {
+            status: orderData.status,
+            type: orderData.type,
+            timestamp: new Date()
+          });
           // Guardar en Firestore y obtener el ID real
           const docRef = await addDoc(collection(db, `users/${user.uid}/orders`), {
             ...orderData,
           });
           finalOrderId = docRef.id;
           finalOrderData = { id: finalOrderId, ...orderData };
-          console.log('✅ Orden guardada en Firestore con ID:', finalOrderId);
+          console.log('✅ Orden guardada en Firestore con ID:', finalOrderId, 'Status:', orderData.status);
         } catch (firestoreError) {
           console.warn('⚠️ Firestore falló, usando ID local como fallback:', firestoreError.message);
           // Mantener el ID local si Firestore falla

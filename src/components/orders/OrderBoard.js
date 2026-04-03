@@ -6,7 +6,10 @@ import KitchenTicketModal from './KitchenTicketModal';
 
 const OrderBoard = ({ onNewOrder, onEditOrder, onPayOrder, onDeleteOrder }) => {
   const { orders = [], updateOrder } = useOrder();
-  console.log('🎯 OrderBoard - Órdenes del contexto:', orders);
+  console.log('🎯 [TABLERO] Órdenes cargadas del contexto:', orders.length);
+  orders.forEach((o, idx) => {
+    console.log(`  [${idx}] ${o.id.substring(0,8)}... type=${o.type} status=${o.status}`);
+  });
 
   const [showKitchenTicket, setShowKitchenTicket] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
