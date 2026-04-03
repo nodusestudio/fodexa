@@ -206,27 +206,27 @@ export const OrderProvider = ({ children }) => {
     console.log('  Usuario UID:', user?.uid || '❌ NO AUTENTICADO');
     
     try {
-      // Verificar que la orden existe
+      // ⚠️ NOTA: La orden podría no estar en estado local si fue eliminada por onSnapshot
+      // Pero eso está bien - podemos actualizarla en Firestore directamente
       const orderBefore = orders.find(o => o.id === id);
-      if (!orderBefore) {
-        console.error(`❌ ORDEN NO ENCONTRADA: ${id}`);
-        console.log('  Órdenes actuales:', orders.map(o => ({ id: o.id, status: o.status })));
-        console.groupEnd();
-        throw new Error(`Orden ${id} no encontrada en estado local`);
+      
+      if (orderBefore) {
+        // ACTUALIZAR estado local si aún existe
+        console.log('  1️⃣ Actualizando estado local...');
+        console.log('     Status anterior:', orderBefore?.status);
+        
+        setOrders(prev => {
+          const updated = prev.map(order => 
+            order.id === id ? { ...order, ...data, updatedAt: new Date() } : order
+          );
+          const updatedOrder = updated.find(o => o.id === id);
+          console.log('     ✅ Status ahora:', updatedOrder?.status);
+          return updated;
+        });
+      } else {
+        console.warn(`⚠️ Orden ${id} no está en estado local (probablemente ya fue eliminada por onSnapshot)`);
+        console.warn('  Continuando con actualización en Firestore de todos modos...');
       }
-      
-      // SIEMPRE actualizar estado local PRIMERO
-      console.log('  1️⃣ Actualizando estado local...');
-      console.log('     Status anterior:', orderBefore?.status);
-      
-      setOrders(prev => {
-        const updated = prev.map(order => 
-          order.id === id ? { ...order, ...data, updatedAt: new Date() } : order
-        );
-        const updatedOrder = updated.find(o => o.id === id);
-        console.log('     ✅ Status ahora:', updatedOrder?.status);
-        return updated;
-      });
       
       if (!user?.uid) {
         console.error('❌ SIN USUARIO AUTENTICADO - No se puede guardar en Firestore');
