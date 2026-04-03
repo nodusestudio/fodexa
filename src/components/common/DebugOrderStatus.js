@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useOrderContext } from '../../context/OrderContext';
+import { useOrder } from '../../context/OrderContext';
 
 /**
  * Componente de diagnóstico para verificar el estado de las órdenes
  * Debe mostrarse solo en desarrollo para debuggear problemas de persistencia
  */
 const DebugOrderStatus = () => {
-  const { orders } = useOrderContext();
+  const { orders } = useOrder();
   const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
@@ -27,7 +27,9 @@ const DebugOrderStatus = () => {
     });
   }, [orders]);
 
-  if (!process.env.NODE_ENV === 'development') return null;
+  // Mostrar panel de debug (comentar para ocultar)
+  const DEBUG = true;
+  if (!DEBUG) return null;
 
   return (
     <div style={{
