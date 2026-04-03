@@ -323,17 +323,6 @@ const POS = () => {
             )}
           </div>
 
-          {/* Desktop Cart Panel - Hidden on mobile */}
-          <div className="hidden md:flex w-full md:w-96 border-t md:border-t-0 md:border-l border-gray-300 dark:border-gray-700 flex-col min-h-0">
-            <CartPanel 
-              orderType={localOrderType}
-              selectedTable={selectedTable}
-              deliveryData={deliveryData}
-              currentOrder={currentOrder}
-              onPayOrder={handlePayOrder}
-            />
-          </div>
-
           {/* Mobile Cart Button - Fixed floating button */}
           {showProducts && items && items.length > 0 && (
             <button
