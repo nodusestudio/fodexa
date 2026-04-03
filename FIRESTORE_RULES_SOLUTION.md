@@ -32,12 +32,19 @@ service cloud.firestore {
         // ✅ CREAR: El dueño puede crear nuevas órdenes
         allow create: if request.auth.uid == userId
           && request.resource.data.userId == userId
-          && request.resource.data.status in ['pending', 'waiting', 'completed']
+          && request.resource.data.status in ['pending', 'waiting', 'preparing', 'completed']
           && request.resource.data.type in ['table', 'takeout', 'delivery'];
         
         // ✅ ACTUALIZAR: El dueño puede actualizar sus órdenes
+        // Permite cambiar status a cualquier estado válido
         allow update: if request.auth.uid == userId
-          && request.resource.data.userId == userId;
+          && (
+            // Permitir updates que no cambien el status
+            !request.resource.data.keys().hasAny(['status'])
+            ||
+            // O permitir si el status nuevo está en los estados válidos
+            (request.resource.data.status in ['pending', 'waiting', 'preparing', 'completed'])
+          );
         
         // ✅ ELIMINAR: El dueño puede eliminar sus órdenes
         allow delete: if request.auth.uid == userId;

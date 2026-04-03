@@ -203,12 +203,21 @@ export const OrderProvider = ({ children }) => {
   const updateOrder = async (id, data) => {
     console.group(`🔄 [UPDATE] Iniciando actualización de orden: ${id}`);
     console.log('  Datos a actualizar:', data);
+    console.log('  Usuario UID:', user?.uid || '❌ NO AUTENTICADO');
     
     try {
+      // Verificar que la orden existe
+      const orderBefore = orders.find(o => o.id === id);
+      if (!orderBefore) {
+        console.error(`❌ ORDEN NO ENCONTRADA: ${id}`);
+        console.log('  Órdenes actuales:', orders.map(o => ({ id: o.id, status: o.status })));
+        console.groupEnd();
+        throw new Error(`Orden ${id} no encontrada en estado local`);
+      }
+      
       // SIEMPRE actualizar estado local PRIMERO
       console.log('  1️⃣ Actualizando estado local...');
-      const stateBefore = orders.find(o => o.id === id);
-      console.log('     Status anterior:', stateBefore?.status);
+      console.log('     Status anterior:', orderBefore?.status);
       
       setOrders(prev => {
         const updated = prev.map(order => 
@@ -220,9 +229,9 @@ export const OrderProvider = ({ children }) => {
       });
       
       if (!user?.uid) {
-        console.warn('⚠️ SIN USUARIO - No se actualizará Firestore');
+        console.error('❌ SIN USUARIO AUTENTICADO - No se puede guardar en Firestore');
         console.groupEnd();
-        return;
+        throw new Error('Usuario no autenticado');
       }
 
       // ✅ CASO 1: ID local - MIGRAR A FIRESTORE con los datos actualizados
@@ -231,12 +240,10 @@ export const OrderProvider = ({ children }) => {
         console.log('     Migrando a Firestore con status:', data.status);
         
         const orderToMigrate = orders.find(o => o.id === id);
-        console.log('     Orden a migrar encontrada:', !!orderToMigrate);
-        
         if (!orderToMigrate) {
           console.error('❌ Orden local no encontrada en estado');
           console.groupEnd();
-          return;
+          throw new Error('Orden local no encontrada');
         }
 
         try {
@@ -267,30 +274,48 @@ export const OrderProvider = ({ children }) => {
             return updated;
           });
         } catch (migrateError) {
-          console.error('❌ Error al migrar orden:', migrateError.message);
+          console.error('❌ Error al migrar orden:', migrateError.code);
+          console.error('   Mensaje:', migrateError.message);
           console.error('   Stack:', migrateError.stack);
+          throw migrateError; // ← Propagar el error
         }
       } 
       // ✅ CASO 2: ID real de Firestore - ACTUALIZAR directamente
       else {
         console.log(`  2️⃣ ID FIREBASE DETECTADO`);
+        console.log('     Ruta: users/${user.uid}/orders/${id}');
         console.log('     Actualizando documento en Firestore...');
         
         try {
           const orderRef = doc(db, `users/${user.uid}/orders`, id);
+          console.log('     Llamando updateDoc...');
+          
           await updateDoc(orderRef, {
             ...data,
             updatedAt: new Date(),
           });
-          console.log(`     ✅ Actualizado en Firestore`);
-          console.log(`     Status en Firestore: ${data.status}`);
+          
+          console.log(`     ✅ Actualizado en Firestore CON ÉXITO`);
+          console.log(`     Nuevo status: ${data.status}`);
         } catch (error) {
-          console.error('❌ Error al actualizar en Firestore:', error.message);
+          console.error('❌ ERROR AL ACTUALIZAR EN FIRESTORE');
+          console.error('   Código:', error.code);
+          console.error('   Mensaje:', error.message);
+          
+          // Detalles específicos del error
+          if (error.code === 'permission-denied') {
+            console.error('   ⚠️ PROBLEMA DE PERMISOS - Revisar Firestore Rules');
+          } else if (error.code === 'not-found') {
+            console.error('   ⚠️ DOCUMENTO NO ENCONTRADO - El ID puede ser incorrecto');
+          }
+          
           console.error('   Stack:', error.stack);
+          throw error; // ← Propagar el error
         }
       }
     } catch (error) {
-      console.error('❌ Error en updateOrder:', error.message);
+      console.error('❌ Error en updateOrder - No se completó la actualización');
+      console.error('   Mensaje:', error.message);
       console.error('   Stack:', error.stack);
       throw error;
     } finally {

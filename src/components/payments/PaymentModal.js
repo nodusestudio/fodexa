@@ -268,9 +268,11 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
       const paymentType = finalPaymentMethods.length === 1 ? finalPaymentMethods[0].type : 'mixed';
       
       console.log('💾 [ORDEN] Actualizando orden con status:', orderStatus);
+      console.log('   ID de orden:', orderData.id);
+      console.log('   Tipo de orden:', orderData.type);
       
       try {
-        // ✅ ESPERAR a que se actualice en Firestore
+        // ✅ ESPERAR a que se actualice en Firestore - Crítico para persistencia
         await updateOrder(orderData.id, {
           status: orderStatus,
           paymentMethods: finalPaymentMethods,
@@ -280,13 +282,26 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
           pago_efectivo,
           pago_digital,
         });
-        console.log('✅ Orden actualizada en Firestore - Status:', orderStatus);
+        console.log('✅ [ÉXITO] Orden actualizada en Firestore con status:', orderStatus);
       } catch (error) {
-        console.error('❌ Error al actualizar orden:', error);
+        console.error('❌ [CRÍTICO] Error al actualizar orden en Firestore:', error);
+        console.error('   El pago se procesó pero la orden NO se guardó correctamente');
+        console.error('   Detalles:', error.message);
+        
+        // Mostrar error crítico al usuario
+        alert(`⚠️ ERROR CRÍTICO:\n\nEl pago se realizó pero hay un problema guardando la orden en la base de datos.\n\nDetalles: ${error.message}\n\nContacte al administrador.`);
+        
+        // No continuar con el flujo de éxito
+        console.log('⏸️ Deteniendo flujo de pago - El usuario debe reintentar');
+        return;
       }
+    } else {
+      console.warn('⚠️ La orden no tiene ID - No se puede actualizar en Firestore');
+      alert('⚠️ ADVERTENCIA: La orden no tiene ID para guardar. Contacte al administrador.');
+      return;
     }
     
-    console.log('✅ Ticket + Orden actualizados:', {
+    console.log('✅ Ticket + Orden actualizados correctamente:', {
       ticketId: newTicket?.id,
       pago_efectivo,
       pago_digital,
@@ -294,7 +309,7 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
       newStatus: orderStatus,
     });
     
-    console.log('🎉 [PAGO EXITOSO] Orden actualizada a status:', orderStatus);
+    console.log('🎉 [PAGO EXITOSO COMPLETO] Orden con ID:', orderData.id, 'Status:', orderStatus);
     
     setSuccess(true);
     
