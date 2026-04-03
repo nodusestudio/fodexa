@@ -30,50 +30,56 @@ const OrderBoard = ({ onNewOrder, onEditOrder, onPayOrder, onDeleteOrder }) => {
   };
 
   // ============================================================
-  // 🔴 REGLA FUNDAMENTAL: Solo mostrar órdenes NO COBRADAS
+  // 🔴 REGLA FUNDAMENTAL: Solo mostrar órdenes SIN COBRAR
   // ============================================================
-  // Status válidos en tablero:
-  // - 'pending': Orden recién creada, sin cobrar
-  // - 'waiting': Delivery pagado, esperando domiciliario
-  // - 'preparing': Mesa/Takeout en preparación
+  // VÁLIDO PARA MOSTRAR:
+  // - type='table' AND status='pending'
+  // - type='takeout' AND status='pending'  
+  // - type='delivery' AND status='pending'
   // 
-  // Nunca mostrar:
-  // - 'completed': Orden pagada y completada
-  // - undefined/null: Órdenes corruptas o viejas
+  // EXCLUIR ABSOLUTAMENTE:
+  // - Cualquier status que NO sea 'pending'
+  // - Órdenes sin type definido
+  // - Órdenes sin status definido
   // ============================================================
 
-  // Filtro estricto: Solo MESA con status 'pending'
+  // Filtro IMPENETRABLE: Solo MESA status='pending'
   const tableOrders = (orders || [])
     .filter(o => {
-      // Mesa + pending = orden sin cobrar
-      const isValid = o.type === 'table' && o.status === 'pending';
-      if (o.type === 'table' && !isValid) {
-        console.log(`🚫 Mesa ${o.id} ocultada: status="${o.status}" (solo mostrar si es 'pending')`);
+      // DEBE ser: type='table' Y status='pending' EXACTAMENTE
+      const isTablePending = o.type === 'table' && o.status === 'pending';
+      
+      if (!isTablePending && o.type === 'table') {
+        console.log(`❌ EXCLUIDA MESA: ${o.id} (status="${o.status}", NO es 'pending')`);
       }
-      return isValid;
+      
+      return isTablePending;
     })
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   
-  // Filtro estricto: Solo TAKEOUT con status 'pending'
+  // Filtro IMPENETRABLE: Solo TAKEOUT status='pending'
   const takeoutOrders = (orders || [])
     .filter(o => {
-      const isValid = o.type === 'takeout' && o.status === 'pending';
-      if (o.type === 'takeout' && !isValid) {
-        console.log(`🚫 Takeout ${o.id} ocultada: status="${o.status}"`);
+      const isTakeoutPending = o.type === 'takeout' && o.status === 'pending';
+      
+      if (!isTakeoutPending && o.type === 'takeout') {
+        console.log(`❌ EXCLUIDA TAKEOUT: ${o.id} (status="${o.status}", NO es 'pending')`);
       }
-      return isValid;
+      
+      return isTakeoutPending;
     })
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   
-  // Filtro estricto: Solo DELIVERY con status 'pending' (sin cobrar)
-  // Una vez pagado pasa a 'waiting' y sale de aquí
+  // Filtro IMPENETRABLE: Solo DELIVERY status='pending'
   const deliveryOrders = (orders || [])
     .filter(o => {
-      const isValid = o.type === 'delivery' && o.status === 'pending';
-      if (o.type === 'delivery' && !isValid) {
-        console.log(`🚫 Delivery ${o.id} ocultada: status="${o.status}"`);
+      const isDeliveryPending = o.type === 'delivery' && o.status === 'pending';
+      
+      if (!isDeliveryPending && o.type === 'delivery') {
+        console.log(`❌ EXCLUIDA DELIVERY: ${o.id} (status="${o.status}", NO es 'pending')`);
       }
-      return isValid;
+      
+      return isDeliveryPending;
     })
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
@@ -83,10 +89,15 @@ const OrderBoard = ({ onNewOrder, onEditOrder, onPayOrder, onDeleteOrder }) => {
     .filter(o => o.type === 'delivery' && (o.status === 'waiting' || o.status === 'completed'))
     .reduce((sum, o) => sum + (o.deliveryCost || 0), 0);
 
-  console.log(`📊 TABLERO - Mesa: ${tableOrders.length} (pending), Takeout: ${takeoutOrders.length} (pending), Delivery: ${deliveryOrders.length} (pending) | Total cargadas: ${orders.length}`);
+  console.log(`📊 [TABLERO ACTUALIZADO] Mesa: ${tableOrders.length} (pending), Takeout: ${takeoutOrders.length} (pending), Delivery: ${deliveryOrders.length} (pending)`);
+  if (orders.length > tableOrders.length + takeoutOrders.length + deliveryOrders.length) {
+    console.log(`   ⚠️ ${orders.length - tableOrders.length - takeoutOrders.length - deliveryOrders.length} órdenes excluidas (status inválido)`);
+  }
 
   const Column = ({ title, Icon, orders, type, color, totalCost }) => {
-    console.log(`🔶 Column ${title} - Órdenes recibidas:`, orders);
+    if (orders && orders.length > 0) {
+      console.log(`📦 [${title.toUpperCase()}] Mostrando ${orders.length} órdenes`);
+    }
     return (
     <div className="bg-gray-100 dark:bg-gray-900 rounded-lg sm:rounded-xl p-3 sm:p-4 min-h-[300px] sm:min-h-[400px] transition-colors">
       <div className={color + " text-white dark:text-white rounded-lg p-3 sm:p-4 mb-3 sm:mb-4 flex justify-between items-center gap-2 shadow-md transition-colors"}>
@@ -118,7 +129,7 @@ const OrderBoard = ({ onNewOrder, onEditOrder, onPayOrder, onDeleteOrder }) => {
           <p className="text-center text-gray-500 dark:text-gray-400 py-12">Sin pedidos</p>
         ) : (
           orders.map((order, idx) => {
-            console.log(`📌 Renderizando orden ${idx}:`, order);
+            console.log(`  [${idx}] Renderizando: ${order.id.substring(0,8)}... (type=${order.type}, status=${order.status})`);
             return (
             <div key={order.id || idx}>
               <OrderCard 

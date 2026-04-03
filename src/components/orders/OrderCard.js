@@ -6,19 +6,25 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
   if (!order) return null;
   
   // ============================================================
-  // 🔴 PROTECCIONES: Nunca renderizar órdenes cobradas o inválidas
+  // 🔴 SEGUNDA BARRERA DE DEFENSA: Nunca renderizar órdenes inválidas
   // ============================================================
   
-  // ✅ Protección 1: Exigir status válido
+  // ✅ Protección 1: RECHAZAR órdenes sin status válido
   const validStatuses = ['pending', 'waiting', 'preparing'];
   if (!order.status || !validStatuses.includes(order.status)) {
-    console.log(`🚫 OrderCard NO renderiza ${order.id}: status inválido/indefinido (${order.status})`);
+    console.log(`🚫 [OrderCard] NO RENDERIZAR: ${order.id} (status inválido: "${order.status}")`);
     return null;
   }
   
-  // ✅ Protección 2: NUNCA renderizar órdenes pagadas/completadas
+  // ✅ Protección 2: RECHAZAR CUALQUIER orden pagada
   if (order.status === 'completed') {
-    console.log(`🚫 OrderCard NO renderiza ${order.id}: status=completed (ORDEN PAGADA, NO MOSTRAR)`);
+    console.log(`🚫 [OrderCard] NO RENDERIZAR: ${order.id} (COMPLETADA - PAGADA)`);
+    return null;
+  }
+  
+  // ✅ Protección 3: RECHAZAR órdenes sin type
+  if (!order.type) {
+    console.log(`🚫 [OrderCard] NO RENDERIZAR: ${order.id} (sin type definido)`);
     return null;
   }
 
