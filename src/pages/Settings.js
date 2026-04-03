@@ -9,7 +9,7 @@ import LanguageSettings from '../components/settings/LanguageSettings';
 import AppearanceSettings from '../components/settings/AppearanceSettings';
 import GeneralSettings from '../components/settings/GeneralSettings';
 import DeliverySettings from '../components/settings/DeliverySettings';
-import ResetDataSettings from '../components/settings/ResetDataSettings';
+import ClearOrdersPanel from '../components/settings/ClearOrdersPanel';
 
 const Settings = () => {
   const { settings, resetSettings, exportSettings, importSettings } = useSettings();
@@ -107,7 +107,7 @@ const Settings = () => {
         {activeTab === 'language' && <LanguageSettings />}
         {activeTab === 'appearance' && <AppearanceSettings />}
         {activeTab === 'general' && <GeneralSettings />}
-        {activeTab === 'reset' && <ResetDataSettings />}
+        {activeTab === 'reset' && <ClearOrdersPanel />}
       </div>
     </div>
   );

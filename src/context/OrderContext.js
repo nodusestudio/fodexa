@@ -388,6 +388,46 @@ export const OrderProvider = ({ children }) => {
     }, 0);
   };
 
+  // 🗑️ LIMPIAR TODAS LAS ÓRDENES DE FIRESTORE
+  const clearAllOrders = async () => {
+    if (!user?.uid) {
+      console.error('❌ No hay usuario autenticado');
+      return false;
+    }
+
+    console.log('🗑️ Iniciando limpieza de TODAS las órdenes...');
+    
+    try {
+      // Obtener todos los documentos de órdenes
+      const q = query(collection(db, `users/${user.uid}/orders`));
+      const snapshot = await getDocs(q);
+
+      console.log(`📊 Total de órdenes encontradas: ${snapshot.docs.length}`);
+
+      // Borrar cada orden
+      let deletedCount = 0;
+      for (const doc of snapshot.docs) {
+        try {
+          await deleteDoc(doc.ref);
+          deletedCount++;
+          console.log(`✂️ Eliminada orden: ${doc.id}`);
+        } catch (error) {
+          console.error(`❌ Error eliminando ${doc.id}:`, error.message);
+        }
+      }
+
+      // Limpiar estado local
+      setOrders([]);
+      setCurrentOrder(null);
+
+      console.log(`✅ Limpeza completada: ${deletedCount} órdenes eliminadas`);
+      return true;
+    } catch (error) {
+      console.error('❌ Error en clearAllOrders:', error);
+      return false;
+    }
+  };
+
   const value = {
     orders,
     setOrders,
@@ -407,6 +447,7 @@ export const OrderProvider = ({ children }) => {
     updateTableStatus,
     clearCurrentOrder,
     calculateOrderTotal,
+    clearAllOrders,
     tables: tablesData,
   };
 
