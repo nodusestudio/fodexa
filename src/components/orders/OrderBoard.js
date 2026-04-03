@@ -44,8 +44,9 @@ const OrderBoard = ({ onNewOrder, onEditOrder, onPayOrder, onDeleteOrder }) => {
     .filter(o => o.type === 'delivery' && o.status !== 'completed' && o.status !== 'waiting')
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-  // Calcular suma de TODOS los costos de delivery (incluyendo completados)
-  const deliveryTotal = deliveryOrders
+  // ✅ Sumar costos de TODOS los domicilios (incluyendo completados) para mostrar referencia
+  const deliveryTotal = (orders || [])
+    .filter(o => o.type === 'delivery')
     .reduce((sum, o) => sum + (o.deliveryCost || 0), 0);
 
   console.log('📌 Órdenes filtradas - Mesa:', tableOrders, 'Para Llevar:', takeoutOrders, 'Domicilio:', deliveryOrders, 'Total delivery:', deliveryTotal);

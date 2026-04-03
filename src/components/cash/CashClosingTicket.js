@@ -5,53 +5,21 @@ import { useCash } from '../../context/CashContext';
 function CashClosingTicket({ isOpen, onClose, sessionId }) {
   const { getSessionById, cashMovements } = useCash();
   const [session, setSession] = useState(null);
-  const [sessionMovements, setSessionMovements] = useState([]);
-  const [paymentBreakdown, setPaymentBreakdown] = useState({});
 
   useEffect(() => {
     if (isOpen && sessionId) {
       const foundSession = getSessionById(sessionId);
       setSession(foundSession);
-
-      if (foundSession) {
-        // Filtrar movimientos de esta sesión
-        const relevantMovements = cashMovements.filter(
-          m => new Date(m.date) >= new Date(foundSession.openDate) &&
-               new Date(m.date) <= new Date(foundSession.closeDate || new Date())
-        );
-        setSessionMovements(relevantMovements);
-
-        // Calcular desglose por tipo de pago desde las descripciones
-        const breakdown = {};
-        relevantMovements
-          .filter(m => m.type === 'sale')
-          .forEach(m => {
-            const types = m.description.match(/efectivo|tarjeta|transferencia/gi) || [];
-            types.forEach(type => {
-              const normalizedType = type.toLowerCase();
-              if (!breakdown[normalizedType]) {
-                breakdown[normalizedType] = 0;
-              }
-              breakdown[normalizedType] += m.amount;
-            });
-          });
-        setPaymentBreakdown(breakdown);
-      }
     }
-  }, [isOpen, sessionId, getSessionById, cashMovements]);
+  }, [isOpen, sessionId, getSessionById]);
 
   if (!isOpen || !session) return null;
 
-  const sales = sessionMovements
-    .filter(m => m.type === 'sale')
-    .reduce((sum, m) => sum + m.amount, 0);
-
-  const expenses = sessionMovements
-    .filter(m => m.type === 'expense')
-    .reduce((sum, m) => sum + m.amount, 0);
-
-  const saleCount = sessionMovements.filter(m => m.type === 'sale').length;
-  const expenseCount = sessionMovements.filter(m => m.type === 'expense').length;
+  // Usar datos guardados en la sesión (Firestore), no movimientos locales
+  const sales = session?.sales || 0;
+  const expenses = session?.expenses || 0;
+  const saleCount = session?.saleCount || 0;
+  const expenseCount = session?.dayExpenses?.length || 0;
 
   const handlePrint = () => {
     window.print();
@@ -152,38 +120,39 @@ function CashClosingTicket({ isOpen, onClose, sessionId }) {
             <div className="border-b border-gray-300 dark:border-gray-700 pb-3 sm:pb-4">
               <p className="font-bold text-gray-800 dark:text-white mb-3 text-xs sm:text-sm">📊 DESGLOSE POR MEDIO DE PAGO</p>
               
-              {session?.paymentBreakdown && Object.entries(session.paymentBreakdown).length > 0 ? (
+              {session?.paymentMethods && Object.keys(session.paymentMethods).length > 0 ? (
                 <div className="space-y-3">
-                  {Object.entries(session.paymentBreakdown).map(([type, amount]) => {
+                  {Object.entries(session.paymentMethods).map(([method, data]) => {
                     const typeLabels = {
-                      'cash': '💵 Efectivo',
-                      'card': '🏦 Bancolombia',
-                      'transfer': '📱 Transferencia',
+                      'efectivo': '💵 Efectivo',
+                      'bancolombia': '🏦 Bancolombia',
                       'nequi': '📱 Nequi',
                       'bold': '💳 Bold',
                       'aliado': '🏪 Aliado',
-                      'efectivo': '💵 Efectivo',
-                      'bancolombia': '🏦 Bancolombia',
-                      'transferencia': '📱 Transferencia'
+                      'transferencia': '📱 Transferencia',
                     };
+                    const ingresos = data?.ingresos || 0;
+                    const egresos = data?.egresos || 0;
+                    const saldo = ingresos - egresos;
+                    
                     return (
-                      <div key={type} className="bg-blue-50 dark:bg-blue-900/10 p-2 sm:p-3 rounded-lg border border-blue-200 dark:border-blue-700">
-                        <div className="flex justify-between items-center text-xs sm:text-sm mb-1">
-                          <span className="font-bold text-gray-800 dark:text-white">{typeLabels[type] || type}</span>
-                          <span className="font-bold text-blue-600 dark:text-blue-400">Entró: {formatCurrency(amount)}</span>
+                      <div key={method} className="bg-blue-50 dark:bg-blue-900/10 p-2 sm:p-3 rounded-lg border border-blue-200 dark:border-blue-700">
+                        <div className="flex justify-between items-center text-xs sm:text-sm mb-2">
+                          <span className="font-bold text-gray-800 dark:text-white">{typeLabels[method] || method}</span>
                         </div>
-                        <div className="text-xs text-gray-600 dark:text-gray-400">Salió por egresos: ${
-                          sessionMovements
-                            .filter(m => m.type === 'expense' && m.metadata?.paymentMethod === type)
-                            .reduce((sum, m) => sum + m.amount, 0)
-                            .toLocaleString('es-CO')
-                        }</div>
-                        <div className="text-xs font-semibold text-green-600 dark:text-green-400 mt-1">
-                          Saldo final: {formatCurrency(
-                            amount - sessionMovements
-                              .filter(m => m.type === 'expense' && m.metadata?.paymentMethod === type)
-                              .reduce((sum, m) => sum + m.amount, 0)
-                          )}
+                        <div className="grid grid-cols-3 gap-1 text-xs">
+                          <div className="text-green-600 dark:text-green-400">
+                            <span className="text-gray-600 dark:text-gray-400 block">Entró:</span>
+                            <span className="font-bold">${ingresos.toLocaleString('es-CO')}</span>
+                          </div>
+                          <div className="text-red-600 dark:text-red-400">
+                            <span className="text-gray-600 dark:text-gray-400 block">Salió:</span>
+                            <span className="font-bold">-${egresos.toLocaleString('es-CO')}</span>
+                          </div>
+                          <div className={saldo >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'}>
+                            <span className="text-gray-600 dark:text-gray-400 block">Saldo:</span>
+                            <span className="font-bold">${saldo.toLocaleString('es-CO')}</span>
+                          </div>
                         </div>
                       </div>
                     );
@@ -195,32 +164,29 @@ function CashClosingTicket({ isOpen, onClose, sessionId }) {
             </div>
 
             {/* EGRESOS DETALLADOS */}
-            {sessionMovements.filter(m => m.type === 'expense').length > 0 && (
+            {session?.dayExpenses && session.dayExpenses.length > 0 && (
               <div className="border-b border-gray-300 dark:border-gray-700 pb-3 sm:pb-4">
-                <p className="font-bold text-gray-800 dark:text-white mb-2 text-xs sm:text-sm">🗑️ EGRESOS DEL DÍA ({sessionMovements.filter(m => m.type === 'expense').length})</p>
+                <p className="font-bold text-gray-800 dark:text-white mb-2 text-xs sm:text-sm">🗑️ EGRESOS DEL DÍA ({session.dayExpenses.length})</p>
                 <div className="space-y-1 bg-red-50 dark:bg-red-900/10 p-2 sm:p-3 rounded-lg max-h-[200px] overflow-y-auto">
-                  {sessionMovements
-                    .filter(m => m.type === 'expense')
-                    .map((expense, idx) => (
-                      <div key={idx} className="text-xs sm:text-sm border-b border-red-200 dark:border-red-800 pb-1 mb-1 last:border-b-0">
-                        <div className="flex justify-between">
-                          <span className="font-medium text-gray-800 dark:text-white">{expense.description || 'Egreso'}</span>
-                          <span className="font-bold text-red-600 dark:text-red-400">-{formatCurrency(expense.amount)}</span>
-                        </div>
-                        {expense.metadata?.paymentMethod && (
-                          <span className="text-xs text-gray-500 dark:text-gray-500">Medio: {expense.metadata.paymentMethod}</span>
-                        )}
+                  {session.dayExpenses.map((expense, idx) => (
+                    <div key={idx} className="text-xs sm:text-sm border-b border-red-200 dark:border-red-800 pb-1 mb-1 last:border-b-0">
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-800 dark:text-white">{expense.category || 'Egreso'}</span>
+                        <span className="font-bold text-red-600 dark:text-red-400">-${expense.amount?.toLocaleString('es-CO') || '0'}</span>
                       </div>
-                    ))}
+                      {expense.description && (
+                        <span className="text-xs text-gray-500 dark:text-gray-500 block">{expense.description}</span>
+                      )}
+                      {expense.paymentType && (
+                        <span className="text-xs text-gray-500 dark:text-gray-500 block">Método: {expense.paymentType}</span>
+                      )}
+                    </div>
+                  ))}
                 </div>
                 <div className="flex justify-between mt-2 p-2 bg-red-100 dark:bg-red-900/20 rounded font-bold text-xs sm:text-sm">
                   <span>Total Egresos:</span>
                   <span className="text-red-600 dark:text-red-400">
-                    {formatCurrency(
-                      sessionMovements
-                        .filter(m => m.type === 'expense')
-                        .reduce((sum, m) => sum + m.amount, 0)
-                    )}
+                    ${session.dayExpenses.reduce((sum, e) => sum + (e.amount || 0), 0).toLocaleString('es-CO')}
                   </span>
                 </div>
               </div>
@@ -228,26 +194,26 @@ function CashClosingTicket({ isOpen, onClose, sessionId }) {
 
             {/* RESUMEN FINAL */}
             <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg p-3 sm:p-4 border-l-4 border-purple-600 dark:border-purple-400 space-y-2 sm:space-y-3">
-              <h3 className="font-bold text-gray-800 dark:text-white text-xs sm:text-sm mb-2">🧮 RESUMEN DEL CIERRE</h3>
+              <h3 className="font-bold text-gray-800 dark:text-white text-xs sm:text-sm mb-2">🧮 CUADRE DE CAJA</h3>
               
               <div className="space-y-1 text-xs sm:text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Monto Inicial</span>
+                  <span className="text-gray-600 dark:text-gray-400">💰 Monto Inicial</span>
                   <span className="font-bold text-gray-800 dark:text-white">+ {formatCurrency(session?.initialAmount)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Total Ventas del Día</span>
+                  <span className="text-gray-600 dark:text-gray-400">💳 Total Ventas del Día</span>
                   <span className="font-bold text-green-600 dark:text-green-400">+ {formatCurrency(sales)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Total Egresos del Día</span>
+                  <span className="text-gray-600 dark:text-gray-400">🗑️ Total Egresos del Día</span>
                   <span className="font-bold text-red-600 dark:text-red-400">- {formatCurrency(expenses)}</span>
                 </div>
                 
                 <div className="border-t border-gray-300 dark:border-gray-600 pt-2 mt-2">
                   <div className="flex justify-between">
                     <span className="font-bold text-gray-800 dark:text-white">Debería haber:</span>
-                    <span className="font-bold text-blue-600 dark:text-blue-400">{formatCurrency(session?.expectedAmount || (session?.initialAmount + sales - expenses))}</span>
+                    <span className="font-bold text-blue-600 dark:text-blue-400">{formatCurrency(session?.expectedAmount || 0)}</span>
                   </div>
                 </div>
               </div>
