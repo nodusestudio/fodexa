@@ -29,9 +29,11 @@ const OrderBoard = ({ onNewOrder, onEditOrder, onPayOrder, onDeleteOrder }) => {
   // Solo mostrar pedidos que no han sido cobrados (status !== 'completed')
   const tableOrders = (orders || [])
     .filter(o => {
-      const matches = o.type === 'table' && o.status !== 'completed';
-      console.log(`📊 Evaluando orden ${o.id}:`, { type: o.type, status: o.status, matches });
-      return matches;
+      const isVisible = o.type === 'table' && o.status !== 'completed';
+      if (!isVisible) {
+        console.log(`🔍 Ocultando orden mesa ${o.id}: type=${o.type}, status=${o.status}`);
+      }
+      return isVisible;
     })
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   
@@ -39,7 +41,7 @@ const OrderBoard = ({ onNewOrder, onEditOrder, onPayOrder, onDeleteOrder }) => {
     .filter(o => o.type === 'takeout' && o.status !== 'completed')
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   
-  // ✅ Solo mostrar deliveries SIN COBRAR (status !== 'completed' y status !== 'waiting')
+  // ✅ Solo mostrar deliveries SIN COBRAR (excluir 'completed' y 'waiting')
   const deliveryOrders = (orders || [])
     .filter(o => o.type === 'delivery' && o.status !== 'completed' && o.status !== 'waiting')
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));

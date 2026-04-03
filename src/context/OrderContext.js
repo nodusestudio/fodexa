@@ -158,24 +158,45 @@ export const OrderProvider = ({ children }) => {
     try {
       console.log('✏️ updateOrder llamado con ID:', id, 'Datos:', data);
       
+      // Obtener la orden que se está actualizando
+      const orderToUpdate = orders.find(o => o.id === id);
+      
       // 1️⃣ ✅ Actualizar PRIMERO en estado local
       setOrders(prev => prev.map(order => 
         order.id === id ? { ...order, ...data, updatedAt: new Date() } : order
       ));
       console.log('✅ Pedido actualizado en estado local');
       
-      // 2️⃣ Intentar actualizar en Firestore en background (si el usuario existe y es ID válido)
-      if (user?.uid && !id.startsWith('local_')) {
+      // 2️⃣ Actualizar en Firestore - para órdenes locales o normales
+      if (user?.uid) {
         (async () => {
           try {
-            const orderRef = doc(db, `users/${user.uid}/orders`, id);
-            await updateDoc(orderRef, {
-              ...data,
-              updatedAt: new Date(),
-            });
-            console.log('📦 Orden también actualizada en Firestore');
+            // Si es un ID local, crear un documento nuevo en Firestore
+            if (id.startsWith('local_')) {
+              console.log('🔄 Migrando orden local a Firestore...');
+              const newDocRef = await addDoc(collection(db, `users/${user.uid}/orders`), {
+                ...orderToUpdate,
+                ...data,
+                localId: id, // Guardar referencia al ID local anterior
+                updatedAt: new Date(),
+              });
+              console.log('✅ Orden local migrada a Firestore con nuevo ID:', newDocRef.id);
+              
+              // Actualizar el estado con el nuevo ID de Firestore
+              setOrders(prev => prev.map(order => 
+                order.id === id ? { ...order, ...data, id: newDocRef.id, updatedAt: new Date() } : order
+              ));
+            } else {
+              // Para órdenes que ya existen en Firestore, actualizar directamente
+              const orderRef = doc(db, `users/${user.uid}/orders`, id);
+              await updateDoc(orderRef, {
+                ...data,
+                updatedAt: new Date(),
+              });
+              console.log('📦 Orden actualizada en Firestore');
+            }
           } catch (firestoreError) {
-            console.warn('⚠️ Firestore falló pero orden actualizada localmente:', firestoreError.message);
+            console.warn('⚠️ Error en Firestore pero orden actualizada localmente:', firestoreError.message);
           }
         })();
       }
