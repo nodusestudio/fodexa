@@ -174,9 +174,15 @@ export const OrderProvider = ({ children }) => {
           finalOrderData = { id: finalOrderId, ...orderData };
           console.log('✅ [CREAR] Orden en Firestore:', finalOrderId, 'Status:', orderData.status);
         } catch (firestoreError) {
-          console.error('❌ [CREAR] Firestore falló:', firestoreError.message);
+          console.error('❌ [CREAR] Firestore falló');
+          console.error('   Código de error:', firestoreError.code);
+          console.error('   Mensaje:', firestoreError.message);
+          console.error('   Stack:', firestoreError);
+          console.error('   UID del usuario:', user?.uid);
           console.error('   Usando ID local como fallback:', finalOrderId);
         }
+      } else {
+        console.warn('⚠️ [CREAR] Usuario no autenticado:', { user, uid: user?.uid });
       }
       
       // 4️⃣ Guardar en estado local con el ID real (de Firestore) o local (si Firestore falló)
