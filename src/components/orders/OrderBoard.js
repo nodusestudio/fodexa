@@ -26,44 +26,61 @@ const OrderBoard = ({ onNewOrder, onEditOrder, onPayOrder, onDeleteOrder }) => {
     }
   };
 
-  // Solo mostrar pedidos que no han sido cobrados (status !== 'completed')
+  // ============================================================
+  // 🔴 REGLA FUNDAMENTAL: Solo mostrar órdenes NO COBRADAS
+  // ============================================================
+  // Status válidos en tablero:
+  // - 'pending': Orden recién creada, sin cobrar
+  // - 'waiting': Delivery pagado, esperando domiciliario
+  // - 'preparing': Mesa/Takeout en preparación
+  // 
+  // Nunca mostrar:
+  // - 'completed': Orden pagada y completada
+  // - undefined/null: Órdenes corruptas o viejas
+  // ============================================================
+
+  // Filtro estricto: Solo MESA con status 'pending'
   const tableOrders = (orders || [])
     .filter(o => {
-      const isVisible = o.type === 'table' && o.status !== 'completed';
-      if (!isVisible && o.type === 'table') {
-        console.log(`🔍 Ocultando orden mesa ${o.id}: status="${o.status}" (debe ser ≠ 'completed')`);
+      // Mesa + pending = orden sin cobrar
+      const isValid = o.type === 'table' && o.status === 'pending';
+      if (o.type === 'table' && !isValid) {
+        console.log(`🚫 Mesa ${o.id} ocultada: status="${o.status}" (solo mostrar si es 'pending')`);
       }
-      return isVisible;
+      return isValid;
     })
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   
+  // Filtro estricto: Solo TAKEOUT con status 'pending'
   const takeoutOrders = (orders || [])
     .filter(o => {
-      const isVisible = o.type === 'takeout' && o.status !== 'completed';
-      if (!isVisible && o.type === 'takeout') {
-        console.log(`🔍 Ocultando orden para llevar ${o.id}: status="${o.status}"`);
+      const isValid = o.type === 'takeout' && o.status === 'pending';
+      if (o.type === 'takeout' && !isValid) {
+        console.log(`🚫 Takeout ${o.id} ocultada: status="${o.status}"`);
       }
-      return isVisible;
+      return isValid;
     })
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   
-  // ✅ Solo mostrar deliveries SIN COBRAR (excluir 'completed' y 'waiting')
+  // Filtro estricto: Solo DELIVERY con status 'pending' (sin cobrar)
+  // Una vez pagado pasa a 'waiting' y sale de aquí
   const deliveryOrders = (orders || [])
     .filter(o => {
-      const isVisible = o.type === 'delivery' && o.status !== 'completed' && o.status !== 'waiting';
-      if (!isVisible && o.type === 'delivery') {
-        console.log(`🔍 Ocultando orden delivery ${o.id}: status="${o.status}"`);
+      const isValid = o.type === 'delivery' && o.status === 'pending';
+      if (o.type === 'delivery' && !isValid) {
+        console.log(`🚫 Delivery ${o.id} ocultada: status="${o.status}"`);
       }
-      return isVisible;
+      return isValid;
     })
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-  // ✅ Sumar costos de TODOS los domicilios (incluyendo completados) para mostrar referencia
+  // Sumar costos de entrega SOLO de domicilios en espera o completados
+  // (órdenes pendientes sin pagar no tienen costo de entrega aún confirmado)
   const deliveryTotal = (orders || [])
-    .filter(o => o.type === 'delivery')
+    .filter(o => o.type === 'delivery' && (o.status === 'waiting' || o.status === 'completed'))
     .reduce((sum, o) => sum + (o.deliveryCost || 0), 0);
 
-  console.log(`📌 FILTRADO: Mesa(${tableOrders.length}), Para Llevar(${takeoutOrders.length}), Domicilio(${deliveryOrders.length}) | TOTAL órdenes cargadas: ${orders.length}`);
+  console.log(`📊 TABLERO - Mesa: ${tableOrders.length} (pending), Takeout: ${takeoutOrders.length} (pending), Delivery: ${deliveryOrders.length} (pending) | Total cargadas: ${orders.length}`);
 
   const Column = ({ title, Icon, orders, type, color, totalCost }) => {
     console.log(`🔶 Column ${title} - Órdenes recibidas:`, orders);

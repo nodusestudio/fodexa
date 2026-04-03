@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { collection, addDoc, updateDoc, deleteDoc, doc, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc, query, where, onSnapshot, orderBy, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useAuth } from './AuthContext';
 import tables from '../data/tables';
@@ -44,13 +44,28 @@ export const OrderProvider = ({ children }) => {
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        const ordersData = snapshot.docs.map(doc => ({
+        const allOrdersData = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
           timestamp: doc.data().timestamp?.toDate?.() || doc.data().timestamp,
         }));
-        console.log('✅ Órdenes cargadas desde la nube:', ordersData.length);
-        setOrders(ordersData);
+        
+        // ✅ FILTRADO EN LA CARGA: Solo mostrar órdenes ACTIVAS (no completadas)
+        // Las órdenes completadas deben desaparecer automáticamente del tablero
+        const activeOrders = allOrdersData.filter(order => {
+          // Solo mostrar si status es 'pending', 'waiting' o 'preparing'
+          // Excluir completadas automáticamente
+          const isActive = order.status && ['pending', 'waiting', 'preparing'].includes(order.status);
+          
+          if (!isActive) {
+            console.log(`🔍 Filtrando orden completada/vieja ${order.id}: status="${order.status}"`);
+          }
+          
+          return isActive;
+        });
+        
+        console.log(`✅ Órdenes cargadas: ${allOrdersData.length} total, ${activeOrders.length} activas`);
+        setOrders(activeOrders);
         setLoading(false);
       },
       (error) => {
@@ -207,6 +222,55 @@ export const OrderProvider = ({ children }) => {
       table.id === tableId ? { ...table, status } : table
     ));
   };
+
+  // ✅ LIMPIEZA AUTOMÁTICA: Borrar órdenes completadas antiguas (> 1 hora)
+  // Esto mantiene Firestore limpio y asegura que SOLO órdenes activas se muestren
+  const cleanupCompletedOrders = async () => {
+    if (!user?.uid) return;
+    
+    try {
+      const now = new Date();
+      const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+      
+      // Buscar órdenes completadas hace más de 1 hora
+      const q = query(
+        collection(db, `users/${user.uid}/orders`),
+        where('status', '==', 'completed'),
+        orderBy('timestamp', 'asc')
+      );
+      
+      const snapshot = await getDocs(q);
+      let deletedCount = 0;
+      
+      for (const doc of snapshot.docs) {
+        const orderTime = doc.data().timestamp?.toDate?.() || new Date(doc.data().timestamp);
+        
+        if (orderTime < oneHourAgo) {
+          await deleteDoc(doc.ref);
+          deletedCount++;
+          console.log(`🗑️ Orden completada antigua eliminada: ${doc.id}`);
+        }
+      }
+      
+      if (deletedCount > 0) {
+        console.log(`🧹 Limpieza: ${deletedCount} órdenes completadas antiguas eliminadas`);
+      }
+    } catch (error) {
+      console.warn('⚠️ Error en limpieza de órdenes:', error.message);
+      // No es crítico si falla la limpieza
+    }
+  };
+  
+  // Ejecutar limpieza cada 10 minutos cuando hay usuario autenticado
+  useEffect(() => {
+    if (!user?.uid) return;
+    
+    const cleanupInterval = setInterval(() => {
+      cleanupCompletedOrders();
+    }, 10 * 60 * 1000); // 10 minutos
+    
+    return () => clearInterval(cleanupInterval);
+  }, [user?.uid]);
 
   // Limpia orden actual
   const clearCurrentOrder = () => {

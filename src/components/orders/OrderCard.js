@@ -5,9 +5,20 @@ import { Edit2, CreditCard, Trash2, User, MapPin, Utensils, Truck } from 'lucide
 const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitchen }) => {
   if (!order) return null;
   
-  // ✅ Protección: No renderizar órdenes pagadas en el tablero
+  // ============================================================
+  // 🔴 PROTECCIONES: Nunca renderizar órdenes cobradas o inválidas
+  // ============================================================
+  
+  // ✅ Protección 1: Exigir status válido
+  const validStatuses = ['pending', 'waiting', 'preparing'];
+  if (!order.status || !validStatuses.includes(order.status)) {
+    console.log(`🚫 OrderCard NO renderiza ${order.id}: status inválido/indefinido (${order.status})`);
+    return null;
+  }
+  
+  // ✅ Protección 2: NUNCA renderizar órdenes pagadas/completadas
   if (order.status === 'completed') {
-    console.log(`🚫 Ocultando orden ${order.id} con status 'completed'`);
+    console.log(`🚫 OrderCard NO renderiza ${order.id}: status=completed (ORDEN PAGADA, NO MOSTRAR)`);
     return null;
   }
 
