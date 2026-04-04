@@ -3,7 +3,7 @@
 
 export const APP_VERSION = 'f-7100';
 export const VERSION_NUMBER = '7.1.0';
-export const FULL_VERSION = `f-7100 v7.1.0`;}
+export const FULL_VERSION = `f-7100 v7.1.0`;
 export const LAST_UPDATE = new Date('2024-12-19').toLocaleDateString('es-CO');
 
 export const getVersionInfo = () => ({
