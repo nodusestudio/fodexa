@@ -172,35 +172,35 @@ export const OrderProvider = ({ children }) => {
         total,
       };
       
-      // 3️⃣ ✅ GUARDAR PRIMERO EN FIRESTORE (si está autenticado) para obtener ID real
-      let finalOrderId = `local_${Date.now()}`;
-      let finalOrderData = { id: finalOrderId, ...orderData };
+      // 3️⃣ ✅ GUARDAR EN FIRESTORE (REQUERIDO si está autenticado)
+      let finalOrderId;
+      let finalOrderData;
       
       if (user?.uid) {
+        // Usuario autenticado - DEBE guardar en Firestore, NO hay fallback a local
         try {
-          console.log('🔥 [CREAR] Guardando en Firestore...', {
-            status: orderData.status,
-            type: orderData.type,
-          });
+          console.log('🔥 [CREAR] Guardando orden en Firestore (usuario autenticado)...');
           const docRef = await addDoc(collection(db, `users/${user.uid}/orders`), {
             ...orderData,
           });
           finalOrderId = docRef.id;
           finalOrderData = { id: finalOrderId, ...orderData };
-          console.log('✅ [CREAR] Orden en Firestore:', finalOrderId, 'Status:', orderData.status);
+          console.log('✅ [CREAR] Orden guardada en Firestore:', finalOrderId);
         } catch (firestoreError) {
-          console.error('❌ [CREAR] Firestore falló');
-          console.error('   Código de error:', firestoreError.code);
-          console.error('   Mensaje:', firestoreError.message);
-          console.error('   Stack:', firestoreError);
-          console.error('   UID del usuario:', user?.uid);
-          console.error('   Usando ID local como fallback:', finalOrderId);
+          console.error('❌ [CREAR] FALLÓ guardar en Firestore - NO se puede proceder');
+          console.error('   Error:', firestoreError.message);
+          console.error('   Code:', firestoreError.code);
+          // Relanzar el error - no hay fallback
+          throw new Error(`No se pudo guardar la orden en Firestore: ${firestoreError.message}`);
         }
       } else {
-        console.warn('⚠️ [CREAR] Usuario no autenticado:', { user, uid: user?.uid });
+        // Sin usuario - usar ID local (esto no debe pasar normalmente)
+        console.warn('⚠️ Sin usuario autenticado - usando ID local');
+        finalOrderId = `local_${Date.now()}`;
+        finalOrderData = { id: finalOrderId, ...orderData };
       }
       
-      // 4️⃣ Guardar en estado local con el ID real (de Firestore) o local (si Firestore falló)
+      // 4️⃣ Guardar en estado local con el ID de Firestore
       setOrders(prev => {
         const updated = [...prev, finalOrderData];
         console.log('✅ [CREAR] En estado local. Total órdenes:', updated.length);
@@ -338,25 +338,15 @@ export const OrderProvider = ({ children }) => {
     }
   };
 
-  // Elimina un pedido marcándolo como completado (no lo borra, evita que reaparezca)
+  // Elimina un pedido del estado local solamente
   const deleteOrder = async (id) => {
     if (!user) throw new Error('User not authenticated');
-    try {
-      // ✅ Marcar como 'completed' en lugar de eliminar
-      // Esto evita que órdenes "fantasma" reaparezcan al actualizar
-      await updateDoc(doc(db, `users/${user.uid}/orders`, id), {
-        status: 'completed',
-        completedAt: new Date(),
-        deletedByUser: true
-      });
-      
-      // ✅ Remover del estado local también
-      setOrders(prev => prev.filter(order => order.id !== id));
-      console.log('✅ Pedido marcado como completado (no eliminado físicamente)');
-    } catch (error) {
-      console.error('Error marking order as completed:', error);
-      throw error;
-    }
+    
+    // ✅ Solo remover del estado local
+    // Si el orden tiene ID local (local_*), nunca estuvo en Firestore
+    // Si tiene ID de Firestore, se limpia después con cleanupGhostOrders
+    setOrders(prev => prev.filter(order => order.id !== id));
+    console.log('✅ Orden eliminada del estado local:', id);
   };
 
   // Actualiza estado de mesa
