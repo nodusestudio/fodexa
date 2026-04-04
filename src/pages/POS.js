@@ -429,10 +429,15 @@ const POS = () => {
 
             <div className="flex flex-col gap-2 sm:gap-3 pt-2 sm:pt-4">
               <button
-                onClick={() => {
+                onClick={async () => {
                   setShowNoCashModal(false);
                   setShowOpenCashFlow(true);
-                  openCash({ initialAmount: 0 });
+                  try {
+                    await openCash({ initialAmount: 0 });
+                  } catch (error) {
+                    console.error('❌ Error abriendo caja:', error);
+                    alert('Error al abrir caja: ' + error.message);
+                  }
                 }}
                 className="px-4 sm:px-6 py-2 sm:py-3 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-lg transition-colors text-sm sm:text-base"
               >

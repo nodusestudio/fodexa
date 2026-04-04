@@ -167,7 +167,11 @@ export const CashProvider = ({ children }) => {
   }, [user]);
 
   // Abrir caja
-  const openCash = (cashData) => {
+  const openCash = async (cashData) => {
+    if (!user) {
+      throw new Error('Usuario no autenticado');
+    }
+
     // Aceptar objeto con los nuevos parámetros
     const initialAmount = typeof cashData === 'number' ? cashData : (cashData?.initialAmount || 0);
     const notes = typeof cashData === 'string' ? cashData : (cashData?.notes || '');
@@ -176,7 +180,6 @@ export const CashProvider = ({ children }) => {
     const openedAt = cashData?.openedAt || new Date();
 
     const session = {
-      id: Date.now(),
       openDate: openedAt,
       openDateLocal: openedAt.toLocaleString('es-CO'),
       openUser: 'Cajero Demo',
@@ -187,24 +190,34 @@ export const CashProvider = ({ children }) => {
       status: 'open',
       expenses: [], // Array de egresos
     };
-    setCashSession(session);
-    console.log('📂 Caja abierta - ID:', session.id, 'Capital:', session.initialAmount, 'Fondo:', session.fundAmount);
-    addMovement('opening', initialAmount, 'Apertura de caja');
     
-    // ✅ Crear movimiento acumulativo de domicilios en $0
-    addMovement(
-      'expense',
-      0,
-      '🚗 Domicilios del Día',
-      { 
-        paymentType: 'efectivo',
-        category: 'Domicilios',
-        isAccumulative: true,
-        sessionId: session.id
-      }
-    );
-    
-    return session;
+    try {
+      // ✅ GUARDAR SESIÓN EN FIRESTORE inmediatamente
+      const docRef = await addDoc(collection(db, `users/${user.uid}/cashSessions`), session);
+      const sessionWithId = { ...session, id: docRef.id };
+      
+      setCashSession(sessionWithId);
+      console.log('✅ Caja abierta y guardada en Firestore - ID:', docRef.id, 'Capital:', session.initialAmount, 'Fondo:', session.fundAmount);
+      addMovement('opening', initialAmount, 'Apertura de caja');
+      
+      // ✅ Crear movimiento acumulativo de domicilios en $0
+      addMovement(
+        'expense',
+        0,
+        '🚗 Domicilios del Día',
+        { 
+          paymentType: 'efectivo',
+          category: 'Domicilios',
+          isAccumulative: true,
+          sessionId: docRef.id
+        }
+      );
+      
+      return sessionWithId;
+    } catch (error) {
+      console.error('❌ Error guardando sesión de caja:', error);
+      throw error;
+    }
   };
 
   // Cerrar caja

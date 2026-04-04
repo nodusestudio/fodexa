@@ -60,37 +60,19 @@ export const OrderProvider = ({ children }) => {
         
         // ✅ FILTRADO ESTRICTO: Solo status válidos
         const validStatuses = ['pending', 'waiting', 'preparing'];
-        const toDelete = []; // Órdenes por eliminar
         
         const activeOrders = allOrdersData.filter(order => {
           const isActive = order.status && validStatuses.includes(order.status);
           
           if (!isActive) {
             const reason = !order.status ? 'sin status' : `status="${order.status}" (inválido)`;
-            console.log(`  🚫 EXCLUIDA Y SERÁ BORRADA: ${order.id.substring(0,8)}... (${reason})`);
-            toDelete.push(order.id); // Marcar para borrar
+            console.log(`  🚫 EXCLUIDA: ${order.id.substring(0,8)}... (${reason})`);
           }
           
           return isActive;
         });
         
-        // ✅ LIMPIAR AUTOMÁTICAMENTE órdenes viejas inválidas del Firestore
-        if (toDelete.length > 0 && user?.uid) {
-          console.log(`🗑️ Eliminando ${toDelete.length} órdenes inválidas del Firestore...`);
-          for (const orderId of toDelete) {
-            try {
-              await deleteDoc(doc(db, `users/${user.uid}/orders`, orderId));
-              console.log(`✅ Eliminada: ${orderId.substring(0,8)}...`);
-            } catch (error) {
-              console.warn(`⚠️ Error al eliminar ${orderId}:`, error.message);
-            }
-          }
-        }
-        
         console.log(`✅ [RESULTADO] ${activeOrders.length} órdenes válidas de ${allOrdersData.length} totales`);
-        if (toDelete.length > 0) {
-          console.log(`🧹 ${toDelete.length} órdenes viejas eliminadas automáticamente`);
-        }
         setOrders(activeOrders);
         setLoading(false);
       },
