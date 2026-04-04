@@ -327,11 +327,11 @@ export const OrderProvider = ({ children }) => {
   const deleteOrder = async (id) => {
     if (!user) throw new Error('User not authenticated');
     try {
-      await deleteDoc(doc(db, 'orders', id));
+      await deleteDoc(doc(db, `users/${user.uid}/orders`, id));
       
       // ✅ Remover del estado local también
       setOrders(prev => prev.filter(order => order.id !== id));
-      console.log('✅ Pedido eliminado del estado local');
+      console.log('✅ Pedido eliminado del estado local y de Firestore');
     } catch (error) {
       console.error('Error deleting order:', error);
       throw error;
