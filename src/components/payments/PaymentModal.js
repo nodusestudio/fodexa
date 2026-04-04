@@ -60,8 +60,6 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
   const [selectedTypes, setSelectedTypes] = useState(['cash']);
   const [amounts, setAmounts] = useState({ cash: total });
   const [success, setSuccess] = useState(false);
-  const [showPostOptions, setShowPostOptions] = useState(false);
-  const [postOrder, setPostOrder] = useState(null);
   const [transferType, setTransferType] = useState(null); // 'nequi' o 'bancolombia'
   const items = orderData?.items || [];
 
@@ -332,28 +330,9 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
       }));
       
       setSuccess(false);
-      setShowPostOptions(true);
-      setPostOrder(order);
+      onClose();
       onComplete && onComplete(finalPaymentMethods);
     }, 1000);
-  };
-
-  // Opciones post-pago
-  const printReceipt = (order) => {
-    // Integrar con el sistema real de impresión de tickets (RECIBO DE VENTA)
-    window.dispatchEvent(new CustomEvent('orderSaved', { 
-      detail: {
-        ...order,
-        ticketType: 'customer' // Tipo de ticket: recibo de cliente
-      }
-    }));
-  };
-
-  const copyToClipboard = (order) => {
-    const receiptText = generateWhatsAppReceipt(order);
-    navigator.clipboard.writeText(receiptText).then(() => {
-      alert('📋 Recibo copiado al portapapeles\n\nPuedes pegarlo en WhatsApp');
-    });
   };
 
   const generateWhatsAppReceipt = (order) => {
@@ -534,34 +513,6 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
         {success && (
           <div className="mt-4 text-center text-green-600 font-bold text-lg animate-pulse">
             ¡Pago realizado con éxito!
-          </div>
-        )}
-
-        {/* Opciones post-pago */}
-        {showPostOptions && postOrder && (
-          <div className="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4 space-y-3">
-            <button
-              onClick={() => {
-                printReceipt(postOrder);
-              }}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
-            >
-              🖨️ Imprimir Ticket
-            </button>
-            <button
-              onClick={() => {
-                copyToClipboard(postOrder);
-              }}
-              className="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
-            >
-              💬 Copiar a WhatsApp
-            </button>
-            <button
-              onClick={onClose}
-              className="w-full bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg font-semibold transition-colors"
-            >
-              Cerrar
-            </button>
           </div>
         )}
       </div>
