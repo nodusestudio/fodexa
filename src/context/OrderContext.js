@@ -119,6 +119,39 @@ export const OrderProvider = ({ children }) => {
     setDeliveryDataState(prev => ({ ...prev, ...data }));
   };
 
+  // 🧹 LIMPIAR órdenes completadas antiguamente (fantasmas que bloquean mesas)
+  const cleanupGhostOrders = async () => {
+    if (!user?.uid) return;
+    
+    try {
+      console.log('🧹 Ejecutando limpieza de órdenes fantasma...');
+      const q = query(
+        collection(db, `users/${user.uid}/orders`),
+        where('status', '==', 'completed')
+      );
+      
+      const snapshot = await getDocs(q);
+      let deletedCount = 0;
+      
+      for (const doc of snapshot.docs) {
+        try {
+          // Eliminar órdenes completadas (que ya no bloquean nada)
+          await deleteDoc(doc.ref);
+          deletedCount++;
+          console.log(`  🗑️ Eliminada orden completada: ${doc.id.substring(0,8)}...`);
+        } catch (error) {
+          console.warn(`  ⚠️ Error eliminando ${doc.id}:`, error.message);
+        }
+      }
+      
+      if (deletedCount > 0) {
+        console.log(`✅ Limpieza completada: ${deletedCount} órdenes eliminadas`);
+      }
+    } catch (error) {
+      console.warn('⚠️ Error en limpieza de fantasmas:', error.message);
+    }
+  };
+
   // Filtra pedidos por tipo
   const getOrdersByType = (type) => orders.filter(order => order.type === type);
 
@@ -323,17 +356,23 @@ export const OrderProvider = ({ children }) => {
     }
   };
 
-  // Elimina un pedido y lo remueve del estado local
+  // Elimina un pedido marcándolo como completado (no lo borra, evita que reaparezca)
   const deleteOrder = async (id) => {
     if (!user) throw new Error('User not authenticated');
     try {
-      await deleteDoc(doc(db, `users/${user.uid}/orders`, id));
+      // ✅ Marcar como 'completed' en lugar de eliminar
+      // Esto evita que órdenes "fantasma" reaparezcan al actualizar
+      await updateDoc(doc(db, `users/${user.uid}/orders`, id), {
+        status: 'completed',
+        completedAt: new Date(),
+        deletedByUser: true
+      });
       
       // ✅ Remover del estado local también
       setOrders(prev => prev.filter(order => order.id !== id));
-      console.log('✅ Pedido eliminado del estado local y de Firestore');
+      console.log('✅ Pedido marcado como completado (no eliminado físicamente)');
     } catch (error) {
-      console.error('Error deleting order:', error);
+      console.error('Error marking order as completed:', error);
       throw error;
     }
   };
@@ -473,6 +512,7 @@ export const OrderProvider = ({ children }) => {
     clearCurrentOrder,
     calculateOrderTotal,
     clearAllOrders,
+    cleanupGhostOrders,
     tables: tablesData,
   };
 

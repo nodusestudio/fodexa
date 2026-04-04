@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { collection, addDoc, updateDoc, deleteDoc, doc, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useAuth } from './AuthContext';
@@ -121,12 +121,16 @@ export const CashProvider = ({ children }) => {
     return () => unsubscribe();
   }, [user]);
 
-  // ✅ RESTAURAR SESIÓN ABIERTA al recargar página
+  // ✅ RESTAURAR SESIÓN ABIERTA al recargar página (solo UNA VEZ)
+  // Usar una ref para evitar múltiples restauraciones
+  const restorationAttempted = useRef(false);
+  
   useEffect(() => {
-    if (!user || cashSession) {
-      return; // Ya hay sesión o usuario no auth
+    if (!user || cashSession || restorationAttempted.current) {
+      return; // Ya hay sesión, usuario no auth, o ya intentamos restaurar
     }
 
+    restorationAttempted.current = true;
     console.log('🔍 Buscando sesión abierta para restaurar...');
 
     const q = query(
@@ -139,7 +143,8 @@ export const CashProvider = ({ children }) => {
       q,
       (snapshot) => {
         if (snapshot.empty) {
-          console.log('✅ No hay sesión abierta');
+          console.log('✅ No hay sesión abierta - caja debe abrirse');
+          restorationAttempted.current = false; // Permitir reintento
           return;
         }
 
@@ -150,15 +155,16 @@ export const CashProvider = ({ children }) => {
         };
         
         setCashSession(restoredSession);
-        console.log('✅ Sesión restaurada:', restoredSession.id);
+        console.log('✅ Sesión de caja restaurada:', restoredSession.id);
       },
       (error) => {
         console.warn('⚠️ Error buscando sesión abierta:', error.message);
+        restorationAttempted.current = false; // Permitir reintento en caso de error
       }
     );
 
     return () => unsubscribe();
-  }, [user, cashSession]);
+  }, [user]);
 
   // Abrir caja
   const openCash = (cashData) => {
