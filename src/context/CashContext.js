@@ -121,6 +121,45 @@ export const CashProvider = ({ children }) => {
     return () => unsubscribe();
   }, [user]);
 
+  // ✅ RESTAURAR SESIÓN ABIERTA al recargar página
+  useEffect(() => {
+    if (!user || cashSession) {
+      return; // Ya hay sesión o usuario no auth
+    }
+
+    console.log('🔍 Buscando sesión abierta para restaurar...');
+
+    const q = query(
+      collection(db, `users/${user.uid}/cashSessions`),
+      where('status', '==', 'open'),
+      orderBy('openDate', 'desc')
+    );
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        if (snapshot.empty) {
+          console.log('✅ No hay sesión abierta');
+          return;
+        }
+
+        const openSession = snapshot.docs[0].data();
+        const restoredSession = {
+          ...openSession,
+          openDate: openSession.openDate?.toDate?.() || new Date(openSession.openDate),
+        };
+        
+        setCashSession(restoredSession);
+        console.log('✅ Sesión restaurada:', restoredSession.id);
+      },
+      (error) => {
+        console.warn('⚠️ Error buscando sesión abierta:', error.message);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [user, cashSession]);
+
   // Abrir caja
   const openCash = (cashData) => {
     // Aceptar objeto con los nuevos parámetros

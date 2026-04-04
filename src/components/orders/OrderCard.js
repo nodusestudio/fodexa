@@ -383,19 +383,16 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (order.status === 'completed') {
-                    alert('No se puede eliminar un pedido ya entregado');
-                    return;
+                  const confirmMsg = order.status === 'completed'
+                    ? '⚠️ Esta orden ya está entregada. ¿Deseas eliminarla?'
+                    : '¿Estás seguro de que deseas eliminar esta orden?';
+                  
+                  if (window.confirm(confirmMsg)) {
+                    onDelete && onDelete(order);
                   }
-                  onDelete && onDelete(order);
                 }}
-                disabled={order.status === 'completed'}
-                className={`min-w-[40px] text-xs px-1.5 py-1.5 rounded font-bold transition-all shadow-md ${
-                  order.status === 'completed'
-                    ? 'bg-gray-400 dark:bg-gray-600 text-gray-600 dark:text-gray-500 cursor-not-allowed opacity-50'
-                    : 'bg-red-500 hover:bg-red-600 text-white cursor-pointer'
-                }`}
-                title="Eliminar"
+                className={`min-w-[40px] text-xs px-1.5 py-1.5 rounded font-bold transition-all shadow-md bg-red-500 hover:bg-red-600 text-white cursor-pointer`}
+                title="Eliminar orden"
               >
                 🗑️
               </button>
