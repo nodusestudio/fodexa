@@ -28,7 +28,7 @@ const DebugOrderStatus = () => {
   }, [orders]);
 
   // Mostrar panel de debug (comentar para ocultar)
-  const DEBUG = true;
+  const DEBUG = false;
   if (!DEBUG) return null;
 
   return (
