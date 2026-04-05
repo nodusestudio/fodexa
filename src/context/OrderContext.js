@@ -29,16 +29,17 @@ export const OrderProvider = ({ children }) => {
     if (!user || cleanupRunRef.current) return;
     cleanupRunRef.current = true; // Marcar como ejecutado
 
-    const cleanupLocalIdOrders = async () => {
+    const cleanupOnStartup = async () => {
       try {
+        // 1️⃣ LIMPIAR: Órdenes con IDs locales
         console.log('🧹 [STARTUP] Limpieza de órdenes con IDs locales...');
-        const q = query(
+        const q1 = query(
           collection(db, `users/${user.uid}/orders`),
-          where('id', '>=', 'local_') // Búsqueda inteligente por rango
+          where('id', '>=', 'local_')
         );
         
-        const snapshot = await getDocs(q);
-        const localOrders = snapshot.docs.filter(d => d.id.startsWith('local_'));
+        const snapshot1 = await getDocs(q1);
+        const localOrders = snapshot1.docs.filter(d => d.id.startsWith('local_'));
         
         console.log(`🔍 Encontradas ${localOrders.length} órdenes con IDs locales`);
         
@@ -54,14 +55,39 @@ export const OrderProvider = ({ children }) => {
         }
         
         if (deletedCount > 0) {
-          console.log(`✅ Limpieza completada: ${deletedCount} órdenes eliminadas`);
+          console.log(`✅ Limpieza 1: ${deletedCount} órdenes con IDs locales eliminadas`);
+        }
+
+        // 2️⃣ LIMPIAR: Órdenes completadas (del código anterior que las marcaba en lugar de eliminarlas)
+        console.log('🧹 [STARTUP] Limpieza de órdenes completadas antiguas...');
+        const q2 = query(
+          collection(db, `users/${user.uid}/orders`),
+          where('status', '==', 'completed')
+        );
+        
+        const snapshot2 = await getDocs(q2);
+        console.log(`🔍 Encontradas ${snapshot2.docs.length} órdenes completadas`);
+        
+        let completedCount = 0;
+        for (const doc of snapshot2.docs) {
+          try {
+            await deleteDoc(doc.ref);
+            completedCount++;
+            console.log(`  ✅ Eliminada completada: ${doc.id.substring(0, 8)}...`);
+          } catch (err) {
+            console.error(`  ❌ Error eliminando ${doc.id}:`, err.message);
+          }
+        }
+        
+        if (completedCount > 0) {
+          console.log(`✅ Limpieza 2: ${completedCount} órdenes completadas eliminadas`);
         }
       } catch (error) {
         console.warn('⚠️ Error en limpieza inicial:', error.message);
       }
     };
 
-    cleanupLocalIdOrders();
+    cleanupOnStartup();
   }, [user]);
 
   // 🔄 EFECTO 2: Listener real-time (carga y observa órdenes válidas)
@@ -386,21 +412,17 @@ export const OrderProvider = ({ children }) => {
     }
   };
 
-  // Elimina un pedido marcándolo como completado en Firestore
+  // Elimina un pedido directamente de Firestore (no solo marcar como completada)
   const deleteOrder = async (id) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
       // Verificar si es un ID de Firestore (no local)
       if (!id.startsWith('local_')) {
-        // Orden está en Firestore - marcar como completada para que se filtre
-        console.log('🗑️ Marcando orden como completada en Firestore:', id);
-        await updateDoc(doc(db, `users/${user.uid}/orders`, id), {
-          status: 'completed',
-          completedAt: new Date(),
-          deletedByUser: true
-        });
-        console.log('✅ Orden marcada como completada en Firestore');
+        // Orden está en Firestore - ELIMINARLA directamente
+        console.log('🗑️ Eliminando orden de Firestore:', id);
+        await deleteDoc(doc(db, `users/${user.uid}/orders`, id));
+        console.log('✅ Orden eliminada de Firestore');
       }
       
       // Remover del estado local (sea local o Firestore)
@@ -419,51 +441,47 @@ export const OrderProvider = ({ children }) => {
     ));
   };
 
-  // ✅ LIMPIEZA AUTOMÁTICA: Borrar órdenes completadas antiguas (> 1 hora)
-  // Esto mantiene Firestore limpio y asegura que SOLO órdenes activas se muestren
+  // ✅ LIMPIEZA AUTOMÁTICA: Borrar órdenes completadas
+  // Con el cambio reciente, deleteOrder() ahora elimina completamente en lugar de marcar como completado
+  // Este cleanup es para limpiar cualquier orden completada que pudiera quedar por errores
   const cleanupCompletedOrders = async () => {
     if (!user?.uid) return;
     
     try {
-      const now = new Date();
-      const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
-      
-      // Buscar órdenes completadas hace más de 1 hora
+      // Buscar TODAS las órdenes completadas (sin importar antigüedad)
       const q = query(
         collection(db, `users/${user.uid}/orders`),
-        where('status', '==', 'completed'),
-        orderBy('timestamp', 'asc')
+        where('status', '==', 'completed')
       );
       
       const snapshot = await getDocs(q);
       let deletedCount = 0;
       
       for (const doc of snapshot.docs) {
-        const orderTime = doc.data().timestamp?.toDate?.() || new Date(doc.data().timestamp);
-        
-        if (orderTime < oneHourAgo) {
+        try {
           await deleteDoc(doc.ref);
           deletedCount++;
-          console.log(`🗑️ Orden completada antigua eliminada: ${doc.id}`);
+          console.log(`🗑️ Orden completada eliminada: ${doc.id.substring(0, 8)}...`);
+        } catch (error) {
+          console.warn(`⚠️ Error eliminando orden completada ${doc.id}:`, error.message);
         }
       }
       
       if (deletedCount > 0) {
-        console.log(`🧹 Limpieza: ${deletedCount} órdenes completadas antiguas eliminadas`);
+        console.log(`🧹 Limpieza automática: ${deletedCount} órdenes completadas eliminadas`);
       }
     } catch (error) {
-      console.warn('⚠️ Error en limpieza de órdenes:', error.message);
-      // No es crítico si falla la limpieza
+      console.warn('⚠️ Error en limpieza automática:', error.message);
     }
   };
   
-  // Ejecutar limpieza cada 10 minutos cuando hay usuario autenticado
+  // Ejecutar limpieza cada 5 minutos cuando hay usuario autenticado
   useEffect(() => {
     if (!user?.uid) return;
     
     const cleanupInterval = setInterval(() => {
       cleanupCompletedOrders();
-    }, 10 * 60 * 1000); // 10 minutos
+    }, 5 * 60 * 1000); // 5 minutos
     
     return () => clearInterval(cleanupInterval);
   }, [user?.uid]);
