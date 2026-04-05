@@ -61,6 +61,20 @@ export const OrderProvider = ({ children }) => {
         // ✅ FILTRADO ESTRICTO: Solo status válidos
         const validStatuses = ['pending', 'waiting', 'preparing'];
         
+        // 🚨 LIMPIEZA: Eliminar órdenes con IDs locales (no deberían estar en Firestore)
+        const localIdOrders = allOrdersData.filter(o => o.id.startsWith('local_'));
+        if (localIdOrders.length > 0) {
+          console.warn(`⚠️ DETECTADAS ${localIdOrders.length} órdenes con IDs locales en Firestore - ELIMINANDO...`);
+          for (const order of localIdOrders) {
+            try {
+              await deleteDoc(doc(db, `users/${user.uid}/orders`, order.id));
+              console.log(`  🗑️ Eliminada orden local: ${order.id}`);
+            } catch (error) {
+              console.error(`  ❌ Error eliminando orden local ${order.id}:`, error.message);
+            }
+          }
+        }
+        
         const activeOrders = allOrdersData.filter(order => {
           const isActive = order.status && validStatuses.includes(order.status);
           
