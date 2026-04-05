@@ -37,10 +37,8 @@ export const OrderProvider = ({ children }) => {
         
         if (userDoc.exists() && userDoc.data().tables) {
           const firestoreTables = userDoc.data().tables;
-          // 🧹 FILTRO: Remover mesa 7 y cualquier mesa con id=7
-          const filteredTables = firestoreTables.filter(t => t.id !== 7 && t.number !== 'M7');
-          console.log(`✅ Mesas cargadas desde Firestore: ${firestoreTables.length} → ${filteredTables.length} (mesa 7 removida)`);
-          setTablesData(filteredTables);
+          console.log(`✅ Mesas cargadas desde Firestore: ${firestoreTables.length}`);
+          setTablesData(firestoreTables);
         } else {
           console.log('📭 No hay mesas en Firestore, usando mesas por defecto');
           // Guardar las mesas por defecto en Firestore
@@ -596,22 +594,14 @@ export const OrderProvider = ({ children }) => {
         status: 'available'
       };
       
-      // 🧹 PROTECCIÓN: Evitar crear mesa 7
-      if (newTable.id === 7) {
-        console.warn('⚠️ Mesa 7 está bloqueada y no puede ser creada');
-        throw new Error('Mesa 7 está bloqueada. Use otra mesa.');
-      }
-      
       const updated = [...tablesData, newTable];
       setTablesData(updated);
       
       // Guardar en Firestore usando setDoc con merge
       if (user?.uid) {
         try {
-          // 🧹 FILTRO: Nunca guardar mesa 7
-          const safeTables = updated.filter(t => t.id !== 7 && t.number !== 'M7');
           await setDoc(doc(db, 'users', user.uid), {
-            tables: safeTables.map(t => ({
+            tables: updated.map(t => ({
               id: t.id,
               number: t.number,
               capacity: t.capacity,
@@ -642,10 +632,8 @@ export const OrderProvider = ({ children }) => {
       // Guardar en Firestore usando setDoc con merge
       if (user?.uid) {
         try {
-          // 🧹 FILTRO: Nunca guardar mesa 7
-          const safeTables = updated.filter(t => t.id !== 7 && t.number !== 'M7');
           await setDoc(doc(db, 'users', user.uid), {
-            tables: safeTables.map(t => ({
+            tables: updated.map(t => ({
               id: t.id,
               number: t.number,
               capacity: t.capacity,
@@ -674,10 +662,8 @@ export const OrderProvider = ({ children }) => {
       // Guardar en Firestore usando setDoc con merge
       if (user?.uid) {
         try {
-          // 🧹 FILTRO: Nunca guardar mesa 7
-          const safeTables = updated.filter(t => t.id !== 7 && t.number !== 'M7');
           await setDoc(doc(db, 'users', user.uid), {
-            tables: safeTables.map(t => ({
+            tables: updated.map(t => ({
               id: t.id,
               number: t.number,
               capacity: t.capacity,
