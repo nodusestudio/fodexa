@@ -1,8 +1,8 @@
 // Version control for FODEXA system
 // Format: f-XXXX (starts at f-1001 and increments with each change)
 
-export const APP_VERSION = 'f-15800';
-export const VERSION_NUMBER = '15.8.0';
+export const APP_VERSION = 'f-21000';
+export const VERSION_NUMBER = '21.0.0';
 export const FULL_VERSION = `f-15800 v15.8.0`;
 export const LAST_UPDATE = new Date('2024-12-19').toLocaleDateString('es-CO');
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSettings } from '../context/SettingsContext';
-import { Settings as SettingsIcon, Building2, Receipt, Percent, DollarSign, Languages, Palette, Sliders, Trash2, Wrench } from 'lucide-react';
+import { Settings as SettingsIcon, Building2, Receipt, Percent, DollarSign, Languages, Palette, Sliders, Trash2, Wrench, Layers } from 'lucide-react';
 import CompanySettings from '../components/settings/CompanySettings';
 import TicketSettings from '../components/settings/TicketSettings';
 import TaxSettings from '../components/settings/TaxSettings';
@@ -9,6 +9,7 @@ import LanguageSettings from '../components/settings/LanguageSettings';
 import AppearanceSettings from '../components/settings/AppearanceSettings';
 import GeneralSettings from '../components/settings/GeneralSettings';
 import DeliverySettings from '../components/settings/DeliverySettings';
+import TableManager from '../components/settings/TableManager';
 import CleanupTools from '../components/common/CleanupTools';
 
 const Settings = () => {
@@ -17,6 +18,7 @@ const Settings = () => {
 
   const tabs = [
     { id: 'company', label: 'Empresa', icon: Building2 },
+    { id: 'tablero', label: 'Tablero', icon: Layers },
     { id: 'ticket', label: 'Tickets', icon: Receipt },
     { id: 'taxes', label: 'Impuestos', icon: Percent },
     { id: 'currency', label: 'Moneda', icon: DollarSign },
@@ -100,6 +102,7 @@ const Settings = () => {
       {/* Content */}
       <div className="flex-1 overflow-auto p-3 sm:p-4 md:p-6">
         {activeTab === 'company' && <CompanySettings />}
+        {activeTab === 'tablero' && <TableManager />}
         {activeTab === 'ticket' && <TicketSettings />}
         {activeTab === 'taxes' && <TaxSettings />}
         {activeTab === 'currency' && <CurrencySettings />}
