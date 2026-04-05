@@ -23,6 +23,51 @@ export const OrderProvider = ({ children }) => {
   const [tablesData, setTablesData] = useState(tables);
   const [loading, setLoading] = useState(false);
   const cleanupRunRef = useRef(false); // 🚩 Flag para ejecutar limpieza UNA SOLA VEZ
+  const tablesLoadedRef = useRef(false); // 🚩 Flag para cargar mesas UNA SOLA VEZ
+
+  // 🪑 EFECTO 0: Cargar mesas desde Firestore (SE EJECUTA UNA SOLA VEZ)
+  useEffect(() => {
+    if (!user || tablesLoadedRef.current) return;
+    tablesLoadedRef.current = true;
+
+    const loadTablesFromFirestore = async () => {
+      try {
+        console.log('🪑 [STARTUP] Cargando mesas desde Firestore...');
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        
+        if (userDoc.exists() && userDoc.data().tables) {
+          const firestoreTables = userDoc.data().tables;
+          console.log(`✅ Mesas cargadas desde Firestore: ${firestoreTables.length}`);
+          setTablesData(firestoreTables);
+        } else {
+          console.log('📭 No hay mesas en Firestore, usando mesas por defecto');
+          // Guardar las mesas por defecto en Firestore
+          const defaultTables = tables || [];
+          if (defaultTables.length > 0) {
+            try {
+              await setDoc(doc(db, 'users', user.uid), {
+                tables: defaultTables.map(t => ({
+                  id: t.id,
+                  number: t.number,
+                  capacity: t.capacity,
+                  zone: t.zone,
+                  status: t.status
+                }))
+              }, { merge: true });
+              console.log('✅ Mesas por defecto guardadas en Firestore');
+              setTablesData(defaultTables);
+            } catch (err) {
+              console.error('⚠️ Error guardando mesas por defecto:', err.message);
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('⚠️ Error cargando mesas:', error.message);
+      }
+    };
+
+    loadTablesFromFirestore();
+  }, [user]);
 
   // 🧹 EFECTO 1: Limpieza de órdenes con IDs locales (SE EJECUTA UNA SOLA VEZ)
   useEffect(() => {
@@ -552,10 +597,10 @@ export const OrderProvider = ({ children }) => {
       const updated = [...tablesData, newTable];
       setTablesData(updated);
       
-      // Guardar en Firestore
+      // Guardar en Firestore usando setDoc con merge
       if (user?.uid) {
         try {
-          await updateDoc(doc(db, 'users', user.uid), {
+          await setDoc(doc(db, 'users', user.uid), {
             tables: updated.map(t => ({
               id: t.id,
               number: t.number,
@@ -563,7 +608,7 @@ export const OrderProvider = ({ children }) => {
               zone: t.zone,
               status: t.status
             }))
-          });
+          }, { merge: true });
           console.log('✅ Mesas guardadas en Firestore');
         } catch (err) {
           console.warn('⚠️ Error guardando mesas en Firestore:', err.message);
@@ -584,10 +629,10 @@ export const OrderProvider = ({ children }) => {
       );
       setTablesData(updated);
       
-      // Guardar en Firestore
+      // Guardar en Firestore usando setDoc con merge
       if (user?.uid) {
         try {
-          await updateDoc(doc(db, 'users', user.uid), {
+          await setDoc(doc(db, 'users', user.uid), {
             tables: updated.map(t => ({
               id: t.id,
               number: t.number,
@@ -595,7 +640,7 @@ export const OrderProvider = ({ children }) => {
               zone: t.zone,
               status: t.status
             }))
-          });
+          }, { merge: true });
           console.log('✅ Mesa actualizada en Firestore');
         } catch (err) {
           console.warn('⚠️ Error actualizando mesas en Firestore:', err.message);
@@ -614,10 +659,10 @@ export const OrderProvider = ({ children }) => {
       const updated = tablesData.filter(t => t.id !== id);
       setTablesData(updated);
       
-      // Guardar en Firestore
+      // Guardar en Firestore usando setDoc con merge
       if (user?.uid) {
         try {
-          await updateDoc(doc(db, 'users', user.uid), {
+          await setDoc(doc(db, 'users', user.uid), {
             tables: updated.map(t => ({
               id: t.id,
               number: t.number,
@@ -625,7 +670,7 @@ export const OrderProvider = ({ children }) => {
               zone: t.zone,
               status: t.status
             }))
-          });
+          }, { merge: true });
           console.log('✅ Mesa eliminada en Firestore');
         } catch (err) {
           console.warn('⚠️ Error eliminando mesa en Firestore:', err.message);
