@@ -11,7 +11,6 @@ import ProductGrid from '../components/products/ProductGrid';
 import CartContainer from '../components/cart/CartContainer';
 import OrderInfo from '../components/orders/OrderInfo';
 import CashFundControl from '../components/cash/CashFundControl';
-import tables from '../data/tables';
 import { useProducts } from '../context/ProductContext';
 import { useCash } from '../context/CashContext';
 import { ShoppingCart, Lock, AlertCircle, Check } from 'lucide-react';
@@ -19,7 +18,7 @@ import { ShoppingCart, Lock, AlertCircle, Check } from 'lucide-react';
 const POS = () => {
   const navigate = useNavigate();
   const [localOrderType, setLocalOrderType] = useState(null);
-  const { currentOrderType, selectedTable, deliveryData, setOrderType, selectTable, setDeliveryData, clearCurrentOrder } = useOrder();
+  const { currentOrderType, selectedTable, deliveryData, setOrderType, selectTable, setDeliveryData, clearCurrentOrder, tables } = useOrder();
   const { addItem, clearCart, items } = useCart();
   const { isCashOpen, cashSession, openCash, setCashSession } = useCash();
   const [showNoCashModal, setShowNoCashModal] = useState(false);
