@@ -338,15 +338,30 @@ export const OrderProvider = ({ children }) => {
     }
   };
 
-  // Elimina un pedido del estado local solamente
+  // Elimina un pedido marcándolo como completado en Firestore
   const deleteOrder = async (id) => {
     if (!user) throw new Error('User not authenticated');
     
-    // ✅ Solo remover del estado local
-    // Si el orden tiene ID local (local_*), nunca estuvo en Firestore
-    // Si tiene ID de Firestore, se limpia después con cleanupGhostOrders
-    setOrders(prev => prev.filter(order => order.id !== id));
-    console.log('✅ Orden eliminada del estado local:', id);
+    try {
+      // Verificar si es un ID de Firestore (no local)
+      if (!id.startsWith('local_')) {
+        // Orden está en Firestore - marcar como completada para que se filtre
+        console.log('🗑️ Marcando orden como completada en Firestore:', id);
+        await updateDoc(doc(db, `users/${user.uid}/orders`, id), {
+          status: 'completed',
+          completedAt: new Date(),
+          deletedByUser: true
+        });
+        console.log('✅ Orden marcada como completada en Firestore');
+      }
+      
+      // Remover del estado local (sea local o Firestore)
+      setOrders(prev => prev.filter(order => order.id !== id));
+      console.log('✅ Orden removida del estado local:', id);
+    } catch (error) {
+      console.error('❌ Error eliminando orden:', error.message);
+      throw error;
+    }
   };
 
   // Actualiza estado de mesa
