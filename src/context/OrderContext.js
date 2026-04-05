@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { collection, addDoc, updateDoc, deleteDoc, doc, query, where, onSnapshot, orderBy, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useAuth } from './AuthContext';
@@ -22,8 +22,50 @@ export const OrderProvider = ({ children }) => {
   const [currentOrder, setCurrentOrder] = useState(null);
   const [tablesData, setTablesData] = useState(tables);
   const [loading, setLoading] = useState(false);
+  const cleanupRunRef = useRef(false); // 🚩 Flag para ejecutar limpieza UNA SOLA VEZ
 
-  // Cargar órdenes de Firestore en tiempo real
+  // 🧹 EFECTO 1: Limpieza de órdenes con IDs locales (SE EJECUTA UNA SOLA VEZ)
+  useEffect(() => {
+    if (!user || cleanupRunRef.current) return;
+    cleanupRunRef.current = true; // Marcar como ejecutado
+
+    const cleanupLocalIdOrders = async () => {
+      try {
+        console.log('🧹 [STARTUP] Limpieza de órdenes con IDs locales...');
+        const q = query(
+          collection(db, `users/${user.uid}/orders`),
+          where('id', '>=', 'local_') // Búsqueda inteligente por rango
+        );
+        
+        const snapshot = await getDocs(q);
+        const localOrders = snapshot.docs.filter(d => d.id.startsWith('local_'));
+        
+        console.log(`🔍 Encontradas ${localOrders.length} órdenes con IDs locales`);
+        
+        let deletedCount = 0;
+        for (const doc of localOrders) {
+          try {
+            await deleteDoc(doc.ref);
+            deletedCount++;
+            console.log(`  ✅ Eliminada: ${doc.id}`);
+          } catch (err) {
+            console.error(`  ❌ Error eliminando ${doc.id}:`, err.message);
+          }
+        }
+        
+        if (deletedCount > 0) {
+          console.log(`✅ Limpieza completada: ${deletedCount} órdenes eliminadas`);
+        }
+      } catch (error) {
+        console.warn('⚠️ Error en limpieza inicial:', error.message);
+      }
+    };
+
+    cleanupLocalIdOrders();
+  }, [user]);
+
+  // 🔄 EFECTO 2: Listener real-time (carga y observa órdenes válidas)
+  // 🔄 EFECTO 2: Listener real-time (carga y observa órdenes válidas)
   useEffect(() => {
     if (!user) {
       console.log('❌ Sin usuario, limpiando órdenes');
@@ -43,7 +85,7 @@ export const OrderProvider = ({ children }) => {
 
     const unsubscribe = onSnapshot(
       q,
-      async (snapshot) => {
+      (snapshot) => {
         const allOrdersData = snapshot.docs.map(doc => {
           const data = doc.data();
           return {
@@ -58,24 +100,16 @@ export const OrderProvider = ({ children }) => {
           console.log(`  [${idx}] ID=${o.id.substring(0,8)}... type=${o.type} status=${o.status}`);
         });
         
-        // ✅ FILTRADO ESTRICTO: Solo status válidos
+        // ✅ FILTRADO: Solo status válidos (las órdenes locales serán eliminadas por el efecto de limpieza)
         const validStatuses = ['pending', 'waiting', 'preparing'];
         
-        // 🚨 LIMPIEZA: Eliminar órdenes con IDs locales (no deberían estar en Firestore)
-        const localIdOrders = allOrdersData.filter(o => o.id.startsWith('local_'));
-        if (localIdOrders.length > 0) {
-          console.warn(`⚠️ DETECTADAS ${localIdOrders.length} órdenes con IDs locales en Firestore - ELIMINANDO...`);
-          for (const order of localIdOrders) {
-            try {
-              await deleteDoc(doc(db, `users/${user.uid}/orders`, order.id));
-              console.log(`  🗑️ Eliminada orden local: ${order.id}`);
-            } catch (error) {
-              console.error(`  ❌ Error eliminando orden local ${order.id}:`, error.message);
-            }
-          }
-        }
-        
         const activeOrders = allOrdersData.filter(order => {
+          // Excluir órdenes con IDs locales de la vista (deberían estar siendo eliminadas)
+          if (order.id.startsWith('local_')) {
+            console.warn(`  ⚠️ AÚN EXISTE orden local en Firestore: ${order.id}`);
+            return false;
+          }
+          
           const isActive = order.status && validStatuses.includes(order.status);
           
           if (!isActive) {
