@@ -540,6 +540,103 @@ export const OrderProvider = ({ children }) => {
     }
   };
 
+  // 🪑 FUNCIONES DE MESAS
+  const createTable = async (tableData) => {
+    try {
+      const newTable = {
+        id: Math.max(...tablesData.map(t => t.id), 0) + 1,
+        ...tableData,
+        status: 'available'
+      };
+      
+      const updated = [...tablesData, newTable];
+      setTablesData(updated);
+      
+      // Guardar en Firestore
+      if (user?.uid) {
+        try {
+          await updateDoc(doc(db, 'users', user.uid), {
+            tables: updated.map(t => ({
+              id: t.id,
+              number: t.number,
+              capacity: t.capacity,
+              zone: t.zone,
+              status: t.status
+            }))
+          });
+          console.log('✅ Mesas guardadas en Firestore');
+        } catch (err) {
+          console.warn('⚠️ Error guardando mesas en Firestore:', err.message);
+        }
+      }
+      
+      return newTable;
+    } catch (error) {
+      console.error('❌ Error creando mesa:', error.message);
+      throw error;
+    }
+  };
+
+  const updateTable = async (id, tableData) => {
+    try {
+      const updated = tablesData.map(t => 
+        t.id === id ? { ...t, ...tableData } : t
+      );
+      setTablesData(updated);
+      
+      // Guardar en Firestore
+      if (user?.uid) {
+        try {
+          await updateDoc(doc(db, 'users', user.uid), {
+            tables: updated.map(t => ({
+              id: t.id,
+              number: t.number,
+              capacity: t.capacity,
+              zone: t.zone,
+              status: t.status
+            }))
+          });
+          console.log('✅ Mesa actualizada en Firestore');
+        } catch (err) {
+          console.warn('⚠️ Error actualizando mesas en Firestore:', err.message);
+        }
+      }
+      
+      return updated.find(t => t.id === id);
+    } catch (error) {
+      console.error('❌ Error actualizando mesa:', error.message);
+      throw error;
+    }
+  };
+
+  const deleteTable = async (id) => {
+    try {
+      const updated = tablesData.filter(t => t.id !== id);
+      setTablesData(updated);
+      
+      // Guardar en Firestore
+      if (user?.uid) {
+        try {
+          await updateDoc(doc(db, 'users', user.uid), {
+            tables: updated.map(t => ({
+              id: t.id,
+              number: t.number,
+              capacity: t.capacity,
+              zone: t.zone,
+              status: t.status
+            }))
+          });
+          console.log('✅ Mesa eliminada en Firestore');
+        } catch (err) {
+          console.warn('⚠️ Error eliminando mesa en Firestore:', err.message);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error eliminando mesa:', error.message);
+      throw error;
+    }
+  };
+
   const value = {
     orders,
     setOrders,
@@ -562,6 +659,9 @@ export const OrderProvider = ({ children }) => {
     clearAllOrders,
     cleanupGhostOrders,
     tables: tablesData,
+    createTable,
+    updateTable,
+    deleteTable,
   };
 
   return (

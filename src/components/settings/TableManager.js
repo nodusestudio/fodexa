@@ -1,47 +1,46 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit2, X } from 'lucide-react';
 import { useOrder } from '../../context/OrderContext';
 
 const TableManager = () => {
-  const { tablesData, updateTableStatus } = useOrder();
-  const [tables, setTables] = useState(tablesData || []);
+  const { tables, createTable, updateTable, deleteTable } = useOrder();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({ number: '', capacity: 2, zone: 'Principal' });
 
   const zones = ['Principal', 'Barra', 'Terraza', 'VIP', 'Otro'];
 
-  const handleAddTable = () => {
+  const handleAddTable = async () => {
     if (!formData.number.trim()) {
       alert('⚠️ Nombre de mesa requerido');
       return;
     }
 
-    if (editingId) {
-      // Editar mesa existente
-      setTables(tables.map(t => 
-        t.id === editingId 
-          ? { ...t, ...formData }
-          : t
-      ));
-      setEditingId(null);
-    } else {
-      // Crear nueva mesa
-      const newTable = {
-        id: Math.max(...tables.map(t => t.id), 0) + 1,
-        ...formData,
-        status: 'available'
-      };
-      setTables([...tables, newTable]);
-    }
+    try {
+      if (editingId) {
+        // Editar mesa existente
+        await updateTable(editingId, formData);
+        setEditingId(null);
+      } else {
+        // Crear nueva mesa
+        await createTable(formData);
+      }
 
-    setFormData({ number: '', capacity: 2, zone: 'Principal' });
-    setShowForm(false);
+      setFormData({ number: '', capacity: 2, zone: 'Principal' });
+      setShowForm(false);
+    } catch (error) {
+      alert('❌ Error: ' + error.message);
+    }
   };
 
-  const handleDeleteTable = (id) => {
-    if (window.confirm(`¿Eliminar mesa ${tables.find(t => t.id === id)?.number}?`)) {
-      setTables(tables.filter(t => t.id !== id));
+  const handleDeleteTable = async (id) => {
+    const table = tables.find(t => t.id === id);
+    if (window.confirm(`¿Eliminar mesa ${table?.number}?`)) {
+      try {
+        await deleteTable(id);
+      } catch (error) {
+        alert('❌ Error: ' + error.message);
+      }
     }
   };
 
@@ -133,7 +132,8 @@ const TableManager = () => {
 
       {/* Lista de mesas */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto">
-        {tables.map(table => (
+        {tables && tables.length > 0 ? (
+          tables.map(table => (
           <div
             key={table.id}
             className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 flex items-start justify-between hover:shadow-md transition"
@@ -172,10 +172,15 @@ const TableManager = () => {
               </button>
             </div>
           </div>
-        ))}
+        ))
+        ) : (
+          <div className="md:col-span-2 text-center py-8 text-gray-500 dark:text-gray-400">
+            📭 No hay mesas. Crea una primera mesa.
+          </div>
+        )}
       </div>
 
-      {tables.length === 0 && (
+      {tables && tables.length === 0 && (
         <div className="text-center py-8 text-gray-500 dark:text-gray-400">
           📭 No hay mesas. Crea una primera mesa.
         </div>
