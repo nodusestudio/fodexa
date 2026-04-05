@@ -33,13 +33,8 @@ export const OrderProvider = ({ children }) => {
       try {
         // 1️⃣ LIMPIAR: Órdenes con IDs locales
         console.log('🧹 [STARTUP] Limpieza de órdenes con IDs locales...');
-        const q1 = query(
-          collection(db, `users/${user.uid}/orders`),
-          where('id', '>=', 'local_')
-        );
-        
-        const snapshot1 = await getDocs(q1);
-        const localOrders = snapshot1.docs.filter(d => d.id.startsWith('local_'));
+        const allOrdersSnapshot = await getDocs(collection(db, `users/${user.uid}/orders`));
+        const localOrders = allOrdersSnapshot.docs.filter(d => d.id.startsWith('local_'));
         
         console.log(`🔍 Encontradas ${localOrders.length} órdenes con IDs locales`);
         
