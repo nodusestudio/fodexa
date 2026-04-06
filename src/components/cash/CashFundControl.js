@@ -97,6 +97,7 @@ const CashFundControl = ({ fundAmount = 0, onClose, onUpdate, isStandalone = tru
                       [String(denom.value)]: Math.max(0, parseInt(e.target.value) || 0)
                     }))
                   }
+                  onFocus={(e) => e.target.select()}
                   className="w-full text-center bg-white dark:bg-gray-600 text-gray-800 dark:text-white border border-gray-300 dark:border-gray-500 rounded py-0.5 sm:py-1 text-xs"
                   placeholder="0"
                 />
@@ -117,6 +118,7 @@ const CashFundControl = ({ fundAmount = 0, onClose, onUpdate, isStandalone = tru
               min="0"
               value={additionalAmount || ''}
               onChange={(e) => setAdditionalAmount(parseInt(e.target.value) || 0)}
+              onFocus={(e) => e.target.select()}
               className="w-full bg-white dark:bg-gray-600 text-gray-800 dark:text-white border border-gray-300 dark:border-gray-500 rounded py-1.5 sm:py-2 px-2 text-xs sm:text-sm"
               placeholder="Ingresa monto exacto"
             />

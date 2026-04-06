@@ -105,6 +105,7 @@ const OrderInfo = ({ orderType, tableNumber, deliveryData, onClear, onConfirm })
                 const value = parseFloat(e.target.value) || 0;
                 updateDeliveryCost(value);
               }}
+              onFocus={(e) => e.target.select()}
               className="w-20 sm:w-24 md:w-28 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white text-xs sm:text-sm md:text-base focus:ring-2 focus:ring-orange-500 transition-all"
               placeholder="0.00"
             />

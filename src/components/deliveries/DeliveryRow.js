@@ -90,6 +90,7 @@ const DeliveryRow = ({ ticket, onUpdateField, onMarkDelivered, onPrintGuide, loa
             type="text"
             value={editValue}
             onChange={(e) => setEditValue(e.target.value)}
+            onFocus={(e) => e.target.select()}
             className="px-1.5 py-0.5 border border-blue-400 rounded text-xs bg-white dark:bg-gray-700 flex-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
             placeholder={placeholder}
             autoFocus

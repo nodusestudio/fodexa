@@ -108,6 +108,7 @@ const AddonForm = ({ addon, onSave, onClose }) => {
               min="0"
               value={formData.price}
               onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+              onFocus={(e) => e.target.select()}
               className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-purple-500 ${
                 errors.price ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
               }`}

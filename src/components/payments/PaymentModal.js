@@ -592,6 +592,10 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
                 placeholder={`Monto en ${label}`}
                 value={amounts[key] || ''}
                 onChange={e => handleAmountChange(key, e.target.value)}
+                onFocus={(e) => {
+                  // Seleccionar todo el texto para que el usuario pueda escribir sin borrar manualmente
+                  e.target.select();
+                }}
               />
               {key === 'cash' && (
                 <div className="text-xs text-gray-600">
@@ -609,7 +613,7 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
             paymentTypes.length === 0 || 
             selectedTypes.length === 0 || 
             selectedTypes.some(key => !amounts[key] || parseFloat(amounts[key]) <= 0) || 
-            Math.abs(totalEntered - total) > 0.01 || 
+            totalEntered < total || 
             (selectedTypes.includes('transfer') && transferSubmethods.length > 0 && !transferType) ||
             (selectedTypes.includes('card') && cardSubmethods.length > 0 && !cardType)
           }

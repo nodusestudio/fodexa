@@ -72,6 +72,7 @@ function DeliveryForm({ deliveryData, onChange, deliveryCost, onCostChange }) {
               step="0.01"
               required
               placeholder="0.00"
+              onFocus={(e) => e.target.select()}
               className="flex-1 px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               value={deliveryCost}
               onChange={onCostChange}

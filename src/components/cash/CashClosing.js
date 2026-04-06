@@ -356,6 +356,7 @@ const CashClosing = ({ onClose }) => {
               min="0"
               value={finalCount}
               onChange={(e) => setFinalCount(e.target.value)}
+              onFocus={(e) => e.target.select()}
               className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-orange-500 text-sm sm:text-base"
               placeholder="0.00"
             />
