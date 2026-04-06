@@ -152,7 +152,7 @@ const OrderBoard = ({ onNewOrder, onEditOrder, onPayOrder, onDeleteOrder }) => {
                 onDelete={onDeleteOrder}
                 onUpdateStatus={handleUpdateStatus}
                 onPrintKitchen={handlePrintKitchen}
-                onActivateDeliveryTimer={order.type === 'delivery' ? setActiveDeliveryTimer : undefined}
+                onActivateDeliveryTimer={setActiveDeliveryTimer}
               />
             </div>
             );
