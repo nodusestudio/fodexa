@@ -3,7 +3,7 @@ import { SettingsContext } from '../../context/SettingsContext';
 import { formatCurrency } from '../../utils/formatters';
 import { Edit2, CreditCard, Trash2, User, MapPin, Utensils, Truck } from 'lucide-react';
 
-const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitchen }) => {
+const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitchen, onActivateDeliveryTimer }) => {
   const { settings } = useContext(SettingsContext);
   
   // Valores por defecto para botones de órdenes
@@ -315,6 +315,12 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
       const startTime = new Date().getTime();
       onUpdateStatus(order.id, { status: 'preparing', preparingStartTime: startTime });
       console.log(`🍳 [OrderCard] Iniciando contador de preparación para orden ${order.id}`);
+      
+      // 📦 Si es delivery, activar el timer
+      if (order.type === 'delivery' && onActivateDeliveryTimer) {
+        onActivateDeliveryTimer(order.id);
+        console.log(`⏱️ [OrderCard] Timer de delivery activado para ${order.id}`);
+      }
     } else if (order.status === 'preparing' && !servedStartTime) {
       // 🟢 FASE 2: CAMBIAR A CONTADOR DE "SERVIDO EN MESA" (reinicia contador a 00:00)
       const startTime = new Date().getTime();
