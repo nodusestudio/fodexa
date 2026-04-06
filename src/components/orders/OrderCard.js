@@ -3,7 +3,7 @@ import { SettingsContext } from '../../context/SettingsContext';
 import { formatCurrency } from '../../utils/formatters';
 import { Edit2, CreditCard, Trash2, User, MapPin, Utensils, Truck } from 'lucide-react';
 
-const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitchen, onActivateDeliveryTimer }) => {
+const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitchen }) => {
   const { settings } = useContext(SettingsContext);
   
   // Valores por defecto para botones de órdenes
@@ -145,6 +145,11 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
   const [isExpanded, setIsExpanded] = useState(false); // Siempre colapsado por defecto (ambos: mobile y desktop)
   const [displayMinutes, setDisplayMinutes] = useState(0); // 🔴 Minutos para display
   const [displaySeconds, setDisplaySeconds] = useState(0); // 🔴 Segundos para display
+  const [deliveryCountdownMinutes, setDeliveryCountdownMinutes] = useState(0); // Timer para delivery recién creado
+  const [deliveryCountdownSeconds, setDeliveryCountdownSeconds] = useState(0); // Timer para delivery recién creado
+  const [deliveryTimerStarted, setDeliveryTimerStarted] = useState(false);
+  const [showDeliveryAlertModal, setShowDeliveryAlertModal] = useState(false); // Modal cuando llega a 10 min
+  const deliveryTimerStartRef = useRef(null);
   
   // 🔴 Obtener tiempos de Firestore
   const preparingStartTime = order.preparingStartTime ? new Date(order.preparingStartTime) : null;
@@ -228,6 +233,40 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
 
     return () => clearInterval(interval);
   }, [order.status, deliveryStartTime]);
+
+  // 🚚 Timer para órdenes de delivery recién creadas (pending) - Muestra 10 minutos
+  useEffect(() => {
+    // Solo para órdenes de delivery en status 'pending'
+    if (order.type !== 'delivery' || order.status !== 'pending') {
+      setDeliveryTimerStarted(false);
+      return;
+    }
+
+    // Inicializar el timer si es primera vez
+    if (!deliveryTimerStartRef.current) {
+      deliveryTimerStartRef.current = new Date();
+      setDeliveryTimerStarted(true);
+    }
+
+    const interval = setInterval(() => {
+      const now = new Date();
+      const elapsedSeconds = Math.floor((now - deliveryTimerStartRef.current) / 1000);
+      const minutes = Math.floor(elapsedSeconds / 60);
+      const seconds = elapsedSeconds % 60;
+
+      setDeliveryCountdownMinutes(minutes);
+      setDeliveryCountdownSeconds(seconds);
+
+      // Cuando llega a 10 minutos, mostrar alerta y reproducir sonido
+      if (minutes >= 10 && !showDeliveryAlertModal) {
+        playAlarm();
+        setShowDeliveryAlertModal(true);
+        console.log(`⏰ [OrderCard] ¡Alerta! Delivery lleva ${minutes} minutos`);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [order.type, order.status, showDeliveryAlertModal]);
 
   // Reproducir alarma de sonido
   const playAlarm = () => {
@@ -315,12 +354,6 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
       const startTime = new Date().getTime();
       onUpdateStatus(order.id, { status: 'preparing', preparingStartTime: startTime });
       console.log(`🍳 [OrderCard] Iniciando contador de preparación para orden ${order.id}`);
-      
-      // 📦 Si es delivery, activar el timer
-      if (order.type === 'delivery' && onActivateDeliveryTimer) {
-        onActivateDeliveryTimer(order.id);
-        console.log(`⏱️ [OrderCard] Timer de delivery activado para ${order.id}`);
-      }
     } else if (order.status === 'preparing' && !servedStartTime) {
       // 🟢 FASE 2: CAMBIAR A CONTADOR DE "SERVIDO EN MESA" (reinicia contador a 00:00)
       const startTime = new Date().getTime();
@@ -413,7 +446,10 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
               className={`text-xs px-2 py-1 rounded font-bold cursor-pointer transition-all shadow-md flex items-center justify-center gap-1 flex-shrink-0 ${
                 (order.status === 'waiting' || order.status === 'preparing' || order.status === 'ready') ? 'animate-pulse' : ''
               }`}>
-              {order.status === 'pending' ? buttonTexts.cook :  
+              {order.status === 'pending' 
+                ? order.type === 'delivery' 
+                  ? `⏱️ ${deliveryCountdownMinutes.toString().padStart(2, '0')}:${deliveryCountdownSeconds.toString().padStart(2, '0')}`
+                  : buttonTexts.cook :  
                order.status === 'preparing' && !isServedPhase 
                  ? `${buttonTexts.cooking}${showTimer ? ` ${displayMinutes}:${displaySeconds.toString().padStart(2, '0')}` : ''}` 
                  : order.status === 'preparing' && isServedPhase
@@ -641,6 +677,34 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
                 👍 Entendido
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Alerta - Domicilio Listo para Entregar */}
+      {showDeliveryAlertModal && order.type === 'delivery' && order.status === 'pending' && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[9999]">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-8 max-w-md w-11/12 shadow-2xl border-4 border-yellow-400 animate-pulse">
+            <div className="text-center mb-6">
+              <div className="text-8xl mb-4 animate-bounce">⏰</div>
+              <h2 className="text-3xl font-bold text-yellow-600 dark:text-yellow-400 mb-3">¡10 MINUTOS!</h2>
+              <p className="text-xl text-gray-700 dark:text-gray-300 font-bold">
+                {getName()}
+              </p>
+            </div>
+            
+            <div className="bg-yellow-50 dark:bg-yellow-900/30 border-l-4 border-yellow-600 p-4 mb-6 rounded">
+              <p className="text-gray-800 dark:text-gray-200 font-bold text-center text-lg">
+                ⚠️ El domicilio está listo para entregar
+              </p>
+            </div>
+
+            <button
+              onClick={() => setShowDeliveryAlertModal(false)}
+              className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-4 px-4 rounded-lg transition-colors text-lg"
+            >
+              ✓ Aceptar
+            </button>
           </div>
         </div>
       )}

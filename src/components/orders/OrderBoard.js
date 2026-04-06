@@ -1,32 +1,11 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState } from 'react';
 import { useOrder } from '../../context/OrderContext';
 import OrderCard from './OrderCard';
-import DeliveryTimer from './DeliveryTimer';
 import { Table, ShoppingBag, Bike, Plus } from 'lucide-react';
 import KitchenTicketModal from './KitchenTicketModal';
 
 const OrderBoard = ({ onNewOrder, onEditOrder, onPayOrder, onDeleteOrder }) => {
   const { orders = [], updateOrder } = useOrder();
-  const [activeDeliveryTimer, setActiveDeliveryTimer] = useState(null);
-
-  // 🚚 Detectar automáticamente cuando se crea una nueva orden de delivery
-  useEffect(() => {
-    // Encontrar TODAS las órdenes de delivery (cualquier status)
-    const deliveryOrders = orders.filter(o => o.type === 'delivery');
-    
-    console.log(`🚚 [OrderBoard] Órdenes delivery detectadas:`, deliveryOrders.length, 'activeTimer:', activeDeliveryTimer);
-    
-    if (deliveryOrders.length > 0) {
-      // Obtener la orden más reciente (la última del array)
-      const latestDelivery = deliveryOrders[deliveryOrders.length - 1];
-      
-      // Activar timer si no hay timer activo O si la order ID cambió
-      if (latestDelivery.id && latestDelivery.id !== activeDeliveryTimer) {
-        console.log(`🚚 [OrderBoard] Activando timer para delivery:`, latestDelivery.id, 'status:', latestDelivery.status);
-        setActiveDeliveryTimer(latestDelivery.id);
-      }
-    }
-  }, [orders]);
   console.log('🎯 [TABLERO] Órdenes cargadas del contexto:', orders.length);
   orders.forEach((o, idx) => {
     console.log(`  [${idx}] ${o.id.substring(0,8)}... type=${o.type} status=${o.status}`);
@@ -171,7 +150,6 @@ const OrderBoard = ({ onNewOrder, onEditOrder, onPayOrder, onDeleteOrder }) => {
                 onDelete={onDeleteOrder}
                 onUpdateStatus={handleUpdateStatus}
                 onPrintKitchen={handlePrintKitchen}
-                onActivateDeliveryTimer={setActiveDeliveryTimer}
               />
             </div>
             );
@@ -189,18 +167,6 @@ const OrderBoard = ({ onNewOrder, onEditOrder, onPayOrder, onDeleteOrder }) => {
         <Column title="Para Llevar" Icon={ShoppingBag} orders={takeoutOrders} type="takeout" color="bg-green-600" />
         <Column title="Domicilio" Icon={Bike} orders={deliveryOrders} type="delivery" color="bg-orange-600" totalCost={deliveryTotal} />
       </div>
-
-      {/* Mostrar DeliveryTimer si hay una orden de delivery en preparación */}
-      {activeDeliveryTimer && (
-        <DeliveryTimer
-          orderId={activeDeliveryTimer}
-          onRequestDelivery={() => {
-            console.log('📦 Delivery solicitado para orden:', activeDeliveryTimer);
-            // Aquí irá la lógica para marcar el domicilio como solicitado
-            setActiveDeliveryTimer(null);
-          }}
-        />
-      )}
 
       {showKitchenTicket && selectedOrder && (
         <KitchenTicketModal
