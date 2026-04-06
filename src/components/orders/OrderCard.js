@@ -282,7 +282,7 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [order.type, order.status, deliveryTimerStartTime, deliveryTimerThreshold, showDeliveryAlertModal];
+  }, [order.type, order.status, deliveryTimerStartTime, deliveryTimerThreshold, showDeliveryAlertModal]);
 
   // Reproducir alarma de sonido
   const playAlarm = () => {
