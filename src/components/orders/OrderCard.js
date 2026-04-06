@@ -151,11 +151,11 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
   const [deliveryTimerStarted, setDeliveryTimerStarted] = useState(false);
   const [showDeliveryAlertModal, setShowDeliveryAlertModal] = useState(false); // Modal cuando llega a 10 min
   const [deliveryTimerThreshold, setDeliveryTimerThreshold] = useState(10); // Umbral: 10 min primero, luego 5 min
-  const deliveryTimerStartRef = useRef(null);
   
   // 🔴 Obtener tiempos de Firestore
   const preparingStartTime = order.preparingStartTime ? new Date(order.preparingStartTime) : null;
   const servedStartTime = order.servedStartTime ? new Date(order.servedStartTime) : null;
+  const deliveryTimerStartTime = order.deliveryTimerStartTime ? new Date(order.deliveryTimerStartTime) : null;
   
   // 🔴 Determinar qué contador mostrar
   const isServedPhase = !!servedStartTime;
@@ -236,6 +236,16 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
     return () => clearInterval(interval);
   }, [order.status, deliveryStartTime]);
 
+  // 🚚 Reinicializar threshold cuando cambia la orden
+  useEffect(() => {
+    if (order.type === 'delivery' && (order.status === 'pending' || order.status === 'waiting')) {
+      // Solo resetear si es una nueva orden o si ya no tiene deliveryTimerStartTime
+      if (!order.deliveryTimerStartTime) {
+        setDeliveryTimerThreshold(10); // Volver a 10 minutos para nueva orden
+      }
+    }
+  }, [order.id, order.deliveryTimerStartTime]);
+
   // 🚚 Timer para órdenes de delivery recién creadas (pending o waiting) - Muestra 10 minutos
   useEffect(() => {
     // Solo para órdenes de delivery en status 'pending' o 'waiting'
@@ -244,16 +254,19 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
       return;
     }
 
-    // Inicializar el timer si es primera vez
-    if (!deliveryTimerStartRef.current) {
-      deliveryTimerStartRef.current = new Date();
-      setDeliveryTimerStarted(true);
-      setDeliveryTimerThreshold(10); // Iniciar con umbral de 10 minutos
+    // Si no tiene deliveryTimerStartTime, crearlo
+    if (!deliveryTimerStartTime) {
+      const startTime = new Date().getTime();
+      onUpdateStatus(order.id, { deliveryTimerStartTime: startTime });
+      console.log(`🚚 [OrderCard] Iniciando delivery timer para orden ${order.id}`);
+      return; // Esperar a que se actualice la orden
     }
+
+    setDeliveryTimerStarted(true);
 
     const interval = setInterval(() => {
       const now = new Date();
-      const elapsedSeconds = Math.floor((now - deliveryTimerStartRef.current) / 1000);
+      const elapsedSeconds = Math.floor((now - deliveryTimerStartTime) / 1000);
       const minutes = Math.floor(elapsedSeconds / 60);
       const seconds = elapsedSeconds % 60;
 
@@ -269,7 +282,7 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [order.type, order.status, showDeliveryAlertModal, deliveryTimerThreshold]);
+  }, [order.type, order.status, deliveryTimerStartTime, deliveryTimerThreshold, showDeliveryAlertModal];
 
   // Reproducir alarma de sonido
   const playAlarm = () => {
@@ -345,8 +358,9 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
 
   // 🚚 Callback cuando se pulsa "Aún preparando" en el DeliveryTimer flotante
   const handleContinuePreparingDelivery = () => {
-    // Resetear el timer a 0 para que comience a contar de nuevo
-    deliveryTimerStartRef.current = new Date();
+    // Resetear el timer guardando un nuevo deliveryTimerStartTime en la orden
+    const newStartTime = new Date().getTime();
+    onUpdateStatus(order.id, { deliveryTimerStartTime: newStartTime });
     setDeliveryCountdownMinutes(0);
     setDeliveryCountdownSeconds(0);
     setShowDeliveryAlertModal(false);
