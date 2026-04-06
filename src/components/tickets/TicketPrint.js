@@ -261,16 +261,12 @@ const TicketPrint = ({ ticket, onClose }) => {
                       ))}
                     </div>
                   )}
-                  {ticket.cashReceived && (
-                    <div className="flex justify-between mt-1">
-                      <span>Efectivo recibido:</span>
-                      <span>{formatCurrency(ticket.cashReceived, currencyCode, useDecimals)}</span>
-                    </div>
-                  )}
-                  {ticket.change && (
-                    <div className="flex justify-between mt-1 font-bold">
-                      <span>Cambio:</span>
-                      <span>{formatCurrency(ticket.change, currencyCode, useDecimals)}</span>
+                  {ticket.paymentMethods && ticket.paymentMethods.some(m => m.type === 'cash') && (
+                    <div className="border-top py-1 mt-1">
+                      <div className="flex justify-between font-bold text-sm">
+                        <span>CAMBIO:</span>
+                        <span>{formatCurrency(ticket.change || 0, currencyCode, useDecimals)}</span>
+                      </div>
                     </div>
                   )}
                 </>

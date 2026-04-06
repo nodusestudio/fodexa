@@ -435,8 +435,9 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
     setTimeout(() => {
       window.dispatchEvent(new CustomEvent('orderSaved', { 
         detail: {
-          ...order,
-          ticketType: 'customer' // Tipo de ticket: recibo de cliente
+          ...orderWithPayment,
+          ticketType: 'customer', // Tipo de ticket: recibo de cliente
+          change: change // ✅ Pasar cambio
         }
       }));
       
