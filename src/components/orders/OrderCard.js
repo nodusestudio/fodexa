@@ -398,6 +398,9 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
     }
   };
 
+  // 💳 Determinar si la orden ya fue pagada
+  const isPaid = order.paymentMethods && order.paymentMethods.length > 0;
+
   // Calcular lo que el domiciliario debe pagar/recibir
   const calculateDeliveryPayment = () => {
     if (order.type !== 'delivery') return null;
@@ -568,15 +571,19 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
               <button
                 onClick={(e) => {
                   e.stopPropagation();
+                  if (isPaid) {
+                    alert('No se puede editar un pedido ya pagado. Para modificarlo, debes anularlo en la sección Tickets.');
+                    return;
+                  }
                   if (order.status === 'completed') {
                     alert('No se puede editar un pedido ya entregado');
                     return;
                   }
                   onEdit && onEdit(order);
                 }}
-                disabled={order.status === 'completed'}
+                disabled={isPaid || order.status === 'completed'}
                 className={`flex-1 min-w-[60px] text-xs px-2 py-1.5 rounded font-bold transition-all shadow-md ${
-                  order.status === 'completed'
+                  isPaid || order.status === 'completed'
                     ? 'bg-gray-400 dark:bg-gray-600 text-gray-600 dark:text-gray-500 cursor-not-allowed opacity-50'
                     : 'bg-blue-500 hover:bg-blue-600 text-white cursor-pointer'
                 }`}
@@ -586,23 +593,27 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
               <button
                 onClick={(e) => {
                   e.stopPropagation();
+                  if (isPaid) {
+                    alert('Este pedido ya ha sido pagado');
+                    return;
+                  }
                   if (order.status === 'completed') {
                     alert('Este pedido ya ha sido pagado');
                     return;
                   }
                   onPay && onPay(order);
                 }}
-                disabled={order.status === 'completed'}
+                disabled={isPaid || order.status === 'completed'}
                 className={`flex-1 min-w-[60px] text-xs px-2 py-1.5 rounded font-bold transition-all shadow-md ${
-                  order.status === 'completed'
+                  isPaid || order.status === 'completed'
                     ? 'text-gray-600 dark:text-gray-500 cursor-not-allowed opacity-50'
                     : 'text-white cursor-pointer hover:opacity-90'
                 }`}
                 style={{
-                  backgroundColor: order.status === 'completed' 
+                  backgroundColor: isPaid || order.status === 'completed' 
                     ? '#d1d5db' 
                     : paymentButtonColor,
-                  opacity: order.status === 'completed' ? 0.5 : 1
+                  opacity: isPaid || order.status === 'completed' ? 0.5 : 1
                 }}
               >
                 {paymentButtonText}
