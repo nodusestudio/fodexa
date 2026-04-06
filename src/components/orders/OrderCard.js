@@ -435,21 +435,26 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
                 handleStatusChange();
               }}
               style={{
-                backgroundColor: order.status === 'pending' ? colors.pending
+                backgroundColor: order.status === 'pending' && order.type === 'delivery' ? '#FCD34D'
+                  : order.status === 'pending' ? colors.pending
                   : order.status === 'preparing' ? colors.preparing
                   : order.status === 'waiting' ? '#c084fc'
                   : order.status === 'ready' ? colors.ready
                   : '#9ca3af',
-                color: order.status === 'pending' || (order.status === 'preparing' && !isServedPhase) || order.status === 'waiting'
+                color: order.status === 'pending' && order.type === 'delivery' ? '#000'
+                  : order.status === 'pending' || (order.status === 'preparing' && !isServedPhase) || order.status === 'waiting'
                   ? '#000' : '#fff'
               }}
               className={`text-xs px-2 py-1 rounded font-bold cursor-pointer transition-all shadow-md flex items-center justify-center gap-1 flex-shrink-0 ${
-                (order.status === 'waiting' || order.status === 'preparing' || order.status === 'ready') ? 'animate-pulse' : ''
+                (order.status === 'pending' && order.type === 'delivery') || (order.status === 'waiting' || order.status === 'preparing' || order.status === 'ready') ? 'animate-pulse' : ''
               }`}>
-              {order.status === 'pending' 
-                ? order.type === 'delivery' 
-                  ? `⏱️ ${deliveryCountdownMinutes.toString().padStart(2, '0')}:${deliveryCountdownSeconds.toString().padStart(2, '0')}`
-                  : buttonTexts.cook :  
+              {order.status === 'pending' && order.type === 'delivery' ? (
+                <div className="flex flex-col items-center justify-center">
+                  <span className="text-xs font-bold">EN PREPARACIÓN</span>
+                  <span className="text-sm font-mono font-bold">{deliveryCountdownMinutes.toString().padStart(2, '0')}:{deliveryCountdownSeconds.toString().padStart(2, '0')}</span>
+                </div>
+              ) : order.status === 'pending' 
+                ? buttonTexts.cook :  
                order.status === 'preparing' && !isServedPhase 
                  ? `${buttonTexts.cooking}${showTimer ? ` ${displayMinutes}:${displaySeconds.toString().padStart(2, '0')}` : ''}` 
                  : order.status === 'preparing' && isServedPhase
