@@ -316,10 +316,16 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
     // Obtener el tipo de transferencia si existe
     const transferMethod = finalPaymentMethods.find(m => m.type === 'transfer');
     const cardMethod = finalPaymentMethods.find(m => m.type === 'card');
+    
+    // Calcular cambio (solo en efectivo)
+    const cashMethod = finalPaymentMethods.find(m => m.type === 'cash');
+    const change = cashMethod ? Math.max(0, cashMethod.amount - total) : 0;
+    
     const orderWithPayment = {
       ...order,
       pago_efectivo,
       pago_digital,
+      change, // ✅ Agregar cambio
       paymentType: finalPaymentMethods.length === 1 ? finalPaymentMethods[0].type : 'mixed',
       transferType: transferMethod?.transferType || null, // Pasar el transferType explícitamente
       cardType: cardMethod?.cardType || null, // Pasar el cardType explícitamente
@@ -383,6 +389,7 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
           cardType: cardMethod?.cardType || null,
           pago_efectivo,
           pago_digital,
+          change, // ✅ Guardar cambio en Firestore
         };
         
         // Solo agregar deliveryData si es una orden de delivery y existe
