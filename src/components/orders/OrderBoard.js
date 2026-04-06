@@ -11,8 +11,10 @@ const OrderBoard = ({ onNewOrder, onEditOrder, onPayOrder, onDeleteOrder }) => {
 
   // 🚚 Detectar automáticamente cuando se crea una nueva orden de delivery
   useEffect(() => {
-    // Encontrar la orden de delivery más reciente con status 'pending'
-    const deliveryOrders = orders.filter(o => o.type === 'delivery' && o.status === 'pending');
+    // Encontrar TODAS las órdenes de delivery (cualquier status)
+    const deliveryOrders = orders.filter(o => o.type === 'delivery');
+    
+    console.log(`🚚 [OrderBoard] Órdenes delivery detectadas:`, deliveryOrders.length, 'activeTimer:', activeDeliveryTimer);
     
     if (deliveryOrders.length > 0) {
       // Obtener la orden más reciente (la última del array)
@@ -20,12 +22,9 @@ const OrderBoard = ({ onNewOrder, onEditOrder, onPayOrder, onDeleteOrder }) => {
       
       // Activar timer si no hay timer activo O si la order ID cambió
       if (latestDelivery.id && latestDelivery.id !== activeDeliveryTimer) {
+        console.log(`🚚 [OrderBoard] Activando timer para delivery:`, latestDelivery.id, 'status:', latestDelivery.status);
         setActiveDeliveryTimer(latestDelivery.id);
-        console.log('🚚 [OrderBoard] Activando timer automático para delivery:', latestDelivery.id);
       }
-    } else if (activeDeliveryTimer) {
-      // Si no hay órdenes de delivery pending, desactivar el timer
-      setActiveDeliveryTimer(null);
     }
   }, [orders]);
   console.log('🎯 [TABLERO] Órdenes cargadas del contexto:', orders.length);

@@ -37,8 +37,8 @@ const DeliveryTimer = ({ orderId, onRequestDelivery }) => {
   };
 
   return (
-    <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-4">
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl border-2 border-yellow-400 overflow-hidden">
+    <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-[9999] w-full max-w-md px-4">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl border-4 border-yellow-400 overflow-hidden">
         {/* Header Parpadeante */}
         <div className="bg-yellow-400 text-gray-900 px-4 py-3 text-center animate-pulse">
           <p className="text-lg font-bold">🍳 EN PREPARACIÓN</p>
@@ -48,11 +48,11 @@ const DeliveryTimer = ({ orderId, onRequestDelivery }) => {
         <div className="p-6 space-y-4">
           {/* Timer */}
           <div className="text-center">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Clock size={24} className="text-blue-600" />
-              <span className="text-5xl font-bold text-blue-600 font-mono">{formattedTime}</span>
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <Clock size={32} className="text-blue-600 animate-pulse" />
+              <span className="text-7xl font-bold text-blue-600 font-mono">{formattedTime}</span>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Tiempo para preparar</p>
+            <p className="text-base text-gray-600 dark:text-gray-400 font-semibold">Tiempo para preparar</p>
           </div>
 
           {/* Botones */}
