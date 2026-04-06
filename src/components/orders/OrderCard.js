@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useContext } from 'react';
 import { SettingsContext } from '../../context/SettingsContext';
 import { formatCurrency } from '../../utils/formatters';
 import { Edit2, CreditCard, Trash2, User, MapPin, Utensils, Truck } from 'lucide-react';
+import DeliveryTimer from './DeliveryTimer';
 
 const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitchen }) => {
   const { settings } = useContext(SettingsContext);
@@ -449,10 +450,7 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
                 ((order.status === 'pending' || order.status === 'waiting') && order.type === 'delivery') || (order.status === 'preparing' || order.status === 'ready') ? 'animate-pulse' : ''
               }`}>
               {(order.status === 'pending' || order.status === 'waiting') && order.type === 'delivery' ? (
-                <div className="flex flex-col items-center justify-center">
-                  <span className="text-xs font-bold">EN PREPARACIÓN</span>
-                  <span className="text-sm font-mono font-bold">{deliveryCountdownMinutes.toString().padStart(2, '0')}:{deliveryCountdownSeconds.toString().padStart(2, '0')}</span>
-                </div>
+                <span className="text-xs font-bold">EN PREPARACIÓN {deliveryCountdownMinutes.toString().padStart(2, '0')}:{deliveryCountdownSeconds.toString().padStart(2, '0')}</span>
               ) : order.status === 'pending' 
                 ? buttonTexts.cook :  
                order.status === 'preparing' && !isServedPhase 
@@ -712,6 +710,10 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
             </button>
           </div>
         </div>
+      )}
+      {/* Floating DeliveryTimer - Aparece cuando llega a 10 minutos */}
+      {deliveryCountdownMinutes >= 10 && order.type === 'delivery' && (
+        <DeliveryTimer orderId={order.id} />
       )}
     </div>
   );
