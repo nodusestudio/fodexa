@@ -1,4 +1,4 @@
-import React, { useState, useContext, useMemo } from 'react';
+import React, { useState, useContext, useMemo, useEffect } from 'react';
 import { formatCurrency } from '../../utils/formatters';
 import { useTickets } from '../../context/TicketContext';
 import { useCash } from '../../context/CashContext';
@@ -75,6 +75,19 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
   const [cardType, setCardType] = useState(null);
   const items = orderData?.items || [];
 
+  // Reinicializar amounts cuando la orden cambia
+  useEffect(() => {
+    if (isOpen) {
+      setAmounts(prev => {
+        // Solo reinicializar si el cash no tiene el total correcto
+        if (!prev['cash'] || parseFloat(prev['cash']) === 0) {
+          return { cash: total };
+        }
+        return prev;
+      });
+    }
+  }, [isOpen]);
+
   // Alternar selección de tipo de pago (máximo 2)
   const handleTypeToggle = (key) => {
     setSelectedTypes((prev) => {
@@ -123,8 +136,14 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
     ? (parseFloat(amounts['cash']) || 0) + (selectedTypes.length === 2 ? (parseFloat(amounts[selectedTypes.find(t => t !== 'cash')]) || 0) : 0) - total
     : 0;
 
-  // Calcular total ingresado
-  const totalEntered = selectedTypes.reduce((sum, key) => sum + (parseFloat(amounts[key]) || 0), 0);
+  // Calcular total ingresado (con conversión segura)
+  const totalEntered = selectedTypes.reduce((sum, key) => {
+    const amount = parseFloat(amounts[key]) || 0;
+    return sum + (isNaN(amount) ? 0 : amount);
+  }, 0);
+
+  // Validar que hay suficiente dinero (con tolerancia de 0.01)
+  const hasEnoughPayment = totalEntered >= (total - 0.01);
 
   // Auto-llenado inteligente
   const addPaymentMethod = () => {
@@ -613,7 +632,7 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
             paymentTypes.length === 0 || 
             selectedTypes.length === 0 || 
             selectedTypes.some(key => !amounts[key] || parseFloat(amounts[key]) <= 0) || 
-            totalEntered < total || 
+            !hasEnoughPayment || 
             (selectedTypes.includes('transfer') && transferSubmethods.length > 0 && !transferType) ||
             (selectedTypes.includes('card') && cardSubmethods.length > 0 && !cardType)
           }
