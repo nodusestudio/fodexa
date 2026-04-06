@@ -234,10 +234,10 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
     return () => clearInterval(interval);
   }, [order.status, deliveryStartTime]);
 
-  // 🚚 Timer para órdenes de delivery recién creadas (pending) - Muestra 10 minutos
+  // 🚚 Timer para órdenes de delivery recién creadas (pending o waiting) - Muestra 10 minutos
   useEffect(() => {
-    // Solo para órdenes de delivery en status 'pending'
-    if (order.type !== 'delivery' || order.status !== 'pending') {
+    // Solo para órdenes de delivery en status 'pending' o 'waiting'
+    if (order.type !== 'delivery' || (order.status !== 'pending' && order.status !== 'waiting')) {
       setDeliveryTimerStarted(false);
       return;
     }
@@ -435,20 +435,20 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
                 handleStatusChange();
               }}
               style={{
-                backgroundColor: order.status === 'pending' && order.type === 'delivery' ? '#FCD34D'
+                backgroundColor: (order.status === 'pending' || order.status === 'waiting') && order.type === 'delivery' ? '#FCD34D'
                   : order.status === 'pending' ? colors.pending
                   : order.status === 'preparing' ? colors.preparing
                   : order.status === 'waiting' ? '#c084fc'
                   : order.status === 'ready' ? colors.ready
                   : '#9ca3af',
-                color: order.status === 'pending' && order.type === 'delivery' ? '#000'
+                color: (order.status === 'pending' || order.status === 'waiting') && order.type === 'delivery' ? '#000'
                   : order.status === 'pending' || (order.status === 'preparing' && !isServedPhase) || order.status === 'waiting'
                   ? '#000' : '#fff'
               }}
               className={`text-xs px-2 py-1 rounded font-bold cursor-pointer transition-all shadow-md flex items-center justify-center gap-1 flex-shrink-0 ${
-                (order.status === 'pending' && order.type === 'delivery') || (order.status === 'waiting' || order.status === 'preparing' || order.status === 'ready') ? 'animate-pulse' : ''
+                ((order.status === 'pending' || order.status === 'waiting') && order.type === 'delivery') || (order.status === 'preparing' || order.status === 'ready') ? 'animate-pulse' : ''
               }`}>
-              {order.status === 'pending' && order.type === 'delivery' ? (
+              {(order.status === 'pending' || order.status === 'waiting') && order.type === 'delivery' ? (
                 <div className="flex flex-col items-center justify-center">
                   <span className="text-xs font-bold">EN PREPARACIÓN</span>
                   <span className="text-sm font-mono font-bold">{deliveryCountdownMinutes.toString().padStart(2, '0')}:{deliveryCountdownSeconds.toString().padStart(2, '0')}</span>
@@ -459,7 +459,7 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
                  ? `${buttonTexts.cooking}${showTimer ? ` ${displayMinutes}:${displaySeconds.toString().padStart(2, '0')}` : ''}` 
                  : order.status === 'preparing' && isServedPhase
                  ? `${buttonTexts.served}${showTimer ? ` ${displayMinutes}:${displaySeconds.toString().padStart(2, '0')}` : ''}`
-                 : order.status === 'waiting' ? `⏰ ${deliveryElapsedTime}m` :
+                 : order.status === 'waiting' ? `⏰ Esperando` :
                  order.status === 'ready' ? (buttonTexts.served?.split(' ')[0] || '✅') : 
                  '💰'}
               {(alarmTriggered || deliveryAlarmTriggered) && ' 🔔'}
