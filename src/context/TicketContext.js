@@ -89,6 +89,7 @@ export const TicketProvider = ({ children }) => {
       ticketNumber: generateTicketNumber(),
       orderId: orderData.id,
       orderType: orderData.type,
+      ticketType: orderData.ticketType || 'customer', // ✅ Tipo de ticket (customer/kitchen)
       tableNumber: orderData.tableNumber || null,
       customer: deliveryData,
       deliveryData: deliveryData,
@@ -99,10 +100,13 @@ export const TicketProvider = ({ children }) => {
       total,
       paymentType: orderData.paymentType || 'pending',
       transferType: orderData.transferType || null, // Almacenar tipo de transferencia (nequi/bancolombia)
+      cardType: orderData.cardType || null, // Almacenar tipo de tarjeta
       status: 'completed',
       // Inicializar pagos (se actualizan después)
       pago_efectivo: orderData.pago_efectivo || 0,
       pago_digital: orderData.pago_digital || 0,
+      change: orderData.change || 0, // ✅ Agregar cambio
+      paymentMethods: orderData.paymentMethods || [], // ✅ Agregar métodos de pago
       createdAt: new Date(),
     };
     
