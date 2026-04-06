@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useOrder } from '../../context/OrderContext';
 import OrderCard from './OrderCard';
 import DeliveryTimer from './DeliveryTimer';
@@ -8,6 +8,26 @@ import KitchenTicketModal from './KitchenTicketModal';
 const OrderBoard = ({ onNewOrder, onEditOrder, onPayOrder, onDeleteOrder }) => {
   const { orders = [], updateOrder } = useOrder();
   const [activeDeliveryTimer, setActiveDeliveryTimer] = useState(null);
+
+  // 🚚 Detectar automáticamente cuando se crea una nueva orden de delivery
+  useEffect(() => {
+    // Encontrar la orden de delivery más reciente con status 'pending'
+    const deliveryOrders = orders.filter(o => o.type === 'delivery' && o.status === 'pending');
+    
+    if (deliveryOrders.length > 0) {
+      // Obtener la orden más reciente (la última del array)
+      const latestDelivery = deliveryOrders[deliveryOrders.length - 1];
+      
+      // Activar timer si no hay timer activo O si la order ID cambió
+      if (latestDelivery.id && latestDelivery.id !== activeDeliveryTimer) {
+        setActiveDeliveryTimer(latestDelivery.id);
+        console.log('🚚 [OrderBoard] Activando timer automático para delivery:', latestDelivery.id);
+      }
+    } else if (activeDeliveryTimer) {
+      // Si no hay órdenes de delivery pending, desactivar el timer
+      setActiveDeliveryTimer(null);
+    }
+  }, [orders]);
   console.log('🎯 [TABLERO] Órdenes cargadas del contexto:', orders.length);
   orders.forEach((o, idx) => {
     console.log(`  [${idx}] ${o.id.substring(0,8)}... type=${o.type} status=${o.status}`);

@@ -23,7 +23,7 @@ const DeliveryTimer = ({ orderId, onRequestDelivery }) => {
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
-  const formattedTime = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  const formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
   const handleContinuePreparing = () => {
     // Reiniciar a 5 minutos
