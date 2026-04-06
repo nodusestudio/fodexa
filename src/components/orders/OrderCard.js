@@ -150,6 +150,7 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
   const [deliveryCountdownSeconds, setDeliveryCountdownSeconds] = useState(0); // Timer para delivery recién creado
   const [deliveryTimerStarted, setDeliveryTimerStarted] = useState(false);
   const [showDeliveryAlertModal, setShowDeliveryAlertModal] = useState(false); // Modal cuando llega a 10 min
+  const [deliveryTimerThreshold, setDeliveryTimerThreshold] = useState(10); // Umbral: 10 min primero, luego 5 min
   const deliveryTimerStartRef = useRef(null);
   
   // 🔴 Obtener tiempos de Firestore
@@ -247,6 +248,7 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
     if (!deliveryTimerStartRef.current) {
       deliveryTimerStartRef.current = new Date();
       setDeliveryTimerStarted(true);
+      setDeliveryTimerThreshold(10); // Iniciar con umbral de 10 minutos
     }
 
     const interval = setInterval(() => {
@@ -258,8 +260,8 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
       setDeliveryCountdownMinutes(minutes);
       setDeliveryCountdownSeconds(seconds);
 
-      // Cuando llega a 10 minutos, mostrar alerta y reproducir sonido
-      if (minutes >= 10 && !showDeliveryAlertModal) {
+      // Cuando llega al umbral, reproducir sonido y mostrar alerta
+      if (minutes >= deliveryTimerThreshold && !showDeliveryAlertModal) {
         playAlarm();
         setShowDeliveryAlertModal(true);
         console.log(`⏰ [OrderCard] ¡Alerta! Delivery lleva ${minutes} minutos`);
@@ -267,7 +269,7 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [order.type, order.status, showDeliveryAlertModal]);
+  }, [order.type, order.status, showDeliveryAlertModal, deliveryTimerThreshold]);
 
   // Reproducir alarma de sonido
   const playAlarm = () => {
@@ -339,6 +341,24 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
     copyToClipboard(finalMessage);
     onUpdateStatus(order.id, 'completed');
     setShowDeliveryWarningModal(false);
+  };
+
+  // 🚚 Callback cuando se pulsa "Aún preparando" en el DeliveryTimer flotante
+  const handleContinuePreparingDelivery = () => {
+    // Resetear el timer a 0 para que comience a contar de nuevo
+    deliveryTimerStartRef.current = new Date();
+    setDeliveryCountdownMinutes(0);
+    setDeliveryCountdownSeconds(0);
+    setShowDeliveryAlertModal(false);
+    // Cambiar umbral a 5 minutos para la próxima alerta
+    setDeliveryTimerThreshold(5);
+    console.log(`🟡 [OrderCard] Timer reseteado. Próximo umbral: 5 minutos`);
+  };
+
+  // 🚚 Callback cuando se pulsa "Solicitar Domi" en el DeliveryTimer flotante
+  const handleRequestDeliveryFromTimer = () => {
+    setShowDeliveryAlertModal(false);
+    handleRequestDelivery();
   };
 
   const handleStatusChange = () => {
@@ -711,9 +731,15 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
           </div>
         </div>
       )}
-      {/* Floating DeliveryTimer - Aparece cuando llega a 10 minutos */}
-      {deliveryCountdownMinutes >= 10 && order.type === 'delivery' && (
-        <DeliveryTimer orderId={order.id} />
+      {/* Floating DeliveryTimer - Aparece cuando llega al umbral (10 o 5 minutos) */}
+      {deliveryCountdownMinutes >= deliveryTimerThreshold && order.type === 'delivery' && (
+        <DeliveryTimer 
+          orderId={order.id} 
+          currentMinutes={deliveryCountdownMinutes}
+          currentSeconds={deliveryCountdownSeconds}
+          onContinuePreparing={handleContinuePreparingDelivery}
+          onRequestDelivery={handleRequestDeliveryFromTimer}
+        />
       )}
     </div>
   );

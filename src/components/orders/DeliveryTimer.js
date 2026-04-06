@@ -1,40 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, Truck } from 'lucide-react';
 
-const DeliveryTimer = ({ orderId, onRequestDelivery }) => {
-  const [timeLeft, setTimeLeft] = useState(600); // 10 minutos = 600 segundos
-  const [isRunning, setIsRunning] = useState(true);
-
-  useEffect(() => {
-    if (!isRunning || timeLeft <= 0) return;
-
-    const interval = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          setIsRunning(false);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [isRunning, timeLeft]);
-
-  const minutes = Math.floor(timeLeft / 60);
-  const seconds = timeLeft % 60;
-  const formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-
+const DeliveryTimer = ({ orderId, currentMinutes, currentSeconds, onContinuePreparing, onRequestDelivery }) => {
   const handleContinuePreparing = () => {
-    // Reiniciar a 5 minutos
-    setTimeLeft(300);
-    setIsRunning(true);
+    // Enviar callback al OrderCard para resetear el timer
+    onContinuePreparing && onContinuePreparing();
   };
 
   const handleRequestDelivery = () => {
-    setIsRunning(false);
     onRequestDelivery && onRequestDelivery();
   };
+
+  const formattedTime = `${currentMinutes.toString().padStart(2, '0')}:${currentSeconds.toString().padStart(2, '0')}`;
 
   return (
     <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-[9999] w-full max-w-md px-4">
