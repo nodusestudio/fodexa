@@ -316,8 +316,8 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
   };
 
   const handleDelivery = () => {
-    // Inicia el seguimiento de domicilio - solo si está en estado ready
-    if (order.status !== 'ready') {
+    // Solicitar domiciliario - funciona tanto en estado pending como ready
+    if (order.status !== 'ready' && order.status !== 'pending' && order.status !== 'waiting') {
       console.warn('⚠️ No puedes solicitar domicilio en estado:', order.status);
       return;
     }
@@ -330,7 +330,8 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
     onUpdateStatus(order.id, 'waiting');
     setDeliveryStartTime(new Date());
     lastDeliveryAlarmMinuteRef.current = -1; // Reset ref para nueva alarma
-    console.log('✅ Estado cambiado a "waiting" - Timer iniciado');
+    setShowDeliveryAlertModal(false); // Cerrar modal del timer si está abierto
+    console.log('✅ Estado cambiado a "waiting" - Domiciliario solicitado');
   };
 
   const handleDeliveryCompleted = () => {
@@ -372,7 +373,7 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
   // 🚚 Callback cuando se pulsa "Solicitar Domi" en el DeliveryTimer flotante
   const handleRequestDeliveryFromTimer = () => {
     setShowDeliveryAlertModal(false);
-    handleRequestDelivery();
+    handleDelivery();
   };
 
   const handleStatusChange = () => {
@@ -470,7 +471,12 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                handleStatusChange();
+                // Si es delivery pending/waiting y se toca el timer, solicitar domicilio
+                if ((order.status === 'pending' || order.status === 'waiting') && order.type === 'delivery') {
+                  handleDelivery();
+                } else {
+                  handleStatusChange();
+                }
               }}
               style={{
                 backgroundColor: (order.status === 'pending' || order.status === 'waiting') && order.type === 'delivery' ? '#FCD34D'
