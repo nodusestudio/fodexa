@@ -29,6 +29,7 @@ import { ReportProvider } from './context/ReportContext';
 import { CustomerProvider } from './context/CustomerContext';
 import { SettingsProvider } from './context/SettingsContext';
 import PushMessage from './components/common/PushMessage';
+import LastUpdateIndicator from './components/common/LastUpdateIndicator';
 
 function App() {
   return (
@@ -44,6 +45,7 @@ function App() {
                       <ThemeProvider>
                         <Router>
                           <PushMessage />
+                          <LastUpdateIndicator />
                           <Routes>
                             {/* Login Route */}
                             <Route path="/login" element={<Login />} />

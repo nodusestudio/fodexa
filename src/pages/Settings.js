@@ -9,7 +9,7 @@ import LanguageSettings from '../components/settings/LanguageSettings';
 import AppearanceSettings from '../components/settings/AppearanceSettings';
 import GeneralSettings from '../components/settings/GeneralSettings';
 import DeliverySettings from '../components/settings/DeliverySettings';
-import TableManager from '../components/settings/TableManager';
+import BoardSettings from '../components/settings/BoardSettings';
 import CleanupTools from '../components/common/CleanupTools';
 
 const Settings = () => {
@@ -102,7 +102,7 @@ const Settings = () => {
       {/* Content */}
       <div className="flex-1 overflow-auto p-3 sm:p-4 md:p-6">
         {activeTab === 'company' && <CompanySettings />}
-        {activeTab === 'tablero' && <TableManager />}
+        {activeTab === 'tablero' && <BoardSettings />}
         {activeTab === 'ticket' && <TicketSettings />}
         {activeTab === 'taxes' && <TaxSettings />}
         {activeTab === 'currency' && <CurrencySettings />}

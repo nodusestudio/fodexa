@@ -1,38 +1,49 @@
-import React, { useState } from 'react';
+import React, { useState, useContext, useMemo } from 'react';
 import { formatCurrency } from '../../utils/formatters';
 import { useTickets } from '../../context/TicketContext';
 import { useCash } from '../../context/CashContext';
 import { useOrder } from '../../context/OrderContext';
+import { useSettings } from '../../context/SettingsContext';
 import { CreditCard, Banknote, Smartphone, X } from 'lucide-react';
 
-const paymentTypes = [
-  {
-    key: 'cash',
-    label: 'Efectivo',
-    icon: Banknote,
-    bg: 'bg-green-100 hover:bg-green-200',
-  },
-  {
-    key: 'card',
-    label: 'Tarjeta',
-    icon: CreditCard,
-    bg: 'bg-blue-100 hover:bg-blue-200',
-  },
-  {
-    key: 'transfer',
-    label: 'Transferencia',
-    icon: Smartphone,
-    bg: 'bg-purple-100 hover:bg-purple-200',
-  },
-];
-
-
+// Mapa de iconos por tipo de método
+const iconMap = {
+  cash: Banknote,
+  card: CreditCard,
+  transfer: Smartphone,
+  pse: Smartphone,
+  check: Banknote,
+  credit: CreditCard,
+};
 
 // NUEVA LÓGICA DE PAGO INTELIGENTE Y POST-PAGO
 function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
   const { createTicket, updateTicket } = useTickets();
   const { addMovement, isCashOpen } = useCash();
   const { updateOrder } = useOrder();
+  const { settings } = useSettings();
+
+  // Obtener métodos de pago desde configuración
+  const paymentTypes = useMemo(() => {
+    const methods = settings?.payment?.methods || {};
+    const colorMap = {
+      cash: 'bg-green-100 hover:bg-green-200',
+      card: 'bg-blue-100 hover:bg-blue-200',
+      transfer: 'bg-purple-100 hover:bg-purple-200',
+      pse: 'bg-orange-100 hover:bg-orange-200',
+      check: 'bg-yellow-100 hover:bg-yellow-200',
+      credit: 'bg-pink-100 hover:bg-pink-200',
+    };
+
+    return Object.entries(methods)
+      .filter(([_, method]) => method?.enabled)
+      .map(([key, method]) => ({
+        key,
+        label: method?.name || key,
+        icon: iconMap[key] || Banknote,
+        bg: colorMap[key],
+      }));
+  }, [settings?.payment?.methods]);
   // Calcular subtotal en tiempo real (productos + addons)
   const calcSubtotal = () => {
     if (!orderData?.items) return 0;
@@ -60,7 +71,8 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
   const [selectedTypes, setSelectedTypes] = useState(['cash']);
   const [amounts, setAmounts] = useState({ cash: total });
   const [success, setSuccess] = useState(false);
-  const [transferType, setTransferType] = useState(null); // 'nequi' o 'bancolombia'
+  const [transferType, setTransferType] = useState(null);
+  const [cardType, setCardType] = useState(null);
   const items = orderData?.items || [];
 
   // Alternar selección de tipo de pago (máximo 2)
@@ -150,7 +162,61 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
     return 0;
   };
 
-  // Calcular total pagado desde selectedTypes y amounts (nuevo sistema)
+  // Obtener submétodos disponibles para transferencia (dinámicamente desde configuración)
+  const transferSubmethods = useMemo(() => {
+    const transferMethod = settings?.payment?.methods?.transfer;
+    if (!transferMethod?.submethods) return [];
+    return transferMethod.submethods
+      .filter(sm => sm?.enabled !== false)
+      .map(sm => ({
+        id: sm.id,
+        label: sm.name,
+        value: sm.id
+      }));
+  }, [settings?.payment?.methods?.transfer?.submethods]);
+
+  // Obtener submétodos disponibles para tarjeta (dinámicamente desde configuración)
+  const cardSubmethods = useMemo(() => {
+    const cardMethod = settings?.payment?.methods?.card;
+    if (!cardMethod?.submethods) return [];
+    return cardMethod.submethods
+      .filter(sm => sm?.enabled !== false)
+      .map(sm => ({
+        id: sm.id,
+        label: sm.name,
+        value: sm.id
+      }));
+  }, [settings?.payment?.methods?.card?.submethods]);
+
+  const validateTransferType = () => {
+    // Si transferencia está seleccionada, validar que hay submétodos disponibles
+    if (selectedTypes.includes('transfer')) {
+      if (transferSubmethods.length === 0) {
+        alert('⚠️ No hay tipos de transferencia disponibles configurados');
+        return false;
+      }
+      if (!transferType) {
+        alert('⚠️ Debes seleccionar el tipo de transferencia');
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const validateCardType = () => {
+    // Si tarjeta está seleccionada, validar que hay submétodos disponibles
+    if (selectedTypes.includes('card')) {
+      if (cardSubmethods.length === 0) {
+        alert('⚠️ No hay tipos de tarjeta disponibles configurados');
+        return false;
+      }
+      if (!cardType) {
+        alert('⚠️ Debes seleccionar el tipo de tarjeta');
+        return false;
+      }
+    }
+    return true;
+  };
   const totalPaid = selectedTypes.reduce((sum, key) => sum + (parseFloat(amounts[key]) || 0), 0);
 
   const handleCompletePayment = async () => {
@@ -159,9 +225,11 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
       return;
     }
 
-    // Validar que si hay transferencia, se seleccionó tipo
-    if (selectedTypes.includes('transfer') && !transferType) {
-      alert('⚠️ Debes seleccionar el tipo de transferencia (Nequi o Bancolombia)');
+    // Validar transferencia y tarjeta
+    if (!validateTransferType()) {
+      return;
+    }
+    if (!validateCardType()) {
       return;
     }
     
@@ -182,6 +250,11 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
       // Agregar subtipo de transferencia si aplica
       if (key === 'transfer' && transferType) {
         method.transferType = transferType; // 'nequi' o 'bancolombia'
+      }
+      
+      // Agregar subtipo de tarjeta si aplica
+      if (key === 'card' && cardType) {
+        method.cardType = cardType; // 'visa', 'mastercard', 'amex', etc
       }
       
       return method;
@@ -223,12 +296,14 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
     // Agregar datos de pago al order ANTES de crear ticket
     // Obtener el tipo de transferencia si existe
     const transferMethod = finalPaymentMethods.find(m => m.type === 'transfer');
+    const cardMethod = finalPaymentMethods.find(m => m.type === 'card');
     const orderWithPayment = {
       ...order,
       pago_efectivo,
       pago_digital,
       paymentType: finalPaymentMethods.length === 1 ? finalPaymentMethods[0].type : 'mixed',
       transferType: transferMethod?.transferType || null, // Pasar el transferType explícitamente
+      cardType: cardMethod?.cardType || null, // Pasar el cardType explícitamente
     };
     
     // Registrar en caja
@@ -246,6 +321,15 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
           description = `Venta Transferencia ${transferTypeLabel} - Ticket #${Date.now().toString().slice(-6)}`;
           metadata.transferType = method.transferType;
           metadata.transferTypeLabel = transferTypeLabel;
+        }
+        
+        // Si es tarjeta, agregar el subtipo a la descripción y metadata
+        if (method.type === 'card' && method.cardType) {
+          const cardTypeData = cardSubmethods.find(c => c.id === method.cardType);
+          const cardTypeLabel = cardTypeData?.label || method.cardType;
+          description = `Venta Tarjeta ${cardTypeLabel} - Ticket #${Date.now().toString().slice(-6)}`;
+          metadata.cardType = method.cardType;
+          metadata.cardTypeLabel = cardTypeLabel;
         }
         
         addMovement('sale', method.amount, description, metadata);
@@ -277,6 +361,7 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
           paymentMethods: finalPaymentMethods,
           paymentType: paymentType,
           transferType: transferMethod?.transferType || null,
+          cardType: cardMethod?.cardType || null,
           pago_efectivo,
           pago_digital,
         };
@@ -422,74 +507,89 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
             <span>{formatCurrency(total)}</span>
           </div>
         </div>
-        {/* Tipos de pago (selección múltiple hasta 2) */}
-        <div className="grid grid-cols-3 gap-3 mb-4">
+        {/* Tipos de pago (selección múltiple hasta 2) - COMPACTO */}
+        <div className={`grid gap-2 mb-4 ${paymentTypes.length <= 2 ? 'grid-cols-2' : paymentTypes.length === 3 ? 'grid-cols-3' : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4'}`}>
           {paymentTypes.map(({ key, label, icon: Icon, bg }) => (
             <button
               key={key}
               type="button"
-              className={`flex flex-col items-center justify-center gap-1 py-3 rounded-xl font-semibold transition-all border-2 ${bg} ${selectedTypes.includes(key) ? 'border-primary-600 ring-2 ring-primary-400' : 'border-transparent'}`}
+              className={`flex flex-col items-center justify-center gap-0.5 py-2 px-1 rounded-lg font-semibold transition-all border-2 text-xs ${bg} ${selectedTypes.includes(key) ? 'border-primary-600 ring-1 ring-primary-400' : 'border-transparent'}`}
               onClick={() => {
                 handleTypeToggle(key);
-                // Reset transfer type si deseleccionamos transferencia
+                // Reset tipos si deseleccionamos
                 if (key === 'transfer' && selectedTypes.includes(key)) {
                   setTransferType(null);
+                }
+                if (key === 'card' && selectedTypes.includes(key)) {
+                  setCardType(null);
                 }
               }}
               disabled={selectedTypes.length === 2 && !selectedTypes.includes(key)}
             >
-              <Icon className="w-7 h-7 mb-1" />
-              <span className="text-sm">{label}</span>
+              <Icon className="w-5 h-5" />
+              <span className="text-xs leading-tight text-center">{label}</span>
             </button>
           ))}
         </div>
 
         {/* Selector de tipo de transferencia (si está seleccionada) */}
-        {selectedTypes.includes('transfer') && (
-          <div className="mb-4 p-3 bg-purple-50 dark:bg-purple-900 dark:bg-opacity-30 rounded-lg border border-purple-200 dark:border-purple-700">
-            <label className="block text-sm font-semibold mb-3 text-gray-900 dark:text-white">Selecciona tipo de transferencia:</label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => setTransferType('nequi')}
-                className={`py-2 px-3 rounded-lg font-medium transition-all border-2 text-sm ${
-                  transferType === 'nequi'
-                    ? 'bg-purple-600 text-white border-purple-700'
-                    : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-purple-300 dark:border-purple-600 hover:bg-purple-100 dark:hover:bg-purple-800'
-                }`}
-              >
-                📱 Nequi
-              </button>
-              <button
-                onClick={() => setTransferType('bancolombia')}
-                className={`py-2 px-3 rounded-lg font-medium transition-all border-2 text-sm ${
-                  transferType === 'bancolombia'
-                    ? 'bg-blue-600 text-white border-blue-700'
-                    : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-blue-300 dark:border-blue-600 hover:bg-blue-100 dark:hover:bg-blue-800'
-                }`}
-              >
-                🏦 Bancolombia
-              </button>
+        {selectedTypes.includes('transfer') && transferSubmethods.length > 0 && (
+          <div className="mb-3 p-2 bg-purple-50 dark:bg-purple-900 dark:bg-opacity-30 rounded-lg border border-purple-200 dark:border-purple-700">
+            <label className="text-xs font-semibold mb-2 text-gray-900 dark:text-white block">Transferencia:</label>
+            <div className="flex flex-wrap gap-1">
+              {transferSubmethods.map(submethod => (
+                <button
+                  key={submethod.id}
+                  onClick={() => setTransferType(submethod.id)}
+                  className={`py-1 px-2 rounded text-xs font-medium transition-all border-2 ${
+                    transferType === submethod.id
+                      ? 'bg-purple-600 text-white border-purple-700'
+                      : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-purple-300 dark:border-purple-600 hover:bg-purple-100 dark:hover:bg-purple-800'
+                  }`}
+                >
+                  {submethod.label}
+                </button>
+              ))}
             </div>
-            {transferType && (
-              <div className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-                ✅ Tipo seleccionado: <span className="font-bold">{transferType === 'nequi' ? 'Nequi' : 'Bancolombia'}</span>
-              </div>
-            )}
+          </div>
+        )}
+
+        {/* Selector de tipo de tarjeta (si está seleccionada) */}
+        {selectedTypes.includes('card') && cardSubmethods.length > 0 && (
+          <div className="mb-3 p-2 bg-blue-50 dark:bg-blue-900 dark:bg-opacity-30 rounded-lg border border-blue-200 dark:border-blue-700">
+            <label className="text-xs font-semibold mb-2 text-gray-900 dark:text-white block">Tipo de Tarjeta:</label>
+            <div className="flex flex-wrap gap-1">
+              {cardSubmethods.map(submethod => (
+                <button
+                  key={submethod.id}
+                  onClick={() => setCardType(submethod.id)}
+                  className={`py-1 px-2 rounded text-xs font-medium transition-all border-2 ${
+                    cardType === submethod.id
+                      ? 'bg-blue-600 text-white border-blue-700'
+                      : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-blue-300 dark:border-blue-600 hover:bg-blue-100 dark:hover:bg-blue-800'
+                  }`}
+                >
+                  {submethod.label}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
         {/* Inputs para los métodos seleccionados */}
         {selectedTypes.map(key => {
           const type = paymentTypes.find(t => t.key === key);
+          const label = type?.label || key.charAt(0).toUpperCase() + key.slice(1);
+          
           return (
             <div className="mb-4" key={key}>
-              <label className="block text-sm font-semibold mb-1">{type.label} - Monto</label>
+              <label className="block text-sm font-semibold mb-1">{label} - Monto</label>
               <input
                 type="number"
                 min={0}
                 step="0.01"
                 className="w-full border rounded-lg px-3 py-2 mb-1"
-                placeholder={`Monto en ${type.label}`}
+                placeholder={`Monto en ${label}`}
                 value={amounts[key] || ''}
                 onChange={e => handleAmountChange(key, e.target.value)}
               />
@@ -505,7 +605,14 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
         <button
           className="bg-primary-600 hover:bg-primary-700 text-white py-3 px-6 rounded-xl w-full font-bold text-lg mt-2 disabled:opacity-60"
           onClick={handleCompletePayment}
-          disabled={selectedTypes.length === 0 || selectedTypes.some(key => !amounts[key] || parseFloat(amounts[key]) <= 0) || Math.abs(totalEntered - total) > 0.01 || (selectedTypes.includes('transfer') && !transferType)}
+          disabled={
+            paymentTypes.length === 0 || 
+            selectedTypes.length === 0 || 
+            selectedTypes.some(key => !amounts[key] || parseFloat(amounts[key]) <= 0) || 
+            Math.abs(totalEntered - total) > 0.01 || 
+            (selectedTypes.includes('transfer') && transferSubmethods.length > 0 && !transferType) ||
+            (selectedTypes.includes('card') && cardSubmethods.length > 0 && !cardType)
+          }
         >
           {selectedTypes.length > 1 ? 'Confirmar Pago Dividido' : 'Confirmar Pago'}
         </button>

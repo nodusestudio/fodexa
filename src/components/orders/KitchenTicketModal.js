@@ -1,8 +1,38 @@
-import React, { useRef } from 'react';
+import React, { useRef, useContext } from 'react';
 import { X, Utensils, Printer } from 'lucide-react';
+import { SettingsContext } from '../../context/SettingsContext';
 
 const KitchenTicketModal = ({ order, onClose }) => {
+  const { settings } = useContext(SettingsContext);
   const printRef = useRef();
+
+  // Valores por defecto para botón de cocina
+  const defaultKitchenButton = {
+    buttonText: '🔔 Cocina',
+    buttonColor: '#f97316',
+    ticketTitle: '🍳 COCINA',
+    showTableInfo: true,
+    showPhone: true,
+    showNotes: true,
+    showAddons: true,
+    paperWidth: 80,
+    headerText: '',
+    footerText: '',
+    showTimestamp: true,
+    separatorCharacter: '-'
+  };
+
+  // Obtener valores de configuración
+  const kitchenButton = settings?.kitchenButton || defaultKitchenButton;
+  const ticketTitle = kitchenButton?.ticketTitle ?? defaultKitchenButton.ticketTitle;
+  const headerText = kitchenButton?.headerText ?? defaultKitchenButton.headerText;
+  const footerText = kitchenButton?.footerText ?? defaultKitchenButton.footerText;
+  const showTableInfo = kitchenButton?.showTableInfo ?? defaultKitchenButton.showTableInfo;
+  const showPhone = kitchenButton?.showPhone ?? defaultKitchenButton.showPhone;
+  const showNotes = kitchenButton?.showNotes ?? defaultKitchenButton.showNotes;
+  const showAddons = kitchenButton?.showAddons ?? defaultKitchenButton.showAddons;
+  const showTimestamp = kitchenButton?.showTimestamp ?? defaultKitchenButton.showTimestamp;
+  const separatorCharacter = kitchenButton?.separatorCharacter ?? defaultKitchenButton.separatorCharacter;
 
   const handlePrint = () => {
     const printContent = printRef.current.innerHTML;
@@ -66,10 +96,34 @@ const KitchenTicketModal = ({ order, onClose }) => {
   };
 
   const formatDate = (date) => {
-    return new Date(date).toLocaleString('es-CO', {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-    });
+    if (!date) return 'N/A';
+    try {
+      if (typeof date === 'number') {
+        return new Date(date).toLocaleString('es-CO', {
+          dateStyle: 'short',
+          timeStyle: 'short',
+        });
+      } else if (date.toDate) {
+        return date.toDate().toLocaleString('es-CO', {
+          dateStyle: 'short',
+          timeStyle: 'short',
+        });
+      } else {
+        return new Date(date).toLocaleString('es-CO', {
+          dateStyle: 'short',
+          timeStyle: 'short',
+        });
+      }
+    } catch (e) {
+      return 'N/A';
+    }
+  };
+
+  const getOrderType = () => {
+    if (order.type === 'table') return `🪑 MESA ${order.tableNumber || '?'}`;
+    if (order.type === 'delivery') return `🚚 DOMICILIO - ${order.deliveryData?.name || 'Cliente'}`;
+    if (order.type === 'takeout') return `🛍️ PARA LLEVAR`;
+    return 'PEDIDO';
   };
 
   return (
@@ -94,45 +148,86 @@ const KitchenTicketModal = ({ order, onClose }) => {
           >
             {/* Header */}
             <div className="header">
-              <h1 className="text-2xl font-bold">COCINA</h1>
-              <p>Ticket #{order.ticketNumber}</p>
-              <p>{formatDate(order.createdAt)}</p>
-              <p>
-                {order.orderType === 'table' && `🪑 Mesa ${order.tableNumber}`}
-                {order.orderType === 'delivery' && '🚴 DOMICILIO'}
-                {order.orderType === 'takeout' && '🛍️ PARA LLEVAR'}
-              </p>
+              {headerText && (
+                <div style={{marginBottom: '10px', whiteSpace: 'pre-wrap', fontSize: '12px', fontWeight: 'bold'}}>
+                  {headerText}
+                </div>
+              )}
+              <h1 className="text-2xl font-bold" style={{fontSize: '18px', fontWeight: 'bold', marginBottom: '10px'}}>
+                {ticketTitle}
+              </h1>
+              <div style={{borderBottom: '2px dashed #000', paddingBottom: '10px', marginBottom: '15px'}}>
+                {separatorCharacter.repeat(30)}
+              </div>
+              {showTableInfo && (
+                <p className="text-lg font-bold" style={{marginTop: '5px', marginBottom: '5px', fontSize: '14px'}}>
+                  {getOrderType()}
+                </p>
+              )}
+              {showTimestamp && (
+                <p style={{fontSize: '12px', color: '#666'}}>
+                  📅 {formatDate(order.timestamp || order.createdAt)}
+                </p>
+              )}
+              {showPhone && order.type === 'delivery' && order.deliveryData?.phone && (
+                <p style={{fontSize: '12px', color: '#666'}}>
+                  📞 {order.deliveryData.phone}
+                </p>
+              )}
             </div>
 
-            {/* Items */}
-            <div className="space-y-4">
-              {order.items.map((item, idx) => (
-                <div key={idx} className="item">
-                  <div className="flex items-start">
-                    <span className="qty">{item.quantity}x</span>
-                    <div className="flex-1">
-                      <div className="item-name">{item.name}</div>
-                      {item.addons && item.addons.length > 0 && (
-                        <div className="text-sm text-gray-600">
+            {/* Items - FORMATO SIMPLE Y CLARO */}
+            <div className="space-y-3" style={{marginTop: '15px'}}>
+              <div style={{borderBottom: '2px dashed #000', paddingBottom: '10px', marginBottom: '15px', textAlign: 'center', fontSize: '11px', color: '#666'}}>
+                {separatorCharacter.repeat(30)}
+              </div>
+              {order.items && order.items.length > 0 ? order.items.map((item, idx) => (
+                <div key={idx} className="item" style={{borderLeft: '4px solid #ff8c00', paddingLeft: '12px', marginBottom: '10px'}}>
+                  <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'start'}}>
+                    <div>
+                      <div className="item-name" style={{fontSize: '14px', fontWeight: 'bold', marginBottom: '5px'}}>
+                        {item.quantity}x {item.name}
+                      </div>
+                      {showAddons && item.addons && item.addons.length > 0 && (
+                        <div style={{fontSize: '11px', color: '#666', marginLeft: '0px'}}>
                           {item.addons.map((addon, aidx) => (
-                            <div key={aidx}>+ {addon.name}</div>
+                            <div key={aidx} style={{marginTop: '2px'}}>
+                              + {addon.name} {addon.quantity && `(${addon.quantity})`}
+                            </div>
                           ))}
-                        </div>
-                      )}
-                      {item.notes && (
-                        <div className="notes">
-                          ⚠️ {item.notes}
                         </div>
                       )}
                     </div>
                   </div>
+                  {showNotes && item.notes && (
+                    <div className="notes" style={{marginTop: '8px', backgroundColor: '#fff3cd', padding: '8px', borderLeft: '3px solid #ff6b6b', fontWeight: 'bold', color: '#d32f2f', fontSize: '11px'}}>
+                      ⚠️ NOTA: {item.notes}
+                    </div>
+                  )}
                 </div>
-              ))}
+              )) : (
+                <p style={{color: '#999', textAlign: 'center', fontSize: '12px'}}>Sin items</p>
+              )}
+            </div>
+
+            {/* Separator */}
+            <div style={{borderBottom: '2px dashed #000', paddingTop: '15px', marginTop: '15px', marginBottom: '15px', textAlign: 'center', fontSize: '11px', color: '#666'}}>
+              {separatorCharacter.repeat(30)}
             </div>
 
             {/* Footer */}
-            <div className="mt-6 text-center border-t border-gray-300 pt-4">
-              <p className="text-sm">¡Gracias!</p>
+            <div className="mt-4 text-center" style={{marginTop: '10px', paddingTop: '10px'}}>
+              {footerText && (
+                <div style={{fontSize: '12px', fontWeight: 'bold', marginBottom: '10px', whiteSpace: 'pre-wrap'}}>
+                  {footerText}
+                </div>
+              )}
+              {!footerText && (
+                <>
+                  <p style={{fontSize: '13px', fontWeight: 'bold'}}>✅ ¡GRACIAS!</p>
+                  <p style={{fontSize: '11px', color: '#888', marginTop: '5px'}}>Tiempo estimado: 15 min</p>
+                </>
+              )}
             </div>
           </div>
         </div>

@@ -54,8 +54,10 @@ const OrderTypeEditor = ({ isOpen, onClose,currentOrderType, selectedTable, deli
   };
 
   const getTableStatus = (table) => {
+    // 🔴 SOLO bloquear si hay orden NUEVA (pending)
+    // Órdenes en 'preparing', 'ready' no bloquean (son temporales)
     const order = orders.find(
-      o => o.type === 'table' && o.tableNumber === table.id && o.status !== 'completed'
+      o => o.type === 'table' && o.tableNumber === table.id && o.status === 'pending'
     );
     if (order) return 'occupied';
     return table.status;

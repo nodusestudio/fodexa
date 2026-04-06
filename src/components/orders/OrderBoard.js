@@ -19,10 +19,18 @@ const OrderBoard = ({ onNewOrder, onEditOrder, onPayOrder, onDeleteOrder }) => {
     setShowKitchenTicket(true);
   };
 
-  const handleUpdateStatus = async (orderId, newStatus) => {
+  const handleUpdateStatus = async (orderId, statusData) => {
     try {
-      await updateOrder(orderId, { status: newStatus });
-      console.log(`✅ Orden ${orderId} actualizada a estado: ${newStatus}`);
+      // 🔴 Soportar dos formatos:
+      // 1. Antiguo: handleUpdateStatus(id, 'preparing')
+      // 2. Nuevo: handleUpdateStatus(id, { status: 'preparing', preparingStartTime: 123456 })
+      
+      const updateData = typeof statusData === 'string' 
+        ? { status: statusData }
+        : statusData;
+      
+      await updateOrder(orderId, updateData);
+      console.log(`✅ Orden ${orderId} actualizada:`, updateData);
     } catch (error) {
       console.error('❌ Error actualizando orden:', error);
       alert('Error al actualizar el estado');
@@ -38,48 +46,51 @@ const OrderBoard = ({ onNewOrder, onEditOrder, onPayOrder, onDeleteOrder }) => {
   // - type='delivery' AND status='pending'
   // 
   // EXCLUIR ABSOLUTAMENTE:
-  // - Cualquier status que NO sea 'pending'
+  // - Cualquier status que NO sea 'pending', 'preparing', 'waiting'
   // - Órdenes sin type definido
   // - Órdenes sin status definido
   // ============================================================
 
-  // Filtro IMPENETRABLE: Solo MESA status='pending'
+  // Filtro: MESA con status='pending', 'preparing', 'waiting'
   const tableOrders = (orders || [])
     .filter(o => {
-      // DEBE ser: type='table' Y status='pending' EXACTAMENTE
-      const isTablePending = o.type === 'table' && o.status === 'pending';
+      // DEBE ser: type='table' Y status válido (pending, preparing, waiting)
+      const validStatuses = ['pending', 'preparing', 'waiting'];
+      const isTableValid = o.type === 'table' && validStatuses.includes(o.status);
       
-      if (!isTablePending && o.type === 'table') {
-        console.log(`❌ EXCLUIDA MESA: ${o.id} (status="${o.status}", NO es 'pending')`);
+      if (!isTableValid && o.type === 'table') {
+        console.log(`❌ EXCLUIDA MESA: ${o.id} (status="${o.status}", debe ser uno de: ${validStatuses.join(', ')})`);
       }
       
-      return isTablePending;
+      return isTableValid;
     })
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   
-  // Filtro IMPENETRABLE: Solo TAKEOUT status='pending'
+  // Filtro: TAKEOUT con status='pending', 'preparing', 'waiting'
   const takeoutOrders = (orders || [])
     .filter(o => {
-      const isTakeoutPending = o.type === 'takeout' && o.status === 'pending';
+      const validStatuses = ['pending', 'preparing', 'waiting'];
+      const isTakeoutValid = o.type === 'takeout' && validStatuses.includes(o.status);
       
-      if (!isTakeoutPending && o.type === 'takeout') {
-        console.log(`❌ EXCLUIDA TAKEOUT: ${o.id} (status="${o.status}", NO es 'pending')`);
+      if (!isTakeoutValid && o.type === 'takeout') {
+        console.log(`❌ EXCLUIDA TAKEOUT: ${o.id} (status="${o.status}", debe ser uno de: ${validStatuses.join(', ')})`);
       }
       
-      return isTakeoutPending;
+      return isTakeoutValid;
     })
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   
-  // Filtro IMPENETRABLE: Solo DELIVERY status='pending'
+  // Filtro: DELIVERY con status='pending', 'preparing', 'waiting'
   const deliveryOrders = (orders || [])
     .filter(o => {
-      const isDeliveryPending = o.type === 'delivery' && o.status === 'pending';
+      const validStatuses = ['pending', 'preparing', 'waiting'];
+      const isDeliveryValid = o.type === 'delivery' && validStatuses.includes(o.status);
       
-      if (!isDeliveryPending && o.type === 'delivery') {
-        console.log(`❌ EXCLUIDA DELIVERY: ${o.id} (status="${o.status}", NO es 'pending')`);
+      if (!isDeliveryValid && o.type === 'delivery') {
+        console.log(`❌ EXCLUIDA DELIVERY: ${o.id} (status="${o.status}", debe ser uno de: ${validStatuses.join(', ')})`);
       }
       
-      return isDeliveryPending;
+      return isDeliveryValid;
     })
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 

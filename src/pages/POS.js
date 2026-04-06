@@ -11,6 +11,7 @@ import ProductGrid from '../components/products/ProductGrid';
 import CartContainer from '../components/cart/CartContainer';
 import OrderInfo from '../components/orders/OrderInfo';
 import CashFundControl from '../components/cash/CashFundControl';
+import PaymentModal from '../components/payments/PaymentModal';
 import { useProducts } from '../context/ProductContext';
 import { useCash } from '../context/CashContext';
 import { ShoppingCart, Lock, AlertCircle, Check } from 'lucide-react';
@@ -34,6 +35,8 @@ const POS = () => {
   const [category, setCategory] = useState('all');
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [ticketToPrint, setTicketToPrint] = useState(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false); // 🔴 Para pagar desde OrderBoard
+  const [selectedOrderForPayment, setSelectedOrderForPayment] = useState(null); // 🔴 Orden a pagar
 
   const { getActiveProducts, getActiveCategories } = useProducts();
   const dynamicProducts = getActiveProducts();
@@ -174,8 +177,10 @@ const POS = () => {
   };
 
   const handlePayOrder = (order) => {
-    // ✅ CartPanel maneja el modal de pago - esta función es un stub
-    console.log('✅ Pago iniciado desde OrderBoard');
+    // 💳 Abrir modal de pago para esta orden
+    setSelectedOrderForPayment(order);
+    setShowPaymentModal(true);
+    console.log('💳 Abriendo modal de pago para orden:', order.id);
   };
 
   const handleDeleteOrder = (order) => {
@@ -332,7 +337,22 @@ const POS = () => {
       {showPrintModal && ticketToPrint && (
         <TicketPrint
           ticket={ticketToPrint}
-          onClose={() => { setShowPrintModal(false); setTicketToPrint(null); }}
+          onClose={() => {
+            setShowPrintModal(false);
+            setTicketToPrint(null);
+            
+            // Si es un pago completado (customer ticket), regresa al tablero
+            if (ticketToPrint?.ticketType === 'customer') {
+              setView('board');
+              setLocalOrderType(null);
+              setShowTableSelector(false);
+              setShowCustomerSelector(false);
+              setShowOrderInfo(false);
+              setShowProducts(false);
+              clearCart();
+              clearCurrentOrder();
+            }
+          }}
         />
       )}
 
@@ -451,6 +471,23 @@ const POS = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* 💳 Modal de Pago desde OrderBoard */}
+      {showPaymentModal && selectedOrderForPayment && (
+        <PaymentModal
+          isOpen={showPaymentModal}
+          onClose={() => {
+            setShowPaymentModal(false);
+            setSelectedOrderForPayment(null);
+          }}
+          orderData={selectedOrderForPayment}
+          onComplete={() => {
+            setShowPaymentModal(false);
+            setSelectedOrderForPayment(null);
+            // La orden ya fue actualizada a 'completed' por PaymentModal
+          }}
+        />
       )}
     </div>
   );

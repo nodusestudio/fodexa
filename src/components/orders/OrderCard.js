@@ -1,8 +1,119 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
+import { SettingsContext } from '../../context/SettingsContext';
 import { formatCurrency } from '../../utils/formatters';
 import { Edit2, CreditCard, Trash2, User, MapPin, Utensils, Truck } from 'lucide-react';
 
 const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitchen }) => {
+  const { settings } = useContext(SettingsContext);
+  
+  // Valores por defecto para botones de órdenes
+  const defaultOrderButtons = {
+    alarmTime: 20,
+    alarmSound: true,
+    buttonTexts: { cook: '▶ Cocinar', cooking: '🍳 Cocinando', served: '✅ Mesa servida' },
+    colors: { pending: '#FBBF24', preparing: '#F97316', ready: '#22C55E' },
+    showTimer: true,
+    enableAutoAlarm: true
+  };
+
+  // Valores por defecto para botón de cocina
+  const defaultKitchenButton = {
+    buttonText: '🔔 Cocina',
+    buttonColor: '#f97316',
+    ticketTitle: '🍳 COCINA',
+    showTableInfo: true,
+    showPhone: true,
+    showNotes: true,
+    showAddons: true,
+    paperWidth: 80,
+    headerText: '',
+    footerText: '',
+    showTimestamp: true,
+    separatorCharacter: '-'
+  };
+
+  // Valores por defecto para pago
+  const defaultPayment = {
+    buttonText: '💳 Cobrar',
+    buttonColor: '#22c55e',
+    methods: {
+      cash: { name: '💵 Efectivo', enabled: true, icon: '💵', submethods: [] },
+      card: { 
+        name: '💳 Tarjeta', 
+        enabled: true, 
+        icon: '💳',
+        submethods: [
+          { id: 'visa', name: '💳 Visa', enabled: true },
+          { id: 'mastercard', name: '💳 Mastercard', enabled: true },
+          { id: 'amex', name: '💳 American Express', enabled: false },
+          { id: 'other_card', name: '💳 Otra Tarjeta', enabled: true }
+        ]
+      },
+      transfer: { 
+        name: '🏦 Transferencia', 
+        enabled: true, 
+        icon: '🏦',
+        submethods: [
+          { id: 'bancolombia', name: '🏦 Bancolombia', enabled: true },
+          { id: 'nequi', name: '📱 Nequi', enabled: true },
+          { id: 'daviplata', name: '📱 Daviplata', enabled: false },
+          { id: 'other_transfer', name: '🏦 Otra Transferencia', enabled: true }
+        ]
+      },
+      pse: { name: '🔗 PSE', enabled: false, icon: '🔗', submethods: [] },
+      check: { name: '📋 Cheque', enabled: false, icon: '📋', submethods: [] },
+      credit: { name: '📝 Crédito', enabled: false, icon: '📝', submethods: [] }
+    },
+    splitPayment: {
+      enabled: true,
+      maxMethods: 2,
+      allowPartial: true
+    },
+    requireNote: false,
+    showBalance: true,
+    autoClose: false
+  };
+  
+  // Obtener valores actuales o usar defaults para órdenes
+  const orderButtons = settings?.orderButtons || defaultOrderButtons;
+  
+  const alarmTime = orderButtons?.alarmTime ?? defaultOrderButtons.alarmTime;
+  const alarmSound = orderButtons?.alarmSound ?? defaultOrderButtons.alarmSound;
+  const showTimer = orderButtons?.showTimer ?? defaultOrderButtons.showTimer;
+  const enableAutoAlarm = orderButtons?.enableAutoAlarm ?? defaultOrderButtons.enableAutoAlarm;
+  const colors = { 
+    ...defaultOrderButtons.colors, 
+    ...orderButtons?.colors 
+  };
+  const buttonTexts = { 
+    ...defaultOrderButtons.buttonTexts, 
+    ...orderButtons?.buttonTexts 
+  };
+
+  // Obtener valores para botón de cocina
+  const kitchenButton = {
+    ...defaultKitchenButton,
+    ...settings?.kitchenButton
+  };
+  const kitchenButtonText = kitchenButton?.buttonText ?? defaultKitchenButton.buttonText;
+  const kitchenButtonColor = kitchenButton?.buttonColor ?? defaultKitchenButton.buttonColor;
+
+  // Obtener valores para pago
+  const payment = {
+    ...defaultPayment,
+    ...settings?.payment,
+    methods: {
+      ...defaultPayment.methods,
+      ...(settings?.payment?.methods || {})
+    },
+    splitPayment: {
+      ...defaultPayment.splitPayment,
+      ...(settings?.payment?.splitPayment || {})
+    }
+  };
+  const paymentButtonText = payment?.buttonText ?? defaultPayment.buttonText;
+  const paymentButtonColor = payment?.buttonColor ?? defaultPayment.buttonColor;
+
   if (!order) return null;
   
   // ============================================================
@@ -32,6 +143,15 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
   const [alarmTriggered, setAlarmTriggered] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false); // Siempre colapsado por defecto (ambos: mobile y desktop)
+  const [displayMinutes, setDisplayMinutes] = useState(0); // 🔴 Minutos para display
+  const [displaySeconds, setDisplaySeconds] = useState(0); // 🔴 Segundos para display
+  
+  // 🔴 Obtener tiempos de Firestore
+  const preparingStartTime = order.preparingStartTime ? new Date(order.preparingStartTime) : null;
+  const servedStartTime = order.servedStartTime ? new Date(order.servedStartTime) : null;
+  
+  // 🔴 Determinar qué contador mostrar
+  const isServedPhase = !!servedStartTime;
   
   // Estados para domicilio
   const [deliveryStartTime, setDeliveryStartTime] = useState(null);
@@ -39,34 +159,47 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
   const [deliveryAlarmTriggered, setDeliveryAlarmTriggered] = useState(false);
   const [showDeliveryWarningModal, setShowDeliveryWarningModal] = useState(false);
 
-  // Refs para rastrear alarmas
+  // Refs para rastrear alarmas y prevenir doble click
   const lastDeliveryAlarmMinuteRef = useRef(-1);
+  const isProcessingStatusChangeRef = useRef(false); // 🔴 Prevenir doble click en botón de status
+  const alarmTriggeredRef = useRef(false); // 🔴 Rastrear si ya se disparó alarma a los 20min
 
-  // Timer para contar tiempo de preparación
+  // Timer para contar tiempo de preparación o servido en mesa
   useEffect(() => {
     if (order.status !== 'preparing') return;
 
+    // 🔴 RESET: Resetear alarma cuando ENTRA a preparing
+    alarmTriggeredRef.current = false;
+    setAlarmTriggered(false);
+
     const interval = setInterval(() => {
+      // Usar servedStartTime si existe, si no usar preparingStartTime
+      const currentStartTime = isServedPhase ? servedStartTime : preparingStartTime;
+      if (!currentStartTime) return;
+
       const now = new Date();
-      const startTime = new Date(order.timestamp);
-      const minutes = Math.floor((now - startTime) / 60000);
+      const totalSeconds = Math.floor((now - currentStartTime) / 1000);
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
       
+      setDisplayMinutes(minutes);
+      setDisplaySeconds(seconds);
       setElapsedTime(minutes);
 
-      // Mostrar modal de advertencia a los 20 minutos
-      if (minutes >= 20 && !alarmTriggered) {
+      // 🔴 SOLO en fase de PREPARACIÓN: Mostrar alerta según el tiempo configurado
+      if (!isServedPhase && minutes >= alarmTime && !alarmTriggeredRef.current) {
         playAlarm();
+        alarmTriggeredRef.current = true;
         setAlarmTriggered(true);
-        setShowWarningModal(true);
-      }
-      // Alarma cada 5 minutos después de los 20
-      else if (minutes >= 20 && minutes % 5 === 0 && Math.floor(minutes) === minutes) {
-        playAlarm();
+        // Solo mostrar modal automático si enableAutoAlarm está activado
+        if (enableAutoAlarm) {
+          setShowWarningModal(true);
+        }
       }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [order.status, order.timestamp, alarmTriggered]);
+  }, [order.status, preparingStartTime, servedStartTime, isServedPhase]);
 
   // Timer para contar tiempo de espera de domicilio
   useEffect(() => {
@@ -85,8 +218,8 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
       
       setDeliveryElapsedTime(minutes);
 
-      // Alarma de domicilio retrasado a los 20 minutos, entonces cada 5 minutos
-      if (minutes >= 20 && minutes % 5 === 0 && lastDeliveryAlarmMinuteRef.current !== minutes) {
+      // Alarma de domicilio retrasado según el tiempo configurado, entonces cada 5 minutos
+      if (minutes >= alarmTime && minutes % 5 === 0 && lastDeliveryAlarmMinuteRef.current !== minutes) {
         playAlarm();
         setShowDeliveryWarningModal(true);
         lastDeliveryAlarmMinuteRef.current = minutes;
@@ -98,6 +231,9 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
 
   // Reproducir alarma de sonido
   const playAlarm = () => {
+    // Solo reproducir sonido si está habilitado
+    if (!alarmSound) return;
+    
     // Crear un sonido "puf" con Web Audio API
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     const oscillator = audioContext.createOscillator();
@@ -166,24 +302,30 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
   };
 
   const handleStatusChange = () => {
-    if (order.type === 'takeout') {
-      // Flujo especial para Para Llevar
-      if (order.status === 'pending') {
-        onUpdateStatus(order.id, 'preparing');
-      } else if (order.status === 'preparing') {
-        onUpdateStatus(order.id, 'ready');
-        // Copiar mensaje al portapapeles
-        copyToClipboard('Hola tu pedido ya se encuentra listo para retirar, te esperamos');
-      }
-      // Para Llevar NO tiene tercer toque, solo se cierra al cobrar/cancelar
-    } else {
-      // Flujo para Mesa y Domicilio
-      if (order.status === 'pending') {
-        onUpdateStatus(order.id, 'preparing');
-      } else if (order.status === 'preparing') {
-        onUpdateStatus(order.id, 'ready');
-      }
+    // 🔴 PROTECCIÓN: Evitar doble click
+    if (isProcessingStatusChangeRef.current) {
+      console.log(`⚠️ [OrderCard] Doble click prevenido en orden ${order.id}`);
+      return;
     }
+    
+    isProcessingStatusChangeRef.current = true;
+
+    if (order.status === 'pending') {
+      // 🔴 FASE 1: INICIA CONTADOR DE PREPARACIÓN
+      const startTime = new Date().getTime();
+      onUpdateStatus(order.id, { status: 'preparing', preparingStartTime: startTime });
+      console.log(`🍳 [OrderCard] Iniciando contador de preparación para orden ${order.id}`);
+    } else if (order.status === 'preparing' && !servedStartTime) {
+      // 🟢 FASE 2: CAMBIAR A CONTADOR DE "SERVIDO EN MESA" (reinicia contador a 00:00)
+      const startTime = new Date().getTime();
+      onUpdateStatus(order.id, { servedStartTime: startTime });
+      console.log(`🟢 [OrderCard] Iniciando contador de 'Servido en mesa' para orden ${order.id}`);
+    }
+
+    // Liberar el lock después de 500ms
+    setTimeout(() => {
+      isProcessingStatusChangeRef.current = false;
+    }, 500);
   };
 
   const getName = () => {
@@ -253,18 +395,26 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
                 e.stopPropagation();
                 handleStatusChange();
               }}
+              style={{
+                backgroundColor: order.status === 'pending' ? colors.pending
+                  : order.status === 'preparing' ? colors.preparing
+                  : order.status === 'waiting' ? '#c084fc'
+                  : order.status === 'ready' ? colors.ready
+                  : '#9ca3af',
+                color: order.status === 'pending' || (order.status === 'preparing' && !isServedPhase) || order.status === 'waiting'
+                  ? '#000' : '#fff'
+              }}
               className={`text-xs px-2 py-1 rounded font-bold cursor-pointer transition-all shadow-md flex items-center justify-center gap-1 flex-shrink-0 ${
-                order.status === 'pending' ? 'bg-yellow-400 dark:bg-yellow-600 text-yellow-900 dark:text-yellow-100' :
-                order.status === 'preparing' ? 'bg-orange-400 dark:bg-orange-600 text-orange-900 dark:text-orange-100 animate-pulse' :
-                order.status === 'ready' ? 'bg-green-400 dark:bg-green-600 text-green-900 dark:text-green-100' :
-                order.status === 'waiting' ? 'bg-purple-400 dark:bg-purple-600 text-purple-900 dark:text-purple-100 animate-pulse' :
-                'bg-gray-400 dark:bg-gray-600 text-gray-900 dark:text-gray-100'
+                (order.status === 'waiting' || order.status === 'preparing' || order.status === 'ready') ? 'animate-pulse' : ''
               }`}>
-              {order.status === 'pending' ? '▶' : 
-               order.status === 'preparing' ? `⏱️ ${elapsedTime}m` : 
-               order.status === 'waiting' ? `⏰ ${deliveryElapsedTime}m` :
-               order.status === 'ready' ? '✅' : 
-               '💰'}
+              {order.status === 'pending' ? buttonTexts.cook :  
+               order.status === 'preparing' && !isServedPhase 
+                 ? `${buttonTexts.cooking}${showTimer ? ` ${displayMinutes}:${displaySeconds.toString().padStart(2, '0')}` : ''}` 
+                 : order.status === 'preparing' && isServedPhase
+                 ? `${buttonTexts.served}${showTimer ? ` ${displayMinutes}:${displaySeconds.toString().padStart(2, '0')}` : ''}`
+                 : order.status === 'waiting' ? `⏰ ${deliveryElapsedTime}m` :
+                 order.status === 'ready' ? (buttonTexts.served?.split(' ')[0] || '✅') : 
+                 '💰'}
               {(alarmTriggered || deliveryAlarmTriggered) && ' 🔔'}
             </button>
           </div>
@@ -337,12 +487,18 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
                 disabled={order.status === 'completed'}
                 className={`flex-1 min-w-[60px] text-xs px-2 py-1.5 rounded font-bold cursor-pointer transition-all shadow-md ${
                   order.status === 'completed' 
-                    ? 'bg-gray-400 dark:bg-gray-600 text-gray-600 dark:text-gray-500 cursor-not-allowed opacity-50' 
-                    : 'bg-orange-500 hover:bg-orange-600 text-white'
+                    ? 'text-gray-600 dark:text-gray-500 cursor-not-allowed opacity-50' 
+                    : 'text-white hover:opacity-90'
                 }`}
+                style={{
+                  backgroundColor: order.status === 'completed' 
+                    ? '#9ca3af' 
+                    : kitchenButtonColor,
+                  opacity: order.status === 'completed' ? 0.5 : 1
+                }}
                 title="Imprimir para Cocina"
               >
-                🍳 Cocina
+                {kitchenButtonText}
               </button>
               <button
                 onClick={(e) => {
@@ -374,11 +530,17 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
                 disabled={order.status === 'completed'}
                 className={`flex-1 min-w-[60px] text-xs px-2 py-1.5 rounded font-bold transition-all shadow-md ${
                   order.status === 'completed'
-                    ? 'bg-gray-400 dark:bg-gray-600 text-gray-600 dark:text-gray-500 cursor-not-allowed opacity-50'
-                    : 'bg-green-500 hover:bg-green-600 text-white cursor-pointer'
+                    ? 'text-gray-600 dark:text-gray-500 cursor-not-allowed opacity-50'
+                    : 'text-white cursor-pointer hover:opacity-90'
                 }`}
+                style={{
+                  backgroundColor: order.status === 'completed' 
+                    ? '#d1d5db' 
+                    : paymentButtonColor,
+                  opacity: order.status === 'completed' ? 0.5 : 1
+                }}
               >
-                💳 Cobrar
+                {paymentButtonText}
               </button>
               <button
                 onClick={(e) => {
@@ -437,6 +599,40 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
                 className="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition-colors"
               >
                 ✅ Entregado
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Advertencia - Pedido Demorado en Cocina */}
+      {showWarningModal && order.status === 'preparing' && !isServedPhase && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-11/12 shadow-2xl border-4 border-orange-500">
+            <div className="text-center mb-4">
+              <div className="text-6xl mb-2 animate-pulse">🍳</div>
+              <h2 className="text-2xl font-bold text-orange-600 dark:text-orange-400 mb-2">¡PEDIDO DEMORADO!</h2>
+              <p className="text-lg text-gray-700 dark:text-gray-300 font-semibold">
+                {getName()}
+              </p>
+            </div>
+            
+            <div className="bg-orange-50 dark:bg-orange-900/30 border-l-4 border-orange-600 p-4 mb-6 rounded">
+              <p className="text-gray-800 dark:text-gray-200 font-semibold text-center">
+                ⚠️ El pedido lleva {displayMinutes} minutos en cocina
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowWarningModal(false);
+                  setAlarmTriggered(false);
+                  alarmTriggeredRef.current = false;
+                }}
+                className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-colors"
+              >
+                👍 Entendido
               </button>
             </div>
           </div>

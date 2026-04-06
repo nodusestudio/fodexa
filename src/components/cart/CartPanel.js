@@ -1,5 +1,5 @@
 ﻿// CartPanel.js - Optimized for mobile-first design
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useOrder } from '../../context/OrderContext';
 import { useCart } from '../../context/CartContext';
 import { useTickets } from '../../context/TicketContext';
@@ -13,7 +13,7 @@ import OrderTypeEditor from '../orders/OrderTypeEditor';
 const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp, currentOrder, onPayOrder, onCloseCart }) => {
 	const { deliveryData } = useOrder();
 	const { items, clearCart, updateQuantity, removeItem } = useCart();
-	const { createOrder, clearCurrentOrder } = useOrder();
+	const { createOrder, updateOrder, clearCurrentOrder } = useOrder();
 	const { createTicket } = useTickets();
 	const [showPaymentModal, setShowPaymentModal] = useState(false);
 	const [showNoteModal, setShowNoteModal] = useState(false);
@@ -21,6 +21,8 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp, c
 	const [selectedItemId, setSelectedItemId] = useState(null);
 	const [currentNotes, setCurrentNotes] = useState('');
 	const [currentPaymentOrder, setCurrentPaymentOrder] = useState(null);
+	const [isProcessing, setIsProcessing] = useState(false);
+	const isProcessingRef = useRef(false); // 🚫 Ref para prevenir doble clic SÍNCRONO
 	const { settings } = useSettings();
 
 	const currencyCode = settings?.currency?.code || 'COP';
@@ -62,6 +64,21 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp, c
 
 	const { subtotal, iva, deliveryCost, total } = calculateTotals();
 
+	// ✅ Cerrar PaymentModal automáticamente cuando se guarda una orden (para evitar duplicación)
+	useEffect(() => {
+		const handleOrderSaved = (e) => {
+			const order = e.detail;
+			// Si es un pago completado (ticketType: 'customer'), cierra el modal de pago completamente
+			if (order?.ticketType === 'customer') {
+				setShowPaymentModal(false);
+				setCurrentPaymentOrder(null);
+				console.log('✅ PaymentModal cerrado automáticamente después del pago');
+			}
+		};
+		window.addEventListener('orderSaved', handleOrderSaved);
+		return () => window.removeEventListener('orderSaved', handleOrderSaved);
+	}, []);
+
 	// Funciones para editar notas
 	const openNoteModal = (itemId, notes = '') => {
 		setSelectedItemId(itemId);
@@ -86,6 +103,12 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp, c
 	};
 
 	const handleSaveOrder = async () => {
+		// 🚫 Usar REF para prevenir doble clic SÍNCRONO (antes de que React actualice el estado)
+		if (isProcessingRef.current) {
+			console.warn('⚠️ Ya hay una orden en proceso');
+			return;
+		}
+
 		if (!items || items.length === 0) {
 			alert('⚠️ Agregue productos al carrito');
 			return;
@@ -106,6 +129,10 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp, c
 			return;
 		}
 
+		// Marcar como procesando (ambos: ref y state)
+		isProcessingRef.current = true;
+		setIsProcessing(true);
+
 		const orderData = {
 			type: orderType,
 			tableNumber: orderType === 'table' ? selectedTable : null,
@@ -122,9 +149,20 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp, c
 		};
 
 		try {
-			console.log('📝 Creando orden:', orderData);
-			const savedOrder = await createOrder(orderData);
-			console.log('✅ Orden guardada:', savedOrder);
+			let savedOrder;
+			
+			if (currentOrder && currentOrder.id) {
+				// 🔄 EDITAR ORDEN EXISTENTE
+				console.log('📝 Actualizando orden existente:', currentOrder.id);
+				await updateOrder(currentOrder.id, orderData);
+				savedOrder = { ...currentOrder, ...orderData };
+				console.log('✅ Orden actualizada:', savedOrder);
+			} else {
+				// 🆕 CREAR NUEVA ORDEN
+				console.log('📝 Creando nueva orden:', orderData);
+				savedOrder = await createOrder(orderData);
+				console.log('✅ Orden guardada:', savedOrder);
+			}
 			
 			// ✅ Si es domicilio, crear TAMBIÉN el ticket para que aparezca en la sección de Domicilios
 			if (orderType === 'delivery') {
@@ -159,6 +197,11 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp, c
 				} 
 			}));
 			
+			// ✅ Disparar evento para actualizar el timestamp
+			window.dispatchEvent(new CustomEvent('orderCreated', { 
+				detail: savedOrder 
+			}));
+			
 			// Mostrar notificación automática
 			window.dispatchEvent(new CustomEvent('push-message', {
 				detail: { message: '✅ ¡Orden guardada exitosamente!', type: 'success' }
@@ -166,14 +209,27 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp, c
 		} catch (error) {
 			console.error('❌ Error guardando orden:', error);
 			alert('❌ Error: No se pudo guardar la orden');
+		} finally {
+			isProcessingRef.current = false;
+			setIsProcessing(false);
 		}
 	};
 
 	const handleProcessPayment = async () => {
+		// 🚫 Usar REF para prevenir doble clic SÍNCRONO (antes de que React actualice el estado)
+		if (isProcessingRef.current) {
+			console.warn('⚠️ Ya hay una orden en proceso');
+			return;
+		}
+
 		if (!items || items.length === 0) {
 			alert('⚠️ Agregue productos al carrito');
 			return;
 		}
+
+		// Marcar como procesando (ambos: ref y state)
+		isProcessingRef.current = true;
+		setIsProcessing(true);
 
 		try {
 			// 1️⃣ CREAR la orden primero
@@ -201,12 +257,20 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp, c
 
 			// 3️⃣ Disparar evento con la orden creada (para que POS.js la capture)
 			onPayOrder && onPayOrder(savedOrder);
+			
+			// 4️⃣ Disparar evento para actualizar el timestamp
+			window.dispatchEvent(new CustomEvent('orderCreated', { 
+				detail: savedOrder 
+			}));
 
-			// 4️⃣ Abrir modal de pago
+			// 5️⃣ Abrir modal de pago
 			setShowPaymentModal(true);
 		} catch (error) {
 			console.error('❌ Error creando orden para pago:', error);
 			alert('❌ Error: No se pudo crear la orden');
+		} finally {
+			isProcessingRef.current = false;
+			setIsProcessing(false);
 		}
 	};
 
@@ -316,24 +380,27 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp, c
 						<div className="space-y-2 md:space-y-3">
 							<button
 								onClick={onCloseCart || (() => {})}
-								className="w-full md:hidden bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600 text-gray-800 dark:text-white py-2 rounded-lg font-semibold text-sm transition-colors"
+								disabled={isProcessing}
+								className="w-full md:hidden bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600 text-gray-800 dark:text-white py-2 rounded-lg font-semibold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 							>
 								← Volver a Productos
 							</button>
 
 							<button
 								onClick={handleSaveOrder}
-								className="w-full bg-gray-700 dark:bg-gray-600 hover:bg-gray-800 dark:hover:bg-gray-500 text-white py-2 md:py-3 rounded-lg font-semibold text-sm md:text-base transition-colors shadow-lg"
+								disabled={isProcessing}
+								className="w-full bg-gray-700 dark:bg-gray-600 hover:bg-gray-800 dark:hover:bg-gray-500 text-white py-2 md:py-3 rounded-lg font-semibold text-sm md:text-base transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
 							>
-								💾 Guardar Orden
+								{isProcessing ? '⏳ Guardando...' : '💾 Guardar Orden'}
 							</button>
 
 							<button
 								onClick={handleProcessPayment}
-								className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white py-2 md:py-3 rounded-lg font-semibold text-sm md:text-base transition-all shadow-lg flex items-center justify-center gap-2"
+								disabled={isProcessing}
+								className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white py-2 md:py-3 rounded-lg font-semibold text-sm md:text-base transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
 							>
 								<CreditCard size={20} />
-								💳 Procesar Pago
+								{isProcessing ? '⏳ Procesando...' : '💳 Procesar Pago'}
 							</button>
 						</div>
 					</div>
@@ -342,17 +409,18 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp, c
 
 			<PaymentModal
 				isOpen={showPaymentModal}
-				onClose={() => setShowPaymentModal(false)}
-				orderData={currentPaymentOrder || {
-					type: orderType,
-					deliveryData: orderType === 'delivery' ? deliveryData : null
-				}}
-			/>
+			onClose={() => {
+				setShowPaymentModal(false);
+				setCurrentPaymentOrder(null);
+			}}
+			orderData={currentPaymentOrder || {
+				type: orderType,
+				deliveryData: orderType === 'delivery' ? deliveryData : null
+			}}
+		/>
 
-			<OrderTypeEditor
-				isOpen={showOrderTypeEditor}
-				onClose={() => setShowOrderTypeEditor(false)}
-				currentOrderType={orderType}
+		<OrderTypeEditor
+			isOpen={showOrderTypeEditor}
 				selectedTable={selectedTable}
 				deliveryData={deliveryData}
 			/>

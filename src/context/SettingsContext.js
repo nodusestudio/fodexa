@@ -36,6 +36,101 @@ const defaultSettings = {
     enabled: true,
     baseAmount: 0,
     presets: [30, 40, 50]
+  },
+  orderButtons: {
+    alarmTime: 20, // 🔴 Minutos para alarma
+    alarmSound: true, // 🔔 Reproducir sonido
+    buttonTexts: {
+      cook: '▶ Cocinar',
+      cooking: '🍳 Cocinando',
+      served: '✅ Mesa servida'
+    },
+    colors: {
+      pending: '#FBBF24', // Amarillo
+      preparing: '#F97316', // Naranja
+      ready: '#22C55E' // Verde
+    },
+    estimatedTime: 15, // Tiempo estimado en minutos
+    showTimer: true,
+    enableAutoAlarm: true
+  },
+  kitchenButton: {
+    // 👨‍🍳 Configuración del Botón de Cocina y Ticket
+    buttonText: '🔔 Cocina', // Texto del botón
+    buttonColor: '#f97316', // Color del botón
+    ticketTitle: '🍳 COCINA', // Título del ticket
+    showTableInfo: true, // Mostrar info de mesa/cliente
+    showPhone: true, // Mostrar teléfono en delivery
+    showNotes: true, // Mostrar notas especiales
+    showAddons: true, // Mostrar addons/extras
+    paperWidth: 80, // Ancho en mm (80mm típico point of sale)
+    headerText: '', // Texto personalizado en encabezado
+    footerText: '', // Texto personalizado en pie
+    showTimestamp: true, // Mostrar fecha/hora
+    separatorCharacter: '-' // Carácter para separadores
+  },
+  payment: {
+    // 💳 Configuración de Métodos de Pago
+    buttonText: '💳 Cobrar',
+    buttonColor: '#22c55e', // Verde
+    methods: {
+      cash: { 
+        name: '💵 Efectivo', 
+        enabled: true, 
+        icon: '💵',
+        submethods: [] // Sin submétodos
+      },
+      card: { 
+        name: '💳 Tarjeta', 
+        enabled: true, 
+        icon: '💳',
+        submethods: [
+          { id: 'visa', name: '💳 Visa', enabled: true },
+          { id: 'mastercard', name: '💳 Mastercard', enabled: true },
+          { id: 'amex', name: '💳 American Express', enabled: false },
+          { id: 'other_card', name: '💳 Otra Tarjeta', enabled: true }
+        ]
+      },
+      transfer: { 
+        name: '🏦 Transferencia', 
+        enabled: true, 
+        icon: '🏦',
+        submethods: [
+          { id: 'bancolombia', name: '🏦 Bancolombia', enabled: true },
+          { id: 'nequi', name: '📱 Nequi', enabled: true },
+          { id: 'daviplata', name: '📱 Daviplata', enabled: false },
+          { id: 'other_transfer', name: '🏦 Otra Transferencia', enabled: true }
+        ]
+      },
+      pse: { 
+        name: '🔗 PSE', 
+        enabled: false, 
+        icon: '🔗',
+        submethods: []
+      },
+      check: { 
+        name: '📋 Cheque', 
+        enabled: false, 
+        icon: '📋',
+        submethods: []
+      },
+      credit: { 
+        name: '📝 Crédito', 
+        enabled: false, 
+        icon: '📝',
+        submethods: []
+      }
+    },
+    // Configuración de pago dividido
+    splitPayment: {
+      enabled: true, // Permitir pago dividido
+      maxMethods: 2, // Máximo métodos simultáneamente
+      allowPartial: true // Permitir pagos incompletos
+    },
+    // Otras configuraciones
+    requireNote: false, // Requerir nota al pagar
+    showBalance: true, // Mostrar saldo pendiente
+    autoClose: false // Cerrar orden después de pagar
   }
 };
 
@@ -47,13 +142,24 @@ export const SettingsProvider = ({ children }) => {
     const storageKey = `settings_${user?.uid || 'default'}`;
     const saved = localStorage.getItem(storageKey);
     const loaded = saved ? JSON.parse(saved) : defaultSettings;
+    // ✅ Mergear siempre con defaults para asegurar que existan payment.methods, etc.
     return {
+      ...defaultSettings,
       ...loaded,
       currency: {
-        ...loaded.currency,
+        ...defaultSettings.currency,
+        ...(loaded.currency || {}),
         code: 'COP',
         symbol: '$',
         decimals: false
+      },
+      payment: {
+        ...defaultSettings.payment,
+        ...(loaded.payment || {}),
+        methods: {
+          ...defaultSettings.payment.methods,
+          ...(loaded.payment?.methods || {})
+        }
       }
     };
   });
@@ -69,13 +175,24 @@ export const SettingsProvider = ({ children }) => {
         
         if (docSnap.exists()) {
           const firestoreSettings = docSnap.data();
+          // ✅ Mergear con defaults para asegurar que siempre existan payment.methods, etc.
           setSettings(prev => ({
+            ...defaultSettings,
             ...firestoreSettings,
             currency: {
-              ...firestoreSettings.currency,
+              ...defaultSettings.currency,
+              ...(firestoreSettings.currency || {}),
               code: 'COP',
               symbol: '$',
               decimals: false
+            },
+            payment: {
+              ...defaultSettings.payment,
+              ...(firestoreSettings.payment || {}),
+              methods: {
+                ...defaultSettings.payment.methods,
+                ...(firestoreSettings.payment?.methods || {})
+              }
             }
           }));
           console.log('✅ Settings cargados desde Firestore');
@@ -83,10 +200,12 @@ export const SettingsProvider = ({ children }) => {
           console.log('📝 Creando settings iniciales en Firestore');
           // Crear documento inicial si no existe
           await setDoc(docRef, defaultSettings);
+          setSettings(defaultSettings);
         }
       } catch (error) {
         console.warn('⚠️ Error cargando settings de Firestore:', error.message);
         // Usar localStorage como fallback
+        setSettings(defaultSettings);
       }
     };
 
@@ -362,4 +481,5 @@ export const SettingsProvider = ({ children }) => {
   );
 };
 
+export { SettingsContext };
 export const useSettings = () => useContext(SettingsContext);

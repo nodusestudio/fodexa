@@ -25,15 +25,7 @@ const Button = ({
 
   return (
     <button
-      className={
-        rounded-lg sm:rounded-lg 
-        font-semibold
-        transition-colors
-        \
-        \
-        \
-        \
-      }
+      className={`${variants[variant]} ${sizes[size]} ${fullWidth} rounded-lg sm:rounded-lg font-semibold transition-colors ${className}`}
       {...props}
     >
       {children}

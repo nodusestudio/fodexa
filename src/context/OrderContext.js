@@ -314,12 +314,9 @@ export const OrderProvider = ({ children }) => {
         finalOrderData = { id: finalOrderId, ...orderData };
       }
       
-      // 4️⃣ Guardar en estado local con el ID de Firestore
-      setOrders(prev => {
-        const updated = [...prev, finalOrderData];
-        console.log('✅ [CREAR] En estado local. Total órdenes:', updated.length);
-        return updated;
-      });
+      // 🚫 NO AÑADIR AL ESTADO LOCAL - Dejar que onSnapshot (listener) lo haga automáticamente
+      // Esto previene duplicados. Firestore es la única fuente de verdad.
+      console.log('✅ [CREAR] Orden guardada. onSnapshot la traerá automáticamente.');
       
       return finalOrderData;
     } catch (error) {
@@ -335,26 +332,12 @@ export const OrderProvider = ({ children }) => {
     console.log('  Usuario UID:', user?.uid || '❌ NO AUTENTICADO');
     
     try {
-      // ⚠️ NOTA: La orden podría no estar en estado local si fue eliminada por onSnapshot
-      // Pero eso está bien - podemos actualizarla en Firestore directamente
+      // ⚠️ Solo actualizar en Firestore
+      // Dejar que onSnapshot sincronice el estado automáticamente
       const orderBefore = orders.find(o => o.id === id);
       
-      if (orderBefore) {
-        // ACTUALIZAR estado local si aún existe
-        console.log('  1️⃣ Actualizando estado local...');
-        console.log('     Status anterior:', orderBefore?.status);
-        
-        setOrders(prev => {
-          const updated = prev.map(order => 
-            order.id === id ? { ...order, ...data, updatedAt: new Date() } : order
-          );
-          const updatedOrder = updated.find(o => o.id === id);
-          console.log('     ✅ Status ahora:', updatedOrder?.status);
-          return updated;
-        });
-      } else {
-        console.warn(`⚠️ Orden ${id} no está en estado local (probablemente ya fue eliminada por onSnapshot)`);
-        console.warn('  Continuando con actualización en Firestore de todos modos...');
+      if (!orderBefore) {
+        console.warn(`⚠️ Orden ${id} no está en estado local, pero procederemos con Firestore`);
       }
       
       if (!user?.uid) {
@@ -388,20 +371,10 @@ export const OrderProvider = ({ children }) => {
           console.log(`     ✅ Guardado en Firestore ID: ${newId}`);
           console.log(`     Status en Firestore: ${data.status}`);
           
-          // Actualizar estado local con el nuevo ID
-          console.log('     📥 Actualizando estado local con ID de Firestore...');
-          setOrders(prev => {
-            const updated = prev.map(order => {
-              if (order.id === id) {
-                console.log(`       ${id} → ${newId}`);
-                return { ...order, ...data, id: newId, updatedAt: new Date() };
-              }
-              return order;
-            });
-            const migrated = updated.find(o => o.id === newId);
-            console.log(`     ✅ Estado actualizado, nuevo ID: ${migrated?.id}`);
-            return updated;
-          });
+          // 🚫 NO actualizar estado local - onSnapshot lo hará automáticamente
+          // Eliminar la orden local del estado
+          setOrders(prev => prev.filter(o => o.id !== id));
+          console.log('     ✅ Orden local eliminada del estado');
         } catch (migrateError) {
           console.error('❌ Error al migrar orden:', migrateError.code);
           console.error('   Mensaje:', migrateError.message);
@@ -426,6 +399,7 @@ export const OrderProvider = ({ children }) => {
           
           console.log(`     ✅ Actualizado en Firestore CON ÉXITO`);
           console.log(`     Nuevo status: ${data.status}`);
+          console.log('     onSnapshot sincronizará el estado automáticamente');
         } catch (error) {
           console.error('❌ ERROR AL ACTUALIZAR EN FIRESTORE');
           console.error('   Código:', error.code);
@@ -442,6 +416,11 @@ export const OrderProvider = ({ children }) => {
           throw error; // ← Propagar el error
         }
       }
+      
+      // ✅ Disparar evento para actualizar timestamp después de actualizar exitosamente
+      window.dispatchEvent(new CustomEvent('orderUpdated', { 
+        detail: { orderId: id, data } 
+      }));
     } catch (error) {
       console.error('❌ Error en updateOrder - No se completó la actualización');
       console.error('   Mensaje:', error.message);
