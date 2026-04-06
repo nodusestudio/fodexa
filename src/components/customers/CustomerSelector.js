@@ -1,11 +1,13 @@
 ﻿import React, { useState } from 'react';
 import { Search, User, Phone, MapPin, Plus, X } from 'lucide-react';
 import { useCustomers } from '../../context/CustomerContext';
+import Toast from '../common/Toast';
 
 const CustomerSelector = ({ onSelectCustomer }) => {
   const { customers = [], addCustomer } = useCustomers();
   const [searchQuery, setSearchQuery] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [toast, setToast] = useState(null);
   const [newCustomer, setNewCustomer] = useState({
     name: '',
     phone: '',
@@ -44,7 +46,7 @@ const CustomerSelector = ({ onSelectCustomer }) => {
 
   const handleSaveNewCustomer = async () => {
     if (!newCustomer.name || !newCustomer.phone || !newCustomer.address) {
-      alert('⚠️ Por favor completa los campos obligatorios (nombre, telefono y direccion)');
+      setToast({ message: '⚠️ Por favor completa los campos obligatorios (nombre, telefono y direccion)', type: 'warning' });
       return;
     }
     const customerWithId = {
@@ -65,10 +67,10 @@ const CustomerSelector = ({ onSelectCustomer }) => {
       }
       setShowForm(false);
       setNewCustomer({ name: '', phone: '', address: '', email: '' });
-      alert('✅ Cliente creado exitosamente');
+      setToast({ message: '✅ Cliente creado exitosamente', type: 'success' });
     } catch (error) {
       console.error('❌ Error al crear cliente:', error);
-      alert('❌ Error al crear el cliente');
+      setToast({ message: '❌ Error al crear el cliente', type: 'error' });
     }
   };
 
@@ -227,6 +229,15 @@ const CustomerSelector = ({ onSelectCustomer }) => {
             </div>
           </div>
         </div>
+      )}
+      
+      {/* Toast de Notificación */}
+      {toast && (
+        <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          onClose={() => setToast(null)} 
+        />
       )}
     </>
   );

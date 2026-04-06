@@ -3,9 +3,11 @@ import { formatCurrency } from '../utils/formatters';
 import { useCash } from '../context/CashContext';
 import { Calendar, Search, Eye, Download } from 'lucide-react';
 import CashClosingTicket from '../components/cash/CashClosingTicket';
+import Toast from '../components/common/Toast';
 
 function CashHistory() {
   const { sessionHistory, getSessionsByDateRange } = useCash();
+  const [toast, setToast] = useState(null);
   const [startDate, setStartDate] = useState(() => {
     const date = new Date();
     date.setDate(date.getDate() - 30); // Últimos 30 días
@@ -122,7 +124,7 @@ function CashHistory() {
 
   const handleExportCSV = () => {
     if (filteredSessions.length === 0) {
-      alert('No hay datos para exportar');
+      setToast({ message: 'No hay datos para exportar', type: 'warning' });
       return;
     }
 
@@ -351,6 +353,14 @@ function CashHistory() {
         onClose={() => setShowTicketModal(false)}
         sessionId={selectedSessionId}
       />
+
+      {toast && (
+        <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          onClose={() => setToast(null)} 
+        />
+      )}
     </div>
   );
 }

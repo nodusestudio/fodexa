@@ -9,6 +9,7 @@ import { Trash2, CreditCard, ShoppingBag, Edit2, Table, Bike, ArrowLeft } from '
 import { useSettings } from '../../context/SettingsContext';
 import { formatCurrency } from '../../utils/formatters';
 import OrderTypeEditor from '../orders/OrderTypeEditor';
+import Toast from '../common/Toast';
 
 const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp, currentOrder, onPayOrder, onCloseCart }) => {
 	const { deliveryData } = useOrder();
@@ -22,6 +23,7 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp, c
 	const [currentNotes, setCurrentNotes] = useState('');
 	const [currentPaymentOrder, setCurrentPaymentOrder] = useState(null);
 	const [isProcessing, setIsProcessing] = useState(false);
+	const [toast, setToast] = useState(null);
 	const isProcessingRef = useRef(false); // 🚫 Ref para prevenir doble clic SÍNCRONO
 	const { settings } = useSettings();
 
@@ -110,22 +112,22 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp, c
 		}
 
 		if (!items || items.length === 0) {
-			alert('⚠️ Agregue productos al carrito');
+			setToast({ message: '⚠️ Agregue productos al carrito', type: 'warning' });
 			return;
 		}
 
 		if (!orderType) {
-			alert('⚠️ Seleccione tipo de orden (Mesa, Para Llevar o Domicilio)');
+			setToast({ message: '⚠️ Seleccione tipo de orden (Mesa, Para Llevar o Domicilio)', type: 'warning' });
 			return;
 		}
 
 		if (orderType === 'table' && !selectedTable) {
-			alert('⚠️ Seleccione una mesa');
+			setToast({ message: '⚠️ Seleccione una mesa', type: 'warning' });
 			return;
 		}
 
 		if (orderType === 'delivery' && !deliveryData?.name) {
-			alert('⚠️ Ingrese nombre del cliente para entrega');
+			setToast({ message: '⚠️ Ingrese nombre del cliente para entrega', type: 'warning' });
 			return;
 		}
 
@@ -457,7 +459,15 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp, c
 					</div>
 				</div>
 			)}
-		</>
+
+		{toast && (
+			<Toast 
+				message={toast.message} 
+				type={toast.type} 
+				onClose={() => setToast(null)} 
+			/>
+		)}
+	</>
 	);
 };
 

@@ -1,23 +1,25 @@
 import React, { useState } from 'react';
 import { useCash } from '../../context/CashContext';
 import { MinusCircle, X } from 'lucide-react';
+import Toast from '../common/Toast';
 
 const CashExpenses = ({ onClose }) => {
   const { addExpense, getTodayExpenses } = useCash();
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
   const [paymentType, setPaymentType] = useState('efectivo');
+  const [toast, setToast] = useState(null);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     
     if (!amount || parseFloat(amount) <= 0) {
-      alert('⚠️ Ingresa un monto válido');
+      setToast({ message: '⚠️ Ingresa un monto válido', type: 'warning' });
       return;
     }
 
     if (!category.trim()) {
-      alert('⚠️ Ingresa una categoría');
+      setToast({ message: '⚠️ Ingresa una categoría', type: 'warning' });
       return;
     }
 
@@ -25,7 +27,7 @@ const CashExpenses = ({ onClose }) => {
     setAmount('');
     setCategory('');
     setPaymentType('efectivo');
-    alert('✅ Egreso registrado exitosamente');
+    setToast({ message: '✅ Egreso registrado exitosamente', type: 'success' });
   };
 
   const todayExpenses = getTodayExpenses();
@@ -123,6 +125,14 @@ const CashExpenses = ({ onClose }) => {
           </div>
         </form>
       </div>
+
+      {toast && (
+        <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          onClose={() => setToast(null)} 
+        />
+      )}
     </div>
   );
 };

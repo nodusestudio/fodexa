@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { X, Check } from 'lucide-react';
+import Toast from '../common/Toast';
 
-const ComboEditor = ({ item, onConfirm, onCancel }) => {
+const ComboEditor = ({ item, onConfirm, onCancel, onToast }) => {
   const [hasCombo, setHasCombo] = useState(
     item.addons?.some(a => a.id === 'combo-papas-bebida') || false
   );
@@ -29,7 +30,7 @@ const ComboEditor = ({ item, onConfirm, onCancel }) => {
 
   const handleConfirm = () => {
     if (hasCombo && !selectedDrink) {
-      alert('Por favor selecciona una bebida');
+      onToast?.('Por favor selecciona una bebida', 'warning');
       return;
     }
 

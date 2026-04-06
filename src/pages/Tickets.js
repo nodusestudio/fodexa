@@ -3,6 +3,7 @@ import { useTickets } from '../context/TicketContext';
 import { formatCurrency } from '../utils/formatters';
 import { Search, Printer, Eye, X, FileText, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import TicketPrint from '../components/tickets/TicketPrint';
+import Toast from '../components/common/Toast';
 
 const Tickets = () => {
   const { getAllTickets, getTicketsByDate, deleteTicket } = useTickets();
@@ -12,6 +13,7 @@ const Tickets = () => {
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [expandedDays, setExpandedDays] = useState({});
   const [expandedCashes, setExpandedCashes] = useState({});
+  const [toast, setToast] = useState(null);
 
   const tickets = getAllTickets();
 
@@ -70,7 +72,7 @@ const Tickets = () => {
         console.log('✅ Ticket y orden eliminados:', ticket.id);
       } catch (error) {
         console.error('❌ Error:', error);
-        alert('Error al eliminar: ' + error.message);
+        setToast({ message: 'Error al eliminar: ' + error.message, type: 'error' });
       }
     }
   };
@@ -267,6 +269,14 @@ const Tickets = () => {
         <TicketPrint
           ticket={selectedTicket}
           onClose={() => { setShowPrintModal(false); setSelectedTicket(null); }}
+        />
+      )}
+
+      {toast && (
+        <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          onClose={() => setToast(null)} 
         />
       )}
     </div>

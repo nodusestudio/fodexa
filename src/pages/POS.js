@@ -15,6 +15,7 @@ import PaymentModal from '../components/payments/PaymentModal';
 import { useProducts } from '../context/ProductContext';
 import { useCash } from '../context/CashContext';
 import { ShoppingCart, Lock, AlertCircle, Check } from 'lucide-react';
+import Toast from '../components/common/Toast';
 
 const POS = () => {
   const navigate = useNavigate();
@@ -37,6 +38,7 @@ const POS = () => {
   const [ticketToPrint, setTicketToPrint] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false); // 🔴 Para pagar desde OrderBoard
   const [selectedOrderForPayment, setSelectedOrderForPayment] = useState(null); // 🔴 Orden a pagar
+  const [toast, setToast] = useState(null);
 
   const { getActiveProducts, getActiveCategories } = useProducts();
   const dynamicProducts = getActiveProducts();
@@ -109,7 +111,7 @@ const POS = () => {
   const handleNewOrder = (type) => {
     // ✅ PHASE 3: Bloquear si caja no está abierta
     if (!isCashOpen) {
-      alert('⚠️ Debes abrir caja antes de crear órdenes');
+      setToast({ message: '⚠️ Debes abrir caja antes de crear órdenes', type: 'warning' });
       setShowNoCashModal(true);
       return;
     }
@@ -455,7 +457,7 @@ const POS = () => {
                     await openCash({ initialAmount: 0 });
                   } catch (error) {
                     console.error('❌ Error abriendo caja:', error);
-                    alert('Error al abrir caja: ' + error.message);
+                    setToast({ message: 'Error al abrir caja: ' + error.message, type: 'error' });
                   }
                 }}
                 className="px-4 sm:px-6 py-2 sm:py-3 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-lg transition-colors text-sm sm:text-base"
@@ -487,6 +489,14 @@ const POS = () => {
             setSelectedOrderForPayment(null);
             // La orden ya fue actualizada a 'completed' por PaymentModal
           }}
+        />
+      )}
+
+      {toast && (
+        <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          onClose={() => setToast(null)} 
         />
       )}
     </div>

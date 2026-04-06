@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Mail, Lock, AlertCircle, Loader, Eye, EyeOff } from 'lucide-react';
 import { APP_VERSION, VERSION_NUMBER } from '../config/version';
+import Toast from '../components/common/Toast';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -14,6 +15,7 @@ export default function Login() {
   const [error, setError] = useState('');
   const [recoveryEmail, setRecoveryEmail] = useState('');
   const [recoveryMessage, setRecoveryMessage] = useState('');
+  const [toast, setToast] = useState(null);
   const { login, signup, resetPassword } = useAuth();
   const navigate = useNavigate();
 
@@ -25,7 +27,7 @@ export default function Login() {
     try {
       if (isSignUp) {
         await signup(email, password);
-        alert('✅ Cuenta creada. Inicia sesión ahora.');
+        setToast({ message: '✅ Cuenta creada. Inicia sesión ahora.', type: 'success' });
         setIsSignUp(false);
       } else {
         await login(email, password);
@@ -268,6 +270,14 @@ export default function Login() {
           </p>
         </div>
       </div>
+
+      {toast && (
+        <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          onClose={() => setToast(null)} 
+        />
+      )}
     </div>
   );
 }

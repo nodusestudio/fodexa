@@ -6,6 +6,7 @@ import SalesChart from '../components/dashboard/SalesChart';
 import CategoryChart from '../components/dashboard/CategoryChart';
 import PaymentChart from '../components/dashboard/PaymentChart';
 import TopProducts from '../components/dashboard/TopProducts';
+import Toast from '../components/common/Toast';
 
 const Dashboard = () => {
   const {
@@ -16,6 +17,7 @@ const Dashboard = () => {
     getTopProducts,
     getRecentOrders,
   } = useReports();
+  const [toast, setToast] = useState(null);
 
   const [period, setPeriod] = useState('today');
   const [customRange, setCustomRange] = useState({
@@ -65,7 +67,7 @@ const Dashboard = () => {
   const recentOrders = getRecentOrders(5);
 
   const handleExport = () => {
-    alert('📥 Función de exportación en desarrollo...');
+    setToast({ message: '📥 Función de exportación en desarrollo...', type: 'info' });
   };
 
   const handleRefresh = () => {
@@ -247,6 +249,14 @@ const Dashboard = () => {
           )}
         </div>
       </div>
+
+      {toast && (
+        <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          onClose={() => setToast(null)} 
+        />
+      )}
     </div>
   );
 };
