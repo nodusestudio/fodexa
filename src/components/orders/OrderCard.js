@@ -259,11 +259,12 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
     }
   }, [order.status]);
 
-  // 🚚 Timer para órdenes de delivery recién creadas (pending o waiting) - Muestra 10 minutos
+  // 🚚 Timer para órdenes de delivery recién creadas (SOLO pending) - Muestra 10 minutos
   useEffect(() => {
-    // Solo para órdenes de delivery en status 'pending' o 'waiting'
-    if (order.type !== 'delivery' || (order.status !== 'pending' && order.status !== 'waiting')) {
+    // Solo para órdenes de delivery en status 'pending' - NOT 'waiting'
+    if (order.type !== 'delivery' || order.status !== 'pending') {
       setDeliveryTimerStarted(false);
+      setShowDeliveryTimerModal(false); // Asegurar que se cierre al cambiar de pending
       return;
     }
 
@@ -289,7 +290,8 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
       setDeliveryCountdownSeconds(seconds);
 
       // Cuando llega al umbral, reproducir sonido y mostrar alerta
-      if (minutes >= deliveryTimerThreshold && !showDeliveryTimerModal) {
+      // SOLO si status sigue siendo 'pending'
+      if (minutes >= deliveryTimerThreshold && !showDeliveryTimerModal && order.status === 'pending') {
         playAlarm();
         setShowDeliveryTimerModal(true);
         console.log(`⏰ [OrderCard] ¡Alerta! Delivery lleva ${minutes} minutos`);
