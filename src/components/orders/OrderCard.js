@@ -369,7 +369,7 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
       return;
     }
     
-    console.log('� [OrderCard] handleDelivery() EJECUTADO para orden:', order.id);
+    console.log('🚚 [OrderCard] handleDelivery() EJECUTADO para orden:', order.id);
     const message = `me mandas un domiciliario por favor, va para ${order.deliveryData?.address || 'la dirección'}`;
     copyToClipboard(message);
     
@@ -386,7 +386,8 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
     lastDeliveryAlarmMinuteRef.current = -1; // Reset ref para nueva alarma
     setShowDeliveryAlertModal(false); // Cerrar modal del timer si está abierto
     setShowDeliveryTimerModal(false); // Cerrar modal flotante
-    console.log('✅ [OrderCard] handleDelivery() completado');
+    deliveryAlarmShownRef.current = true; // 🚚 IMPORTANTE: Prevent alarm from firing again after user clicks "Solicitar Domi"
+    console.log('✅ [OrderCard] handleDelivery() completado - Alarma deshabilitada para no dispararse nuevamente');
   };
 
   const handleDeliveryCompleted = () => {
