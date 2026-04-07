@@ -246,13 +246,9 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
     return () => clearInterval(interval);
   }, [order.status, deliveryStartTime]);
 
-  // 🚚 Efecto para cerrar el modal cuando el status cambia a 'waiting'
-  useEffect(() => {
-    if (order.status === 'waiting') {
-      console.log(`🚚 [OrderCard] Status es 'waiting', cerrando modal flotante`);
-      setShowDeliveryTimerModal(false);
-    }
-  }, [order.status]);
+  // 🚚 NO CERRAR el modal automáticamente cuando cambia a 'waiting'
+  // El usuario debe cerrar manualmente o ver la alarma flotante 
+  // (Se cierra en handleDelivery cuando hace clic en "Solicitar Domi")
 
   // 🚚 Timer para órdenes de delivery - SIEMPRE mostrar contador
   useEffect(() => {
@@ -288,9 +284,9 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
       setDeliveryCountdownMinutes(minutes);
       setDeliveryCountdownSeconds(seconds);
 
-      // 🚚 SIMPLE: Si minutos >= umbral Y status=pending Y no hemos mostrado alarma
-      if (minutes >= deliveryTimerThreshold && order.status === 'pending' && !deliveryAlarmShownRef.current) {
-        console.log(`⏰ [DELIVERY ALARM TRIGGERED] ${minutes}min >= ${deliveryTimerThreshold}min THRESHOLD - Mostrando modal`);
+      // 🚚 ALARMA: Se dispara cuando minutos >= umbral Y (status=pending O status=waiting) Y no hemos mostrado alarma
+      if (minutes >= deliveryTimerThreshold && (order.status === 'pending' || order.status === 'waiting') && !deliveryAlarmShownRef.current) {
+        console.log(`⏰ [DELIVERY ALARM TRIGGERED] ${minutes}min >= ${deliveryTimerThreshold}min THRESHOLD - Status: ${order.status} - Mostrando modal`);
         playAlarm();
         setShowDeliveryTimerModal(true);
         deliveryAlarmShownRef.current = true;
