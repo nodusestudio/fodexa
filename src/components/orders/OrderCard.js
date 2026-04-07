@@ -259,7 +259,7 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
     }
   }, [order.status]);
 
-  // 🚚 Timer para órdenes de delivery - SIEMPRE mostrar contador, modal solo si pending
+  // 🚚 Timer para órdenes de delivery - SIEMPRE mostrar contador
   useEffect(() => {
     // Timer se ejecuta para delivery en pending O waiting
     if (order.type !== 'delivery' || (order.status !== 'pending' && order.status !== 'waiting')) {
@@ -287,18 +287,25 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
 
       setDeliveryCountdownMinutes(minutes);
       setDeliveryCountdownSeconds(seconds);
-
-      // Cuando llega al umbral, reproducir sonido y mostrar alerta
-      // SOLO si status es 'pending' y modal no está abierto
-      if (minutes >= deliveryTimerThreshold && !showDeliveryTimerModal && order.status === 'pending') {
-        playAlarm();
-        setShowDeliveryTimerModal(true);
-        console.log(`⏰ [OrderCard] ¡Alerta! Delivery lleva ${minutes} minutos`);
-      }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [order.type, order.status, deliveryTimerStartTime, deliveryTimerThreshold, showDeliveryTimerModal]);
+  }, [order.type, order.status, deliveryTimerStartTime]);
+
+  // 🚚 Effect SEPARADO para mostrar el modal (solo si pending)
+  useEffect(() => {
+    // Solo abrir modal si status es pending Y minutos >= umbral Y modal no está abierto
+    if (order.type !== 'delivery' || order.status !== 'pending' || showDeliveryTimerModal) {
+      return;
+    }
+
+    // Verificar si ya llegó al umbral
+    if (deliveryCountdownMinutes >= deliveryTimerThreshold) {
+      console.log(`⏰ [OrderCard] ¡Alerta! Delivery lleva ${deliveryCountdownMinutes} minutos`);
+      playAlarm();
+      setShowDeliveryTimerModal(true);
+    }
+  }, [order.type, order.status, deliveryCountdownMinutes, deliveryTimerThreshold, showDeliveryTimerModal]);
 
   // Reproducir alarma de sonido
   const playAlarm = () => {
