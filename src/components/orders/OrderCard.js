@@ -295,13 +295,26 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
   // 🚚 Effect SEPARADO para mostrar el modal (solo si pending)
   useEffect(() => {
     // Solo abrir modal si status es pending Y minutos >= umbral Y modal no está abierto
-    if (order.type !== 'delivery' || order.status !== 'pending' || showDeliveryTimerModal) {
+    if (order.type !== 'delivery') {
+      console.log(`🚚 [Modal Effect] No es delivery`);
+      return;
+    }
+    
+    if (order.status !== 'pending') {
+      console.log(`🚚 [Modal Effect] Status no es pending: ${order.status}`);
+      return;
+    }
+    
+    if (showDeliveryTimerModal) {
+      console.log(`🚚 [Modal Effect] Modal ya está abierto`);
       return;
     }
 
+    console.log(`🚚 [Modal Effect] Chequeando: minutos=${deliveryCountdownMinutes}, umbral=${deliveryTimerThreshold}`);
+
     // Verificar si ya llegó al umbral
     if (deliveryCountdownMinutes >= deliveryTimerThreshold) {
-      console.log(`⏰ [OrderCard] ¡Alerta! Delivery lleva ${deliveryCountdownMinutes} minutos`);
+      console.log(`⏰ [OrderCard] ¡ALERTA! Delivery lleva ${deliveryCountdownMinutes} minutos, umbral ${deliveryTimerThreshold}`);
       playAlarm();
       setShowDeliveryTimerModal(true);
     }
