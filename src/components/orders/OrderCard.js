@@ -246,6 +246,15 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
     return () => clearInterval(interval);
   }, [order.status, deliveryStartTime]);
 
+  // 🚚 CERRAR el modal DEFINITIVAMENTE cuando status cambia a 'waiting'
+  useEffect(() => {
+    if (order.status === 'waiting') {
+      console.log(`🚚 [OrderCard] Status cambió a 'waiting' - CERRANDO MODAL DEFINITIVAMENTE`);
+      setShowDeliveryTimerModal(false);
+      // El ref ya está a true gracias a handleDelivery(), así que no se reabrirá
+    }
+  }, [order.status]);
+
   // 🚚 NO CERRAR el modal automáticamente cuando cambia a 'waiting'
   // El usuario debe cerrar manualmente o ver la alarma flotante 
   // (Se cierra en handleDelivery cuando hace clic en "Solicitar Domi")
@@ -798,6 +807,7 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
       {showDeliveryTimerModal && order.type === 'delivery' && (
         <DeliveryTimer 
           orderId={order.id} 
+          orderStatus={order.status}
           currentMinutes={deliveryCountdownMinutes}
           currentSeconds={deliveryCountdownSeconds}
           onContinuePreparing={handleContinuePreparingDelivery}
