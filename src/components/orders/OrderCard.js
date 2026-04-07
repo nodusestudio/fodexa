@@ -150,7 +150,11 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
   const [deliveryCountdownSeconds, setDeliveryCountdownSeconds] = useState(0); // Timer para delivery recién creado
   const [deliveryTimerStarted, setDeliveryTimerStarted] = useState(false);
   const [showDeliveryAlertModal, setShowDeliveryAlertModal] = useState(false); // Modal cuando llega a 10 min
-  const [deliveryTimerThreshold, setDeliveryTimerThreshold] = useState(10); // Umbral: 10 min primero, luego 5 min
+  
+  // 🔴 Obtener configuración del timer de delivery
+  const firstAlarmMinutes = settings?.deliveryTimer?.firstAlarmMinutes ?? 10;
+  const secondAlarmMinutes = settings?.deliveryTimer?.secondAlarmMinutes ?? 5;
+  const [deliveryTimerThreshold, setDeliveryTimerThreshold] = useState(firstAlarmMinutes); // Umbral configurable
   
   // 🔴 Obtener tiempos de Firestore
   const preparingStartTime = order.preparingStartTime ? new Date(order.preparingStartTime) : null;
@@ -241,10 +245,10 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
     if (order.type === 'delivery' && (order.status === 'pending' || order.status === 'waiting')) {
       // Solo resetear si es una nueva orden o si ya no tiene deliveryTimerStartTime
       if (!order.deliveryTimerStartTime) {
-        setDeliveryTimerThreshold(10); // Volver a 10 minutos para nueva orden
+        setDeliveryTimerThreshold(firstAlarmMinutes); // Usar configuración para nueva orden
       }
     }
-  }, [order.id, order.deliveryTimerStartTime]);
+  }, [order.id, order.deliveryTimerStartTime, firstAlarmMinutes]);
 
   // 🚚 Timer para órdenes de delivery recién creadas (pending o waiting) - Muestra 10 minutos
   useEffect(() => {
@@ -289,22 +293,56 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
     // Solo reproducir sonido si está habilitado
     if (!alarmSound) return;
     
-    // Crear un sonido "puf" con Web Audio API
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-
-    oscillator.frequency.value = 400;
-    oscillator.type = 'sine';
-
-    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.5);
+    try {
+      // Obtener tipo de sonido de settings
+      const soundType = settings?.systemAlerts?.soundType || 'beep-double';
+      const soundVolume = (settings?.systemAlerts?.soundVolume || 80) / 100;
+      
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      
+      // Diferentes tipos de sonido
+      const playSound = (startTime, frequency, duration, volume) => {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = frequency;
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(volume * soundVolume, audioContext.currentTime + startTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + startTime + duration);
+        
+        oscillator.start(audioContext.currentTime + startTime);
+        oscillator.stop(audioContext.currentTime + startTime + duration);
+      };
+      
+      // Reproducir según tipo de sonido
+      switch(soundType) {
+        case 'beep-triple':
+          playSound(0, 800, 0.2, 0.8);
+          playSound(0.25, 800, 0.2, 0.8);
+          playSound(0.5, 800, 0.2, 0.8);
+          break;
+        case 'alarm':
+          playSound(0, 1000, 0.3, 1.0);
+          playSound(0.35, 1200, 0.3, 1.0);
+          playSound(0.7, 1000, 0.3, 1.0);
+          break;
+        case 'siren':
+          for (let i = 0; i < 3; i++) {
+            playSound(i * 0.4, 600 + (i * 200), 0.3, 1.0);
+          }
+          break;
+        default: // beep-double
+          playSound(0, 800, 0.25, 0.9);
+          playSound(0.3, 800, 0.25, 0.9);
+          break;
+      }
+    } catch (error) {
+      console.warn('Error reproduciendo alarma:', error);
+    }
   };
 
   const copyToClipboard = (text) => {
@@ -365,9 +403,9 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
     setDeliveryCountdownMinutes(0);
     setDeliveryCountdownSeconds(0);
     setShowDeliveryAlertModal(false);
-    // Cambiar umbral a 5 minutos para la próxima alerta
-    setDeliveryTimerThreshold(5);
-    console.log(`🟡 [OrderCard] Timer reseteado. Próximo umbral: 5 minutos`);
+    // Cambiar umbral al segundo valor configurado
+    setDeliveryTimerThreshold(secondAlarmMinutes);
+    console.log(`🟡 [OrderCard] Timer reseteado. Próximo umbral: ${secondAlarmMinutes} minutos`);
   };
 
   // 🚚 Callback cuando se pulsa "Solicitar Domi" en el DeliveryTimer flotante
