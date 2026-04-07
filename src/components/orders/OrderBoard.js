@@ -88,6 +88,11 @@ const OrderBoard = ({ onNewOrder, onEditOrder, onPayOrder, onDeleteOrder }) => {
       return isDeliveryValid;
     })
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  
+  console.log(`🚚 [DELIVERY] Mostrando ${deliveryOrders.length} órdenes de delivery (pending/preparing/waiting)`);
+  if (deliveryOrders.length > 0) {
+    deliveryOrders.forEach(o => console.log(`   - ${o.id.substring(0,8)}... status=${o.status}`));
+  }
 
   // Sumar costos de entrega SOLO de domicilios en espera o completados
   // (órdenes pendientes sin pagar no tienen costo de entrega aún confirmado)
