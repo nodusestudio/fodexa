@@ -258,11 +258,13 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
       return;
     }
 
-    // Si no tiene deliveryTimerStartTime, crearlo
+    console.log(`🚚 [OrderCard] Delivery timer effect - order: ${order.id}, status: ${order.status}, startTime: ${deliveryTimerStartTime}`);
+
+    // Si no tiene deliveryTimerStartTime, crearlo (fallback)
     if (!deliveryTimerStartTime) {
+      console.warn(`🚚 [OrderCard] Sin deliveryTimerStartTime, guardando uno nuevo...`);
       const startTime = new Date().getTime();
       onUpdateStatus(order.id, { deliveryTimerStartTime: startTime });
-      console.log(`🚚 [OrderCard] Iniciando delivery timer para orden ${order.id}`);
       return; // Esperar a que se actualice la orden
     }
 

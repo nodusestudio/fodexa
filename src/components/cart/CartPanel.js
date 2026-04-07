@@ -148,6 +148,8 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp, c
 			taxesConfig: { enabled: taxEnabled, value: taxValue },
 			currencyCode: currencyCode,
 			timestamp: new Date(),
+			// 🚚 Si es delivery, guardar el timestamp del inicio del timer
+			...(orderType === 'delivery' && { deliveryTimerStartTime: new Date().getTime() }),
 		};
 
 		try {
