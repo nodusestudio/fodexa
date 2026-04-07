@@ -150,6 +150,7 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
   const [deliveryCountdownSeconds, setDeliveryCountdownSeconds] = useState(0); // Timer para delivery recién creado
   const [deliveryTimerStarted, setDeliveryTimerStarted] = useState(false);
   const [showDeliveryAlertModal, setShowDeliveryAlertModal] = useState(false); // Modal cuando llega a 10 min
+  const [showDeliveryTimerModal, setShowDeliveryTimerModal] = useState(false); // Control para cerrar DeliveryTimer flotante
   
   // 🔴 Obtener configuración del timer de delivery
   const firstAlarmMinutes = settings?.deliveryTimer?.firstAlarmMinutes ?? 10;
@@ -280,15 +281,15 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
       setDeliveryCountdownSeconds(seconds);
 
       // Cuando llega al umbral, reproducir sonido y mostrar alerta
-      if (minutes >= deliveryTimerThreshold && !showDeliveryAlertModal) {
+      if (minutes >= deliveryTimerThreshold && !showDeliveryTimerModal) {
         playAlarm();
-        setShowDeliveryAlertModal(true);
+        setShowDeliveryTimerModal(true);
         console.log(`⏰ [OrderCard] ¡Alerta! Delivery lleva ${minutes} minutos`);
       }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [order.type, order.status, deliveryTimerStartTime, deliveryTimerThreshold, showDeliveryAlertModal]);
+  }, [order.type, order.status, deliveryTimerStartTime, deliveryTimerThreshold, showDeliveryTimerModal]);
 
   // Reproducir alarma de sonido
   const playAlarm = () => {
@@ -379,6 +380,7 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
     setDeliveryStartTime(new Date());
     lastDeliveryAlarmMinuteRef.current = -1; // Reset ref para nueva alarma
     setShowDeliveryAlertModal(false); // Cerrar modal del timer si está abierto
+    setShowDeliveryTimerModal(false); // Cerrar modal flotante
     console.log('✅ [OrderCard] handleDelivery() completado');
   };
 
@@ -413,6 +415,7 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
     setDeliveryCountdownMinutes(0);
     setDeliveryCountdownSeconds(0);
     setShowDeliveryAlertModal(false);
+    setShowDeliveryTimerModal(false); // Cerrar modal al continuar preparando
     // Cambiar umbral al segundo valor configurado
     setDeliveryTimerThreshold(secondAlarmMinutes);
     console.log(`🟡 [OrderCard] Timer reseteado. Próximo umbral: ${secondAlarmMinutes} minutos`);
@@ -420,7 +423,9 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
 
   // 🚚 Callback cuando se pulsa "Solicitar Domi" en el DeliveryTimer flotante
   const handleRequestDeliveryFromTimer = () => {
+    console.log('🚚 [OrderCard] handleRequestDeliveryFromTimer() ejecutado');
     setShowDeliveryAlertModal(false);
+    setShowDeliveryTimerModal(false); // Cerrar modal inmediatamente
     handleDelivery();
   };
 
@@ -784,7 +789,7 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
       )}
 
       {/* Floating DeliveryTimer - Aparece cuando llega al umbral (10 o 5 minutos) */}
-      {deliveryCountdownMinutes >= deliveryTimerThreshold && order.type === 'delivery' && (
+      {showDeliveryTimerModal && order.type === 'delivery' && (
         <DeliveryTimer 
           orderId={order.id} 
           currentMinutes={deliveryCountdownMinutes}
