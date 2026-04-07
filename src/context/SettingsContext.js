@@ -131,6 +131,17 @@ const defaultSettings = {
     requireNote: false, // Requerir nota al pagar
     showBalance: true, // Mostrar saldo pendiente
     autoClose: false // Cerrar orden después de pagar
+  },
+  deliveryTimer: {
+    // 🚚 Configuración del Timer de Delivery
+    firstAlarmMinutes: 10, // ⏰ Minutos para primera alarma (cuando se crea la orden)
+    secondAlarmMinutes: 5, // ⏰ Minutos para segunda alarma (cuando se hace clic en "Aún preparando")
+    deliveryTimeoutMinutes: 20 // ⏰ Minutos máximos en la sección Domicilios
+  },
+  systemAlerts: {
+    // 🔔 Configuración de Alertas del Sistema
+    soundType: 'beep-double', // Tipo de sonido: 'beep-double', 'beep-triple', 'alarm', 'siren'
+    soundVolume: 80 // Volumen del sonido (0-100)
   }
 };
 
@@ -160,6 +171,14 @@ export const SettingsProvider = ({ children }) => {
           ...defaultSettings.payment.methods,
           ...(loaded.payment?.methods || {})
         }
+      },
+      deliveryTimer: {
+        ...defaultSettings.deliveryTimer,
+        ...(loaded.deliveryTimer || {})
+      },
+      systemAlerts: {
+        ...defaultSettings.systemAlerts,
+        ...(loaded.systemAlerts || {})
       }
     };
   });
@@ -193,6 +212,14 @@ export const SettingsProvider = ({ children }) => {
                 ...defaultSettings.payment.methods,
                 ...(firestoreSettings.payment?.methods || {})
               }
+            },
+            deliveryTimer: {
+              ...defaultSettings.deliveryTimer,
+              ...(firestoreSettings.deliveryTimer || {})
+            },
+            systemAlerts: {
+              ...defaultSettings.systemAlerts,
+              ...(firestoreSettings.systemAlerts || {})
             }
           }));
           console.log('✅ Settings cargados desde Firestore');

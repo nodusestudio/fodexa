@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSettings } from '../context/SettingsContext';
-import { Settings as SettingsIcon, Building2, Receipt, Percent, DollarSign, Languages, Palette, Sliders, Trash2, Wrench, Layers } from 'lucide-react';
+import { Settings as SettingsIcon, Building2, Receipt, Percent, DollarSign, Languages, Palette, Sliders, Trash2, Wrench, Layers, Clock } from 'lucide-react';
 import CompanySettings from '../components/settings/CompanySettings';
 import TicketSettings from '../components/settings/TicketSettings';
 import TaxSettings from '../components/settings/TaxSettings';
@@ -9,6 +9,7 @@ import LanguageSettings from '../components/settings/LanguageSettings';
 import AppearanceSettings from '../components/settings/AppearanceSettings';
 import GeneralSettings from '../components/settings/GeneralSettings';
 import DeliverySettings from '../components/settings/DeliverySettings';
+import DeliveryTimerSettings from '../components/settings/DeliveryTimerSettings';
 import BoardSettings from '../components/settings/BoardSettings';
 import CleanupTools from '../components/common/CleanupTools';
 
@@ -23,6 +24,7 @@ const Settings = () => {
     { id: 'taxes', label: 'Impuestos', icon: Percent },
     { id: 'currency', label: 'Moneda', icon: DollarSign },
     { id: 'delivery', label: 'Domicilios', icon: Sliders },
+    { id: 'delivery-timer', label: 'Timer Delivery', icon: Clock },
     { id: 'language', label: 'Idioma', icon: Languages },
     { id: 'appearance', label: 'Apariencia', icon: Palette },
     { id: 'general', label: 'General', icon: Sliders },
@@ -107,6 +109,7 @@ const Settings = () => {
         {activeTab === 'taxes' && <TaxSettings />}
         {activeTab === 'currency' && <CurrencySettings />}
         {activeTab === 'delivery' && <DeliverySettings />}
+        {activeTab === 'delivery-timer' && <DeliveryTimerSettings />}
         {activeTab === 'language' && <LanguageSettings />}
         {activeTab === 'appearance' && <AppearanceSettings />}
         {activeTab === 'general' && <GeneralSettings />}

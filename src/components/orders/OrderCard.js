@@ -157,6 +157,9 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
   const secondAlarmMinutes = settings?.deliveryTimer?.secondAlarmMinutes ?? 5;
   // 🚚 SIEMPRE usar el valor actual de firstAlarmMinutes (no usar state)
   const deliveryTimerThreshold = firstAlarmMinutes;
+
+  // 🔴 LOG: Mostrar qué valores estamos usando
+  console.log(`🚚 [OrderCard CONFIG] firstAlarmMinutes=${firstAlarmMinutes}, alarmTime=${alarmTime}, settings.deliveryTimer=`, settings?.deliveryTimer);
   
   // 🔴 Obtener tiempos de Firestore
   const preparingStartTime = order.preparingStartTime ? new Date(order.preparingStartTime) : null;
@@ -259,7 +262,7 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
       return;
     }
 
-    console.log(`🚚 [OrderCard] Delivery timer effect - order: ${order.id}, status: ${order.status}, startTime: ${deliveryTimerStartTime}`);
+    console.log(`🚚 [OrderCard DELIVERY TIMER] Iniciando - order: ${order.id}, status: ${order.status}, firstAlarmMinutes(threshold): ${firstAlarmMinutes}`);
 
     // Si no tiene deliveryTimerStartTime, crearlo (fallback)
     if (!deliveryTimerStartTime) {
@@ -287,7 +290,7 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
 
       // 🚚 SIMPLE: Si minutos >= umbral Y status=pending Y no hemos mostrado alarma
       if (minutes >= deliveryTimerThreshold && order.status === 'pending' && !deliveryAlarmShownRef.current) {
-        console.log(`⏰ [OrderCard TIMER] ¡ALERTA! ${minutes}min >= ${deliveryTimerThreshold}min umbral`);
+        console.log(`⏰ [DELIVERY ALARM TRIGGERED] ${minutes}min >= ${deliveryTimerThreshold}min THRESHOLD - Mostrando modal`);
         playAlarm();
         setShowDeliveryTimerModal(true);
         deliveryAlarmShownRef.current = true;
