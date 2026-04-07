@@ -251,6 +251,14 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
     }
   }, [order.id, order.deliveryTimerStartTime, firstAlarmMinutes]);
 
+  // 🚚 Efecto para cerrar el modal cuando el status cambia a 'waiting'
+  useEffect(() => {
+    if (order.status === 'waiting') {
+      console.log(`🚚 [OrderCard] Status es 'waiting', cerrando modal flotante`);
+      setShowDeliveryTimerModal(false);
+    }
+  }, [order.status]);
+
   // 🚚 Timer para órdenes de delivery recién creadas (pending o waiting) - Muestra 10 minutos
   useEffect(() => {
     // Solo para órdenes de delivery en status 'pending' o 'waiting'
