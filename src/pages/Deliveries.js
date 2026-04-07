@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useTickets } from '../context/TicketContext';
 import { useSettings } from '../context/SettingsContext';
 import { Search, RefreshCw, Truck, ChevronDown, ChevronUp, Printer, Check, BookOpen, X } from 'lucide-react';
@@ -54,8 +54,12 @@ const DomiAssignModal = ({ ticketId, domiName: initialDomiName, onSave, onClose 
 // Componente para fila de escritorio (grid de 12 columnas)
 const DeliveryRowDesktop = ({ ticket, onUpdateField, onMarkDelivered, onPrintGuide }) => {
   const [showDomiModal, setShowDomiModal] = useState(false);
+  const [deliveryTimeLeft, setDeliveryTimeLeft] = useState(0);
+  const { settings } = useSettings();
+  
   const deliveryData = ticket.deliveryData || ticket.customer || {};
   const status = ticket.deliveryStatus || 'pending';
+  const deliveryTimeoutMinutes = settings?.deliveryTimer?.deliveryTimeoutMinutes ?? 20;
   
   // Lógica de cálculo de cobro/pago
   const calculatePaymentInfo = () => {
@@ -98,6 +102,38 @@ const DeliveryRowDesktop = ({ ticket, onUpdateField, onMarkDelivered, onPrintGui
   };
   
   const paymentInfo = calculatePaymentInfo();
+  
+  // 🚚 Timer para domicilio cuando el estado es "solicitar-domi"
+  useEffect(() => {
+    if (status !== 'solicitar-domi') {
+      setDeliveryTimeLeft(0);
+      return;
+    }
+
+    // Si no tiene deliveryRequestedAt, guardarlo ahora
+    if (!ticket.deliveryRequestedAt) {
+      onUpdateField(ticket.id, 'deliveryRequestedAt', new Date().getTime());
+      setDeliveryTimeLeft(deliveryTimeoutMinutes * 60); // Convertir a segundos
+      return;
+    }
+
+    const interval = setInterval(() => {
+      const now = new Date().getTime();
+      const requestedTime = ticket.deliveryRequestedAt || now;
+      const elapsedSeconds = Math.floor((now - requestedTime) / 1000);
+      const totalSeconds = deliveryTimeoutMinutes * 60;
+      const secondsLeft = Math.max(0, totalSeconds - elapsedSeconds);
+
+      setDeliveryTimeLeft(secondsLeft);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [status, ticket.deliveryRequestedAt, deliveryTimeoutMinutes, ticket.id]);
+
+  // Convertir segundos a MM:SS
+  const deliveryMinutes = Math.floor(deliveryTimeLeft / 60);
+  const deliverySeconds = deliveryTimeLeft % 60;
+  const deliveryTimeDisplay = `${deliveryMinutes.toString().padStart(2, '0')}:${deliverySeconds.toString().padStart(2, '0')}`;
   
   // Verificar si está esperando pago del domi
   const domiName = ticket.domiName || null;
@@ -152,7 +188,7 @@ const DeliveryRowDesktop = ({ ticket, onUpdateField, onMarkDelivered, onPrintGui
         </div>
 
         {/* ESTADO - col-span-3 */}
-        <div className="col-span-3 flex justify-center">
+        <div className="col-span-3 flex flex-col justify-center items-center gap-1">
           <div className="w-full">
             <DeliveryStatusSelector
               ticketId={ticket.id}
@@ -164,6 +200,12 @@ const DeliveryRowDesktop = ({ ticket, onUpdateField, onMarkDelivered, onPrintGui
               }}
             />
           </div>
+          {/* Mostrar contador si status es solicitar-domi */}
+          {status === 'solicitar-domi' && deliveryTimeLeft > 0 && (
+            <div className="w-full text-center bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 px-2 py-1 rounded text-xs font-bold font-mono">
+              ⏱️ {deliveryTimeDisplay}
+            </div>
+          )}
         </div>
 
         {/* PAGOS - col-span-1 */}
