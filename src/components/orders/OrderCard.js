@@ -155,7 +155,8 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
   // 🔴 Obtener configuración del timer de delivery
   const firstAlarmMinutes = settings?.deliveryTimer?.firstAlarmMinutes ?? 10;
   const secondAlarmMinutes = settings?.deliveryTimer?.secondAlarmMinutes ?? 5;
-  const [deliveryTimerThreshold, setDeliveryTimerThreshold] = useState(firstAlarmMinutes); // Umbral configurable
+  // 🚚 SIEMPRE usar el valor actual de firstAlarmMinutes (no usar state)
+  const deliveryTimerThreshold = firstAlarmMinutes;
   
   // 🔴 Obtener tiempos de Firestore
   const preparingStartTime = order.preparingStartTime ? new Date(order.preparingStartTime) : null;
@@ -175,6 +176,7 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
   const lastDeliveryAlarmMinuteRef = useRef(-1);
   const isProcessingStatusChangeRef = useRef(false); // 🔴 Prevenir doble click en botón de status
   const alarmTriggeredRef = useRef(false); // 🔴 Rastrear si ya se disparó alarma a los 20min
+  const deliveryAlarmShownRef = useRef(false); // 🚚 Rastrear si ya se mostró alarma delivery
 
   // Timer para contar tiempo de preparación o servido en mesa
   useEffect(() => {
@@ -241,16 +243,6 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
     return () => clearInterval(interval);
   }, [order.status, deliveryStartTime]);
 
-  // 🚚 Reinicializar threshold cuando cambia la orden
-  useEffect(() => {
-    if (order.type === 'delivery' && (order.status === 'pending' || order.status === 'waiting')) {
-      // Solo resetear si es una nueva orden o si ya no tiene deliveryTimerStartTime
-      if (!order.deliveryTimerStartTime) {
-        setDeliveryTimerThreshold(firstAlarmMinutes); // Usar configuración para nueva orden
-      }
-    }
-  }, [order.id, order.deliveryTimerStartTime, firstAlarmMinutes]);
-
   // 🚚 Efecto para cerrar el modal cuando el status cambia a 'waiting'
   useEffect(() => {
     if (order.status === 'waiting') {
@@ -277,6 +269,11 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
       return; // Esperar a que se actualice la orden
     }
 
+    // Reset ref cuando entra a pending
+    if (order.status === 'pending') {
+      deliveryAlarmShownRef.current = false;
+    }
+
     setDeliveryTimerStarted(true);
 
     const interval = setInterval(() => {
@@ -287,38 +284,18 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
 
       setDeliveryCountdownMinutes(minutes);
       setDeliveryCountdownSeconds(seconds);
+
+      // 🚚 SIMPLE: Si minutos >= umbral Y status=pending Y no hemos mostrado alarma
+      if (minutes >= deliveryTimerThreshold && order.status === 'pending' && !deliveryAlarmShownRef.current) {
+        console.log(`⏰ [OrderCard TIMER] ¡ALERTA! ${minutes}min >= ${deliveryTimerThreshold}min umbral`);
+        playAlarm();
+        setShowDeliveryTimerModal(true);
+        deliveryAlarmShownRef.current = true;
+      }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [order.type, order.status, deliveryTimerStartTime]);
-
-  // 🚚 Effect SEPARADO para mostrar el modal (solo si pending)
-  useEffect(() => {
-    // Solo abrir modal si status es pending Y minutos >= umbral Y modal no está abierto
-    if (order.type !== 'delivery') {
-      console.log(`🚚 [Modal Effect] No es delivery`);
-      return;
-    }
-    
-    if (order.status !== 'pending') {
-      console.log(`🚚 [Modal Effect] Status no es pending: ${order.status}`);
-      return;
-    }
-    
-    if (showDeliveryTimerModal) {
-      console.log(`🚚 [Modal Effect] Modal ya está abierto`);
-      return;
-    }
-
-    console.log(`🚚 [Modal Effect] Chequeando: minutos=${deliveryCountdownMinutes}, umbral=${deliveryTimerThreshold}`);
-
-    // Verificar si ya llegó al umbral
-    if (deliveryCountdownMinutes >= deliveryTimerThreshold) {
-      console.log(`⏰ [OrderCard] ¡ALERTA! Delivery lleva ${deliveryCountdownMinutes} minutos, umbral ${deliveryTimerThreshold}`);
-      playAlarm();
-      setShowDeliveryTimerModal(true);
-    }
-  }, [order.type, order.status, deliveryCountdownMinutes, deliveryTimerThreshold, showDeliveryTimerModal]);
+  }, [order.type, order.status, deliveryTimerStartTime, deliveryTimerThreshold]);
 
   // Reproducir alarma de sonido
   const playAlarm = () => {
@@ -445,9 +422,9 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
     setDeliveryCountdownSeconds(0);
     setShowDeliveryAlertModal(false);
     setShowDeliveryTimerModal(false); // Cerrar modal al continuar preparando
-    // Cambiar umbral al segundo valor configurado
-    setDeliveryTimerThreshold(secondAlarmMinutes);
-    console.log(`🟡 [OrderCard] Timer reseteado. Próximo umbral: ${secondAlarmMinutes} minutos`);
+    // 🚚 Reset ref para que la alarma pueda sonar de nuevo después
+    deliveryAlarmShownRef.current = false;
+    console.log(`🟡 [OrderCard] Timer reseteado. Próximo umbral: ${firstAlarmMinutes} minutos`);
   };
 
   // 🚚 Callback cuando se pulsa "Solicitar Domi" en el DeliveryTimer flotante
