@@ -547,20 +547,26 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
                 }
               }}
               style={{
-                backgroundColor: (order.status === 'pending' || order.status === 'waiting') && order.type === 'delivery' ? '#FCD34D'
+                backgroundColor: order.type === 'delivery' && order.status === 'waiting' ? '#3b82f6'
+                  : (order.status === 'pending' || order.status === 'waiting') && order.type === 'delivery' ? '#FCD34D'
                   : order.status === 'pending' ? colors.pending
                   : order.status === 'preparing' ? colors.preparing
-                  : order.status === 'waiting' ? '#c084fc'
                   : order.status === 'ready' ? colors.ready
                   : '#9ca3af',
-                color: (order.status === 'pending' || order.status === 'waiting') && order.type === 'delivery' ? '#000'
+                color: order.type === 'delivery' && order.status === 'waiting' ? '#fff'
+                  : (order.status === 'pending' || order.status === 'waiting') && order.type === 'delivery' ? '#000'
                   : order.status === 'pending' || (order.status === 'preparing' && !isServedPhase) || order.status === 'waiting'
                   ? '#000' : '#fff'
               }}
               className={`text-xs px-2 py-1 rounded font-bold cursor-pointer transition-all shadow-md flex items-center justify-center gap-1 flex-shrink-0 ${
-                ((order.status === 'pending' || order.status === 'waiting') && order.type === 'delivery') || (order.status === 'preparing' || order.status === 'ready') ? 'animate-pulse' : ''
+                (order.type === 'delivery' && order.status === 'waiting') || ((order.status === 'pending' || order.status === 'waiting') && order.type === 'delivery') || (order.status === 'preparing' || order.status === 'ready') ? 'animate-pulse' : ''
               }`}>
-              {(order.status === 'pending' || order.status === 'waiting') && order.type === 'delivery' ? (
+              {order.type === 'delivery' && order.status === 'waiting' ? (
+                <span className="text-xs font-bold flex items-center gap-1">
+                  <Truck size={14} />
+                  ESPERANDO DOMI {deliveryCountdownMinutes.toString().padStart(2, '0')}:{deliveryCountdownSeconds.toString().padStart(2, '0')}
+                </span>
+              ) : (order.status === 'pending' || order.status === 'waiting') && order.type === 'delivery' ? (
                 <span className="text-xs font-bold">EN PREPARACIÓN {deliveryCountdownMinutes.toString().padStart(2, '0')}:{deliveryCountdownSeconds.toString().padStart(2, '0')}</span>
               ) : order.status === 'pending' 
                 ? buttonTexts.cook :  
