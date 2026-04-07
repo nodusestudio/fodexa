@@ -21,28 +21,14 @@ const OrderBoard = ({ onNewOrder, onEditOrder, onPayOrder, onDeleteOrder }) => {
 
   const handleUpdateStatus = async (orderId, statusData) => {
     try {
-      // 🔴 Soportar dos formatos:
-      // 1. Antiguo: handleUpdateStatus(id, 'preparing')
-      // 2. Nuevo: handleUpdateStatus(id, { status: 'preparing', preparingStartTime: 123456 })
-      
-      console.group(`🔄 [OrderBoard] handleUpdateStatus para ${orderId}`);
-      console.log('  statusData recibido:', statusData);
-      
       const updateData = typeof statusData === 'string' 
         ? { status: statusData }
         : statusData;
       
-      console.log('  updateData a guardar:', updateData);
-      
+      console.log(`🔄 Actualizando ${orderId}:`, updateData);
       await updateOrder(orderId, updateData);
-      console.log(`✅ Orden ${orderId} actualizada exitosamente:`, updateData);
-      console.groupEnd();
     } catch (error) {
-      console.error('❌ Error actualizando orden:', error);
-      console.error('   Mensaje:', error.message);
-      console.error('   Stack:', error.stack);
-      console.groupEnd();
-      // 🚫 NO mostrar alert() - ya está en la consola
+      console.error(`❌ Error:`, error.message);
     }
   };
 
