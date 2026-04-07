@@ -347,9 +347,10 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text).then(() => {
-      alert('✓ Mensaje copiado al portapapeles');
-    }).catch(() => {
-      alert('Error al copiar al portapapeles');
+      // Usar una notificación silenciosa sin modal ni botón
+      console.log('✓ Mensaje copiado al portapapeles');
+    }).catch((err) => {
+      console.error('Error al copiar:', err);
     });
   };
 
@@ -365,7 +366,13 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
     copyToClipboard(message);
     
     // Cambiar estado a "waiting" (esperando domiciliario)
-    onUpdateStatus(order.id, 'waiting');
+    // Actualizar múltiples campos al mismo tiempo
+    const updateData = {
+      status: 'waiting',
+      deliveryRequestedAt: new Date().getTime()
+    };
+    
+    onUpdateStatus(order.id, updateData);
     setDeliveryStartTime(new Date());
     lastDeliveryAlarmMinuteRef.current = -1; // Reset ref para nueva alarma
     setShowDeliveryAlertModal(false); // Cerrar modal del timer si está abierto
@@ -773,33 +780,6 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
         </div>
       )}
 
-      {/* Modal de Alerta - Domicilio Listo para Entregar */}
-      {showDeliveryAlertModal && order.type === 'delivery' && order.status === 'pending' && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[9999]">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-8 max-w-md w-11/12 shadow-2xl border-4 border-yellow-400 animate-pulse">
-            <div className="text-center mb-6">
-              <div className="text-8xl mb-4 animate-bounce">⏰</div>
-              <h2 className="text-3xl font-bold text-yellow-600 dark:text-yellow-400 mb-3">¡10 MINUTOS!</h2>
-              <p className="text-xl text-gray-700 dark:text-gray-300 font-bold">
-                {getName()}
-              </p>
-            </div>
-            
-            <div className="bg-yellow-50 dark:bg-yellow-900/30 border-l-4 border-yellow-600 p-4 mb-6 rounded">
-              <p className="text-gray-800 dark:text-gray-200 font-bold text-center text-lg">
-                ⚠️ El domicilio está listo para entregar
-              </p>
-            </div>
-
-            <button
-              onClick={() => setShowDeliveryAlertModal(false)}
-              className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-4 px-4 rounded-lg transition-colors text-lg"
-            >
-              ✓ Aceptar
-            </button>
-          </div>
-        </div>
-      )}
       {/* Floating DeliveryTimer - Aparece cuando llega al umbral (10 o 5 minutos) */}
       {deliveryCountdownMinutes >= deliveryTimerThreshold && order.type === 'delivery' && (
         <DeliveryTimer 
