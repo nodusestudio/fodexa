@@ -16,6 +16,17 @@ export const CashProvider = ({ children }) => {
   const [sessionHistory, setSessionHistory] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  const setCashSessionSafe = useCallback((nextValueOrUpdater) => {
+    setCashSession((prev) => {
+      const next = typeof nextValueOrUpdater === 'function'
+        ? nextValueOrUpdater(prev)
+        : nextValueOrUpdater;
+
+      if (JSON.stringify(prev) === JSON.stringify(next)) return prev;
+      return next;
+    });
+  }, []);
+
   const isProcessingExpensesRef = useRef(false); // 🛡️ Anti-reentrada gastos
   const isProcessingHistoryRef = useRef(false);  // 🛡️ Anti-reentrada historial
   const isProcessingSessionRef = useRef(false);  // 🛡️ Anti-reentrada sesión
@@ -163,7 +174,7 @@ export const CashProvider = ({ children }) => {
   // Usa un listener continuo para detectar cuando se abre/cierra caja
   useEffect(() => {
     if (!uid) {
-      setCashSession((prev) => (prev === null ? prev : null));
+      setCashSessionSafe((prev) => (prev === null ? prev : null));
       return; // Usuario no autenticado
     }
 
@@ -186,7 +197,7 @@ export const CashProvider = ({ children }) => {
               return;
             }
             lastProcessedSessionRef.current = incomingStr;
-            setCashSession((prev) => (prev === null ? prev : null));
+            setCashSessionSafe((prev) => (prev === null ? prev : null));
             return;
           }
 
@@ -205,7 +216,7 @@ export const CashProvider = ({ children }) => {
 
           lastProcessedSessionRef.current = incomingStr;
           // Guardia: no actualizar si ya es la misma sesión (mismo ID y estado)
-          setCashSession((prev) => {
+          setCashSessionSafe((prev) => {
             if (prev?.id === incomingId && prev?.status === restoredSession.status) return prev;
             if (JSON.stringify(prev) === incomingStr) return prev;
             return restoredSession;
@@ -254,7 +265,7 @@ export const CashProvider = ({ children }) => {
       console.warn('⚡ [MODO LOCAL] Forzando apertura de caja en modo local...');
       const localSessionId = `local_${Date.now()}`;
       const sessionWithId = { ...session, id: localSessionId };
-      setCashSession(sessionWithId);
+      setCashSessionSafe(sessionWithId);
       addMovement('opening', initialAmount, 'Apertura de caja (MODO LOCAL)');
     }
     
@@ -263,7 +274,7 @@ export const CashProvider = ({ children }) => {
       const docRef = await addDoc(collection(db, `users/${user.uid}/cashSessions`), session);
       const sessionWithId = { ...session, id: docRef.id };
       
-      setCashSession(sessionWithId);
+      setCashSessionSafe(sessionWithId);
       addMovement('opening', initialAmount, 'Apertura de caja');
       
       // ✅ Crear movimiento acumulativo de domicilios en $0
@@ -301,7 +312,7 @@ export const CashProvider = ({ children }) => {
       if (isQuotaError) {
         const localSessionId = `local_${Date.now()}`;
         const sessionWithId = { ...session, id: localSessionId };
-        setCashSession(sessionWithId);
+        setCashSessionSafe(sessionWithId);
         console.warn('⚠️ Caja abierta en MODO LOCAL (Firestore no disponible)');
         console.warn('   Los datos se sincronizarán cuando Firestore esté disponible.');
         addMovement('opening', initialAmount, 'Apertura de caja (local)');
@@ -445,7 +456,7 @@ export const CashProvider = ({ children }) => {
       // Guardar sesión cerrada en Firestore
       const docRef = await addDoc(collection(db, `users/${user.uid}/cashSessions`), closedSession);
       
-      setCashSession(null);
+      setCashSessionSafe(null);
       addMovement('closing', finalCount, 'Cierre de caja');
       
       return { id: docRef.id, ...closedSession };
@@ -619,7 +630,7 @@ export const CashProvider = ({ children }) => {
 
   const value = useMemo(() => ({
     cashSession,
-    setCashSession,
+    setCashSession: setCashSessionSafe,
     expenses,
     cashMovements,
     sessionHistory,
@@ -639,7 +650,7 @@ export const CashProvider = ({ children }) => {
     getPeriodSummary,
     isCashOpen: !!cashSession,
   // Solo re-construir el objeto cuando el estado real cambia (no en cada render)
-  }), [cashSession, expenses, cashMovements, sessionHistory, loading, addMovement]);
+  }), [cashSession, expenses, cashMovements, sessionHistory, loading, addMovement, setCashSessionSafe]);
 
   return (
     <CashContext.Provider value={value}>
