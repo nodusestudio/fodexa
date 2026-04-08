@@ -250,25 +250,7 @@ export const OrderProvider = ({ children }) => {
 
     const cleanupOnStartup = async () => {
       try {
-        // 0️⃣ LIMPIAR estado local del navegador relacionado a órdenes
-        const localKeys = Object.keys(localStorage);
-        const sessionKeys = Object.keys(sessionStorage);
-
-        localKeys.forEach((key) => {
-          const normalized = key.toLowerCase();
-          if (normalized.includes('order') || normalized.includes('offline_')) {
-            localStorage.removeItem(key);
-          }
-        });
-
-        sessionKeys.forEach((key) => {
-          const normalized = key.toLowerCase();
-          if (normalized.includes('order') || normalized.includes('offline_')) {
-            sessionStorage.removeItem(key);
-          }
-        });
-
-        // 1️⃣ LIMPIAR: Órdenes completadas antiguas (del código anterior que las marcaba en lugar de eliminarlas)
+        // Limpiar SOLO órdenes completadas en Firestore (no tocar localStorage)
         const q2 = query(
           collection(db, `users/${uid}/orders`),
           where('status', '==', 'completed')
@@ -276,17 +258,15 @@ export const OrderProvider = ({ children }) => {
         
         const snapshot2 = await getDocs(q2);
         
-        let completedCount = 0;
-        for (const doc of snapshot2.docs) {
+        for (const docItem of snapshot2.docs) {
           try {
-            await deleteDoc(doc.ref);
-            completedCount++;
+            await deleteDoc(docItem.ref);
           } catch (err) {
-            console.error(`  ❌ Error eliminando ${doc.id}:`, err.message);
+            // ignorar errores individuales
           }
         }
       } catch (error) {
-        console.warn('⚠️ Error en limpieza inicial:', error.message);
+        // limpieza no crítica — ignorar
       }
     };
 

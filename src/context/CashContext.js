@@ -56,7 +56,6 @@ export const CashProvider = ({ children }) => {
       return;
     }
 
-    console.log('💸 Cargando gastos desde Firestore...');
     setLoading(true);
 
     const q = query(
@@ -73,7 +72,6 @@ export const CashProvider = ({ children }) => {
           date: doc.data().date?.toDate?.() || doc.data().date,
         }));
         setExpenses(expensesData);
-        console.log('✅ Gastos cargados desde la nube:', expensesData.length);
         setLoading(false);
       },
       (error) => {
@@ -94,8 +92,6 @@ export const CashProvider = ({ children }) => {
       return;
     }
 
-    console.log('📂 Cargando sesiones cerradas para usuario:', user.uid);
-
     const q = query(
       collection(db, `users/${user.uid}/cashSessions`),
       orderBy('closeDate', 'desc')
@@ -111,7 +107,6 @@ export const CashProvider = ({ children }) => {
           openDate: doc.data().openDate?.toDate?.() || new Date(doc.data().openDate),
         }));
         setSessionHistory(sessions);
-        console.log('✅ Sesiones cargadas del Libro Contable:', sessions.length);
       },
       (error) => {
         console.warn('⚠️ Error cargando sesiones cerradas:', error.message);
@@ -127,8 +122,6 @@ export const CashProvider = ({ children }) => {
     if (!user) {
       return; // Usuario no autenticado
     }
-
-    console.log('🔍 Iniciando listener permanente de sesión abierta...');
 
     const q = query(
       collection(db, `users/${user.uid}/cashSessions`),
@@ -200,19 +193,6 @@ export const CashProvider = ({ children }) => {
       const sessionWithId = { ...session, id: localSessionId };
       setCashSession(sessionWithId);
       addMovement('opening', initialAmount, 'Apertura de caja (MODO LOCAL)');
-      addMovement(
-        'expense',
-        0,
-        '🚗 Domicilios del Día',
-        { 
-          paymentType: 'efectivo',
-          category: 'Domicilios',
-          isAccumulative: true,
-          sessionId: localSessionId
-        }
-      );
-      console.log('✅ Caja abierta en MODO LOCAL - ID:', localSessionId);
-      return sessionWithId;
     }
     
     try {
@@ -221,7 +201,6 @@ export const CashProvider = ({ children }) => {
       const sessionWithId = { ...session, id: docRef.id };
       
       setCashSession(sessionWithId);
-      console.log('✅ Caja abierta y guardada en Firestore - ID:', docRef.id, 'Capital:', session.initialAmount, 'Fondo:', session.fundAmount);
       addMovement('opening', initialAmount, 'Apertura de caja');
       
       // ✅ Crear movimiento acumulativo de domicilios en $0
@@ -284,18 +263,14 @@ export const CashProvider = ({ children }) => {
   // Cerrar caja
   const closeCash = async (finalCount, observations, dayExpenses = []) => {
     if (!user) {
-      console.error('❌ ERROR: Usuario no autenticado');
       throw new Error('Usuario no autenticado');
     }
     
     if (!cashSession) {
-      console.error('❌ ERROR: No hay caja abierta');
       throw new Error('No hay caja abierta');
     }
     
     try {
-      console.log('📋 Iniciando cierre de caja...', { userId: user.uid, cashSessionId: cashSession.id });
-      
       const expectedAmount = calculateExpectedAmount();
       
       // Calcular total de egresos
@@ -404,12 +379,8 @@ export const CashProvider = ({ children }) => {
         expenseCount: sessionMovements.filter(m => m.type === 'expense').length,
       };
       
-      console.log('💾 Objeto de sesión cerrada:', closedSession);
-      
-      // Guardar sesión cerrada en Firestore (en colección anidada por usuario)
+      // Guardar sesión cerrada en Firestore
       const docRef = await addDoc(collection(db, `users/${user.uid}/cashSessions`), closedSession);
-      console.log('✅ Sesión cerrada y guardada en Firestore con ID:', docRef.id);
-      console.log('📤 Egresos del día:', dayExpenses, 'Total:', totalExpensesAmount);
       
       setCashSession(null);
       addMovement('closing', finalCount, 'Cierre de caja');
@@ -481,22 +452,11 @@ export const CashProvider = ({ children }) => {
     // Calcular total acumulado de domicilios
     const totalDeliveryAmount = deliveryTickets.reduce((sum, t) => sum + (t.deliveryCost || 0), 0);
 
-    console.log('🔍 DEBUG: Buscando movimiento acumulativo...', {
-      totalDeliveryAmount,
-      deliveryTicketsFound: deliveryTickets.length,
-      tickets: deliveryTickets.map(t => ({ id: t.id, orderType: t.orderType, status: t.status, deliveryCost: t.deliveryCost })),
-      cashSessionId: cashSession.id,
-      cashMovementsCount: cashMovements.length,
-    });
-
-    // Buscar el movimiento acumulativo de domicilios (búsqueda más flexible)
     const deliveryMovementIndex = cashMovements.findIndex(
       m => m.type === 'expense' && 
            m.isAccumulative === true && 
            m.category === 'Domicilios'
     );
-
-    console.log('🔍 Movimiento encontrado en índice:', deliveryMovementIndex);
 
     if (deliveryMovementIndex !== -1) {
       // Actualizar el movimiento existente con el nuevo total
@@ -507,8 +467,6 @@ export const CashProvider = ({ children }) => {
         amount: totalDeliveryAmount
       };
       setCashMovements(updatedMovements);
-      
-      console.log(`✅ Domicilios actualizado: $${oldAmount} → $${totalDeliveryAmount}`);
     } else {
       console.warn('❌ Movimiento acumulativo de domicilios NO encontrado!');
     }
