@@ -442,6 +442,14 @@ export const OrderProvider = ({ children }) => {
               return bTime - aTime;
             });
 
+            if (
+              ordersRef.current.length === activeOrders.length &&
+              areOrdersEqual(ordersRef.current, activeOrders)
+            ) {
+              setLoadingSafe(false);
+              return;
+            }
+
             const activeOrdersStr = JSON.stringify(activeOrders);
             if (
               lastProcessedDataRef.current === activeOrdersStr ||

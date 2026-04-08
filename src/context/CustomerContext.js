@@ -67,7 +67,6 @@ export const CustomerProvider = ({ children }) => {
         newCustomer
       );
 
-      console.log('✅ Cliente guardado en la nube:', docRef.id);
       return { id: docRef.id, ...newCustomer };
     } catch (error) {
       console.error('❌ Error al guardar cliente:', error);
@@ -119,13 +118,11 @@ export const CustomerProvider = ({ children }) => {
           });
         }
 
-        console.log(`✅ Lote importado: ${totalImported}/${customersArray.length}`);
 
         // Pequeña pausa para no bloquear el navegador
         await new Promise(resolve => setTimeout(resolve, 100));
       }
 
-      console.log(`✅ ¡Importación completada! ${totalImported} clientes guardados.`);
       return { success: true, imported: totalImported };
     } catch (error) {
       console.error('❌ Error al importar clientes:', error);
@@ -143,7 +140,6 @@ export const CustomerProvider = ({ children }) => {
     try {
       const customerRef = doc(db, `users/${user.uid}/customers`, id);
       await updateDoc(customerRef, data);
-      console.log('✅ Cliente actualizado en la nube');
     } catch (error) {
       console.error('❌ Error al actualizar cliente:', error);
       alert('Error al actualizar cliente: ' + error.message);
@@ -160,7 +156,6 @@ export const CustomerProvider = ({ children }) => {
     try {
       const customerRef = doc(db, `users/${user.uid}/customers`, id);
       await deleteDoc(customerRef);
-      console.log('✅ Cliente eliminado de la nube');
     } catch (error) {
       console.error('❌ Error al eliminar cliente:', error);
       alert('Error al eliminar cliente: ' + error.message);
@@ -292,7 +287,6 @@ export const CustomerProvider = ({ children }) => {
       link.href = URL.createObjectURL(blob);
       link.download = `clientes-${new Date().toISOString().split('T')[0]}.csv`;
       link.click();
-      console.log('✅ Exportados', customers.length, 'clientes');
     } catch (error) {
       console.error('❌ Error exportando clientes:', error);
       alert('Error al exportar clientes: ' + error.message);

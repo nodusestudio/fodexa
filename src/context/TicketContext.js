@@ -144,7 +144,6 @@ export const TicketProvider = ({ children }) => {
       (async () => {
         try {
           await addDoc(collection(db, `users/${user.uid}/tickets`), newTicket);
-          console.log('✅ Ticket guardado en la nube');
         } catch (error) {
           console.warn('⚠️ Error guardando ticket en Firestore:', error.message);
         }
@@ -168,7 +167,6 @@ export const TicketProvider = ({ children }) => {
 
   const updateTicket = async (ticketId, updates) => {
     try {
-      console.log('📝 Intentando actualizar ticket:', { ticketId, updates });
       
       // Actualizar en estado local primero
       setTickets(prev => prev.map(t => 
@@ -185,7 +183,6 @@ export const TicketProvider = ({ children }) => {
             ...updates,
             updatedAt: new Date(),
           });
-          console.log('✅ Ticket actualizado en Firestore:', ticketId, updates);
         } catch (firebaseError) {
           if (firebaseError.code === 'not-found') {
             console.error('❌ Documento no encontrado en Firestore. ID:', ticketId);
@@ -216,11 +213,6 @@ export const TicketProvider = ({ children }) => {
         throw new Error('Ticket no encontrado');
       }
 
-      console.log('🗑️ [ELIMINAR TICKET]', {
-        ticketId: stringId,
-        orderId: ticketToDelete.orderId
-      });
-      
       // Eliminar del estado local primero
       setTickets(prev => prev.filter(t => String(t.id) !== stringId));
       
@@ -229,14 +221,12 @@ export const TicketProvider = ({ children }) => {
         // 1️⃣ Eliminar el ticket
         const ticketRef = doc(db, `users/${user.uid}/tickets`, stringId);
         await deleteDoc(ticketRef);
-        console.log('✅ Ticket eliminado de Firestore:', stringId);
         
         // 2️⃣ Eliminar la orden asociada también
         if (ticketToDelete.orderId) {
           try {
             const orderRef = doc(db, `users/${user.uid}/orders`, ticketToDelete.orderId);
             await deleteDoc(orderRef);
-            console.log('✅ Orden asociada eliminada de Firestore:', ticketToDelete.orderId);
           } catch (orderError) {
             console.warn('⚠️ La orden podría no existir o ya fue eliminada:', orderError.message);
           }
