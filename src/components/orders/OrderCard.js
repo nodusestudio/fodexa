@@ -1,4 +1,4 @@
-import React, { memo, useState, useEffect, useRef, useContext, useMemo } from 'react';
+import React, { memo, useState, useEffect, useRef, useContext, useMemo, useCallback } from 'react';
 import { SettingsContext } from '../../context/SettingsContext';
 import { formatCurrency } from '../../utils/formatters';
 import { Edit2, CreditCard, Trash2, User, MapPin, Utensils, Truck } from 'lucide-react';
@@ -203,6 +203,7 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
   // Refs para rastrear alarmas y prevenir doble click
   const lastDeliveryAlarmMinuteRef = useRef(-1);
   const deliveryAlertPopupShownRef = useRef(false); // 🚚 Rastrear si ya se mostró popup de delivery
+  const deliveryTimerInitializedRef = useRef(false);
   const isProcessingStatusChangeRef = useRef(false); // 🔴 Prevenir doble click en botón de status
   const alarmTriggeredRef = useRef(false); // 🔴 Rastrear si ya se disparó alarma a los 20min
   const deliveryAlarmShownRef = useRef(false); // 🚚 Rastrear si ya se mostró alarma delivery
@@ -248,14 +249,14 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
   useEffect(() => {
     if (order.status !== 'waiting') return;
 
-    // Si no tenemos deliveryStartTime, usa el timestamp de cuando pasó a waiting (o el timestamp actual)
-    if (!deliveryStartTime) {
-      const newStartTime = new Date().getTime();
-      setDeliveryStartTime(new Date(newStartTime));
-      // 🚚 Guardar en Firestore para que persista cuando cambias de sección
-      onUpdateStatus(order.id, { deliveryTimerStartTime: newStartTime });
+    // Si no existe timestamp persistido, inicializar SOLO estado local una vez
+    const currentStartTime = deliveryTimerStartTimeTimestamp || deliveryStartTime?.getTime?.();
+    if (!currentStartTime) {
+      if (deliveryTimerInitializedRef.current) return;
+      deliveryTimerInitializedRef.current = true;
+      setDeliveryStartTime((prev) => prev || new Date());
       lastDeliveryAlarmMinuteRef.current = -1;
-      return; // Recursión del useEffect con el nuevo deliveryStartTime
+      return;
     }
 
     const interval = setInterval(() => {
@@ -266,7 +267,7 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
       
       const minutes = Math.floor((now - startTimeToUse) / 60000);
       
-      setDeliveryElapsedTime(minutes);
+      setDeliveryElapsedTime((prev) => (prev === minutes ? prev : minutes));
 
       // Alarma de domicilio retrasado según el tiempo configurado, entonces cada 5 minutos
       if (minutes >= alarmTime && minutes % 5 === 0 && lastDeliveryAlarmMinuteRef.current !== minutes) {
@@ -277,7 +278,7 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [order.status, order.id, deliveryTimerStartTimeTimestamp, deliveryStartTime, alarmTime, onUpdateStatus]);
+  }, [order.status, deliveryTimerStartTimeTimestamp, deliveryStartTime, alarmTime]);
 
   // 🚚 Timer de delivery para mostrar en la tarjeta - Se detiene al llegar al umbral configurado
   useEffect(() => {
@@ -326,6 +327,7 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
   // 🚚 Resetear popup cuando el status cambia FUERA de 'waiting'
   useEffect(() => {
     if (order.status !== 'waiting') {
+      deliveryTimerInitializedRef.current = false;
       deliveryAlertPopupShownRef.current = false;
       setShowDeliveryAlertPopup(false);
       setDeliveryTimerMode('first'); // 🚚 Solo resetear a 'first' cuando SALIMOS de waiting
@@ -567,8 +569,15 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
     }
   };
 
+  const handleToggleExpand = useCallback(() => {
+    console.log('Tarjeta clickeada', order.id);
+    setIsExpanded((prev) => !prev);
+  }, [order.id]);
+
   return (
-    <div className={`rounded-lg border-l-4 p-4 shadow-md hover:shadow-lg transition-all ${
+    <div
+      onClick={handleToggleExpand}
+      className={`rounded-lg border-l-4 p-4 shadow-md hover:shadow-lg transition-all cursor-pointer ${isExpanded ? 'ring-2 ring-blue-300 dark:ring-blue-600' : ''} ${
       order.status === 'completed' 
         ? 'bg-gray-300 dark:bg-gray-700 border-gray-400 dark:border-gray-600 opacity-75 text-gray-600 dark:text-gray-400' 
         : 'bg-white dark:bg-gray-800 border-blue-500'
@@ -629,7 +638,7 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
           <button
             onClick={(e) => {
               e.stopPropagation();
-              setIsExpanded(!isExpanded);
+              handleToggleExpand();
             }}
             className="text-xl p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
             title="Ver detalles"
@@ -645,7 +654,7 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
 
       {/* DETALLES EXPANDIBLES */}
       {isExpanded && (
-        <div className={`mt-4 pt-4 border-t space-y-3 ${order.status === 'completed' ? 'border-gray-400 dark:border-gray-600' : 'border-gray-200 dark:border-gray-700'}`} onClick={(e) => e.stopPropagation()}>
+        <div className={`mt-4 pt-4 border-t space-y-3 ${order.status === 'completed' ? 'border-gray-400 dark:border-gray-600' : 'border-gray-200 dark:border-gray-700'}`}>
           
           {/* Items List */}
           <div>

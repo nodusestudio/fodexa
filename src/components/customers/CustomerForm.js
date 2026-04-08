@@ -14,6 +14,7 @@ const CustomerForm = ({ customer, onSave, onClose }) => {
   });
 
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (customer) {
@@ -49,12 +50,20 @@ const CustomerForm = ({ customer, onSave, onClose }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!validate()) return;
 
-    onSave(formData);
+    setLoading(true);
+    try {
+      await onSave(formData);
+    } catch (error) {
+      console.error('❌ Error al guardar cliente desde formulario:', error);
+    } finally {
+      setLoading(false);
+      onClose?.();
+    }
   };
 
   const cities = [
@@ -223,15 +232,17 @@ const CustomerForm = ({ customer, onSave, onClose }) => {
             <button
               type="button"
               onClick={onClose}
+              disabled={loading}
               className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
+              disabled={loading}
+              className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-colors"
             >
-              {customer ? '💾 Actualizar' : '➕ Crear Cliente'}
+              {loading ? '⏳ Guardando...' : (customer ? '💾 Actualizar' : '➕ Crear Cliente')}
             </button>
           </div>
         </form>

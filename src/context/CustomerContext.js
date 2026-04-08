@@ -14,16 +14,74 @@ import {
 import { db } from '../config/firebase';
 
 const CustomerContext = createContext();
+const FORCE_LOCAL_KEY = 'fodexa_force_local';
+const CUSTOMERS_CACHE_KEY = 'customers_local_cache';
+
+const leerClientesCache = () => {
+  try {
+    const raw = localStorage.getItem(CUSTOMERS_CACHE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+const guardarClientesCache = (clientes) => {
+  try {
+    localStorage.setItem(CUSTOMERS_CACHE_KEY, JSON.stringify(clientes || []));
+  } catch {
+    // ignorar errores de almacenamiento local
+  }
+};
+
+const esErrorCuotaOConexion = (error) => {
+  const code = String(error?.code || '').toLowerCase();
+  const message = String(error?.message || '').toLowerCase();
+  return (
+    code.includes('resource-exhausted') ||
+    code.includes('quota') ||
+    code.includes('unavailable') ||
+    message.includes('resource-exhausted') ||
+    message.includes('quota') ||
+    message.includes('unavailable')
+  );
+};
 
 export const CustomerProvider = ({ children }) => {
   const { user } = useAuth();
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isLocalMode, setIsLocalMode] = useState(() => {
+    try {
+      return localStorage.getItem(FORCE_LOCAL_KEY) === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const activarModoLocal = (motivo = 'fallback') => {
+    try {
+      localStorage.setItem(FORCE_LOCAL_KEY, 'true');
+    } catch {
+      // ignorar errores de almacenamiento local
+    }
+    setIsLocalMode(true);
+    window.dispatchEvent(
+      new CustomEvent('push-message', {
+        detail: {
+          type: 'warning',
+          message: `Modo local activo en clientes (${motivo}). Los cambios se guardan localmente.`
+        }
+      })
+    );
+  };
 
   // 📡 Cargar clientes desde Firestore cuando cambia el usuario
   useEffect(() => {
-    if (!user) {
-      setCustomers([]);
+    if (isLocalMode || !user?.uid) {
+      setCustomers(leerClientesCache());
       setLoading(false);
       return;
     }
@@ -35,31 +93,55 @@ export const CustomerProvider = ({ children }) => {
     const q = query(collection(db, `users/${user.uid}/customers`));
 
     // Escuchar cambios en tiempo real
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const customersData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setCustomers(customersData);
-      setLoading(false);
-    });
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const customersData = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setCustomers(customersData);
+        guardarClientesCache(customersData);
+        setLoading(false);
+      },
+      (error) => {
+        if (esErrorCuotaOConexion(error)) {
+          activarModoLocal('error de cuota/conexión de Firebase');
+          setCustomers(leerClientesCache());
+          setLoading(false);
+          return;
+        }
+        console.error('❌ Error cargando clientes:', error);
+        setLoading(false);
+      }
+    );
 
     return () => unsubscribe();
-  }, [user]);
+  }, [isLocalMode, user]);
 
   // ➕ Agregar cliente a Firestore
   const addCustomer = async (customerData) => {
-    if (!user) {
-      alert('Debes estar autenticado');
-      return null;
-    }
-
     try {
+      const ownerId = user?.uid || 'LOCAL_USER';
       const newCustomer = {
         ...customerData,
-        userId: user.uid,
+        userId: ownerId,
         createdAt: new Date(),
       };
+
+      if (isLocalMode || !user?.uid) {
+        const localCustomer = {
+          id: `local_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+          ...newCustomer,
+          syncStatus: 'local',
+        };
+        setCustomers((prev) => {
+          const updated = [...prev, localCustomer];
+          guardarClientesCache(updated);
+          return updated;
+        });
+        return localCustomer;
+      }
 
       // Guardar en Firestore
       const docRef = await addDoc(
@@ -69,9 +151,25 @@ export const CustomerProvider = ({ children }) => {
 
       return { id: docRef.id, ...newCustomer };
     } catch (error) {
+      if (esErrorCuotaOConexion(error)) {
+        activarModoLocal('cuota agotada al guardar cliente');
+        const ownerId = user?.uid || 'LOCAL_USER';
+        const localCustomer = {
+          id: `local_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+          ...customerData,
+          userId: ownerId,
+          createdAt: new Date(),
+          syncStatus: 'local',
+        };
+        setCustomers((prev) => {
+          const updated = [...prev, localCustomer];
+          guardarClientesCache(updated);
+          return updated;
+        });
+        return localCustomer;
+      }
       console.error('❌ Error al guardar cliente:', error);
-      alert('Error al guardar cliente: ' + error.message);
-      return null;
+      throw error;
     }
   };
 
@@ -132,33 +230,63 @@ export const CustomerProvider = ({ children }) => {
 
   // ✏️ Actualizar cliente
   const updateCustomer = async (id, data) => {
-    if (!user) {
-      alert('Debes estar autenticado');
-      return;
-    }
-
     try {
+      if (isLocalMode || !user?.uid || String(id).startsWith('local_')) {
+        setCustomers((prev) => {
+          const updated = prev.map((customer) =>
+            customer.id === id ? { ...customer, ...data, syncStatus: 'local' } : customer
+          );
+          guardarClientesCache(updated);
+          return updated;
+        });
+        return;
+      }
+
       const customerRef = doc(db, `users/${user.uid}/customers`, id);
       await updateDoc(customerRef, data);
     } catch (error) {
+      if (esErrorCuotaOConexion(error)) {
+        activarModoLocal('cuota agotada al actualizar cliente');
+        setCustomers((prev) => {
+          const updated = prev.map((customer) =>
+            customer.id === id ? { ...customer, ...data, syncStatus: 'local' } : customer
+          );
+          guardarClientesCache(updated);
+          return updated;
+        });
+        return;
+      }
       console.error('❌ Error al actualizar cliente:', error);
-      alert('Error al actualizar cliente: ' + error.message);
+      throw error;
     }
   };
 
   // 🗑️ Eliminar cliente
   const deleteCustomer = async (id) => {
-    if (!user) {
-      alert('Debes estar autenticado');
-      return;
-    }
-
     try {
+      if (isLocalMode || !user?.uid || String(id).startsWith('local_')) {
+        setCustomers((prev) => {
+          const updated = prev.filter((customer) => customer.id !== id);
+          guardarClientesCache(updated);
+          return updated;
+        });
+        return;
+      }
+
       const customerRef = doc(db, `users/${user.uid}/customers`, id);
       await deleteDoc(customerRef);
     } catch (error) {
+      if (esErrorCuotaOConexion(error)) {
+        activarModoLocal('cuota agotada al eliminar cliente');
+        setCustomers((prev) => {
+          const updated = prev.filter((customer) => customer.id !== id);
+          guardarClientesCache(updated);
+          return updated;
+        });
+        return;
+      }
       console.error('❌ Error al eliminar cliente:', error);
-      alert('Error al eliminar cliente: ' + error.message);
+      throw error;
     }
   };
 
@@ -296,6 +424,7 @@ export const CustomerProvider = ({ children }) => {
   const value = {
     customers,
     loading,
+    isLocalMode,
     getUserCustomers: () => customers, // Ya Firestore filtra por usuario
     addCustomer,
     importCustomersBatch,

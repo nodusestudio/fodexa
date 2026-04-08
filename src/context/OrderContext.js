@@ -372,8 +372,17 @@ export const OrderProvider = ({ children }) => {
       }, 0);
     };
 
-    if (offlinePersisted) {
-      activateOfflineMode('flag persistente en almacenamiento local');
+    const isForceLocal = (() => {
+      try { return localStorage.getItem('fodexa_force_local') === 'true'; } catch { return false; }
+    })();
+    const isLocalUid = uid === 'LOCAL_USER';
+
+    if (offlinePersisted || isForceLocal || isLocalUid) {
+      activateOfflineMode(
+        isLocalUid
+          ? 'uid local sin autenticación de Firebase'
+          : (isForceLocal ? 'modo local forzado por usuario' : 'flag persistente en almacenamiento local')
+      );
       return () => {};
     }
 
@@ -636,6 +645,7 @@ export const OrderProvider = ({ children }) => {
           syncStatus: 'local'
         };
 
+        console.log('Acción local ejecutada');
         setOrders((prev) => {
           const updated = [finalOrderData, ...prev];
           writeOrdersToCache(user?.uid, updated);
@@ -669,6 +679,7 @@ export const OrderProvider = ({ children }) => {
 
             setOrders((prev) => {
               const updated = [finalOrderData, ...prev];
+              if (JSON.stringify(prev) === JSON.stringify(updated)) return prev;
               writeOrdersToCache(user?.uid, updated);
               return updated;
             });
@@ -716,6 +727,7 @@ export const OrderProvider = ({ children }) => {
           const updated = prev.map((order) =>
             order.id === id ? { ...order, ...data, updatedAt: new Date(), syncStatus: 'local' } : order
           );
+          if (JSON.stringify(prev) === JSON.stringify(updated)) return prev;
           writeOrdersToCache(uid, updated);
           return updated;
         });
@@ -733,6 +745,7 @@ export const OrderProvider = ({ children }) => {
           const updated = prev.map((order) =>
             order.id === id ? { ...order, ...data, updatedAt: new Date(), syncStatus: 'local' } : order
           );
+          if (JSON.stringify(prev) === JSON.stringify(updated)) return prev;
           writeOrdersToCache(uid, updated);
           return updated;
         });
@@ -756,6 +769,7 @@ export const OrderProvider = ({ children }) => {
               const updated = prev.map((order) =>
                 order.id === id ? { ...order, ...data, updatedAt: new Date(), syncStatus: 'local' } : order
               );
+              if (JSON.stringify(prev) === JSON.stringify(updated)) return prev;
               writeOrdersToCache(uid, updated);
               return updated;
             });
@@ -797,6 +811,7 @@ export const OrderProvider = ({ children }) => {
       if (ordersMode === 'offline') {
         setOrders((prev) => {
           const updated = prev.filter((order) => order.id !== id);
+          if (updated.length === prev.length) return prev;
           writeOrdersToCache(uid, updated);
           return updated;
         });
@@ -812,6 +827,7 @@ export const OrderProvider = ({ children }) => {
       // Remover del estado local (sea local o Firestore)
       setOrders(prev => {
         const updated = prev.filter(order => order.id !== id);
+        if (updated.length === prev.length) return prev;
         writeOrdersToCache(uid, updated);
         return updated;
       });

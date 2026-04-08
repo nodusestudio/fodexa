@@ -5,11 +5,19 @@ import { useAuth } from './AuthContext';
 import { mockExpenses } from '../data/mockFirebaseData';
 
 const CashContext = createContext();
+const FORCE_LOCAL_KEY = 'fodexa_force_local';
 
 export const CashProvider = ({ children }) => {
   const auth = useAuth();
   const user = auth?.user;
   const uid = user?.uid;
+  const [isLocalMode, setIsLocalMode] = useState(() => {
+    try { return localStorage.getItem(FORCE_LOCAL_KEY) === 'true'; } catch { return false; }
+  });
+  const forceLocalMode = useCallback(() => {
+    try { localStorage.setItem(FORCE_LOCAL_KEY, 'true'); } catch { /* ignore */ }
+    setIsLocalMode(true);
+  }, []);
   const [cashSession, setCashSession] = useState(null);
   const [expenses, setExpenses] = useState([]);
   const [cashMovements, setCashMovements] = useState([]);
@@ -236,10 +244,6 @@ export const CashProvider = ({ children }) => {
 
   // Abrir caja
   const openCash = async (cashData) => {
-    if (!user) {
-      throw new Error('Usuario no autenticado');
-    }
-
     // Aceptar objeto con los nuevos parámetros
     const initialAmount = typeof cashData === 'number' ? cashData : (cashData?.initialAmount || 0);
     const notes = typeof cashData === 'string' ? cashData : (cashData?.notes || '');
@@ -247,8 +251,17 @@ export const CashProvider = ({ children }) => {
     const breakdown = cashData?.breakdown || {};
     const openedAt = cashData?.openedAt || new Date();
     const forceLocal = cashData?.forceLocal || false; // ⚡ Forzar modo LOCAL sin intentar Firestore
+    const localOverride = forceLocal || isLocalMode;
+
+    if (!user && !localOverride) {
+      throw new Error('Usuario no autenticado');
+    }
+
+    const ownerId = user?.uid || 'LOCAL_USER';
 
     const session = {
+      userId: ownerId,
+      openUserId: ownerId,
       openDate: openedAt,
       openDateLocal: openedAt.toLocaleString('es-CO'),
       openUser: 'Cajero Demo',
@@ -261,12 +274,13 @@ export const CashProvider = ({ children }) => {
     };
     
     // ⚡ SI SE FUERZA MODO LOCAL, No intentar Firestore - ir directo a local
-    if (forceLocal) {
+    if (localOverride) {
       console.warn('⚡ [MODO LOCAL] Forzando apertura de caja en modo local...');
       const localSessionId = `local_${Date.now()}`;
       const sessionWithId = { ...session, id: localSessionId };
       setCashSessionSafe(sessionWithId);
       addMovement('opening', initialAmount, 'Apertura de caja (MODO LOCAL)');
+      return sessionWithId;
     }
     
     try {
@@ -649,8 +663,10 @@ export const CashProvider = ({ children }) => {
     getSessionsByDateRange,
     getPeriodSummary,
     isCashOpen: !!cashSession,
+    isLocalMode,
+    forceLocalMode,
   // Solo re-construir el objeto cuando el estado real cambia (no en cada render)
-  }), [cashSession, expenses, cashMovements, sessionHistory, loading, addMovement, setCashSessionSafe]);
+  }), [cashSession, expenses, cashMovements, sessionHistory, loading, addMovement, setCashSessionSafe, isLocalMode, forceLocalMode]);
 
   return (
     <CashContext.Provider value={value}>

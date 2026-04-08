@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useCash } from '../../context/CashContext';
 
 const CashOpening = ({ onClose }) => {
-  const { openCash } = useCash();
+  const { openCash, forceLocalMode } = useCash();
   const [status, setStatus] = useState('loading'); // loading, success, error
   const [error, setError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
@@ -18,6 +18,14 @@ const CashOpening = ({ onClose }) => {
   useEffect(() => {
     onCloseRef.current = onClose;
   }, [onClose]);
+
+  const handleUseLocal = () => {
+    setError(null);
+    setStatus('loading');
+    forceLocalMode();
+    setShowLocalButton(false);
+    setUseLocalMode(true);
+  };
 
   // Abrir caja automáticamente con timeout y reintentos
   useEffect(() => {
@@ -64,10 +72,13 @@ const CashOpening = ({ onClose }) => {
 
         if (isMounted) {
           setStatus('success');
-          // Cerrar modal después de 1.5 segundos
-          setTimeout(() => {
-            if (isMounted) onCloseRef.current?.();
-          }, 1500);
+          if (useLocalMode) {
+            onCloseRef.current?.();
+          } else {
+            setTimeout(() => {
+              if (isMounted) onCloseRef.current?.();
+            }, 1500);
+          }
         }
       } catch (err) {
         clearTimeout(timeoutId);
@@ -114,10 +125,7 @@ const CashOpening = ({ onClose }) => {
               </div>
 
               <button
-                onClick={() => {
-                  setShowLocalButton(false);
-                  setUseLocalMode(true); // ⚡ Forzar apertura en MODO LOCAL
-                }}
+                onClick={handleUseLocal}
                 className="w-full px-4 py-3 bg-yellow-600 hover:bg-yellow-700 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"
               >
                 ⚡ Usar Modo Local Ahora (No Esperar)
@@ -151,14 +159,14 @@ const CashOpening = ({ onClose }) => {
           </div>
 
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-            <p className="text-xs text-blue-700 dark:text-blue-300">
+            <div className="text-xs text-blue-700 dark:text-blue-300">
               <strong>💡 Posibles causas:</strong>
               <ul className="mt-2 space-y-1 ml-4 list-disc">
                 <li>Cuota de Firestore alcanzada (plan gratuito)</li>
                 <li>Sin conexión a internet</li>
                 <li>Firebase configurado incorrectamente</li>
               </ul>
-            </p>
+            </div>
           </div>
 
           <div className="flex flex-col gap-2 pt-4">
@@ -180,9 +188,7 @@ const CashOpening = ({ onClose }) => {
             </div>
             
             <button
-              onClick={() => {
-                setUseLocalMode(true); // ⚡ Forzar apertura en MODO LOCAL sin esperar más
-              }}
+              onClick={handleUseLocal}
               className="w-full px-4 py-3 bg-yellow-600 hover:bg-yellow-700 text-white font-bold rounded-lg transition-colors text-sm"
             >
               ⚡ Usar Modo Local (No Esperar Firestore)

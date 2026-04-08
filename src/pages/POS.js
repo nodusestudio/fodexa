@@ -23,7 +23,7 @@ const POS = () => {
   const [localOrderType, setLocalOrderType] = useState(null);
   const { currentOrderType, selectedTable, deliveryData, setOrderType, selectTable, setDeliveryData, clearCurrentOrder, tables } = useOrder();
   const { addItem, clearCart, items } = useCart();
-  const { isCashOpen, cashSession, openCash, setCashSession } = useCash();
+  const { isCashOpen, cashSession, openCash, setCashSession, isLocalMode } = useCash();
   const [showNoCashModal, setShowNoCashModal] = useState(false);
   const [showOpenCashFlow, setShowOpenCashFlow] = useState(false);
   const [showFundModalFromPOS, setShowFundModalFromPOS] = useState(false);
@@ -46,8 +46,6 @@ const POS = () => {
   const dynamicCategories = getActiveCategories();
 
   // Detectar si caja está en modo LOCAL (Firestore no disponible)
-  const isLocalMode = cashSession?.id?.startsWith('local_');
-
   // ✅ PHASE 3: Validar que caja esté abierta
   useEffect(() => {
     if (!isCashOpen) {
@@ -120,7 +118,7 @@ const POS = () => {
       return;
     }
 
-    console.log('📝 handleNewOrder llamado con type:', type);
+    if (isLocalMode) console.log('Acción local ejecutada');
     setView('creating');
     setLocalOrderType(type);
     setOrderType(type);

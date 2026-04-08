@@ -7,7 +7,7 @@ import CustomerDetail from '../components/customers/CustomerDetail';
 import CustomerImport from '../components/customers/CustomerImport';
 
 const Customers = () => {
-  const { customers, searchCustomers, deleteCustomer, exportCustomers, getCustomerStats, addCustomer, updateCustomer } = useCustomers();
+  const { customers, searchCustomers, deleteCustomer, exportCustomers, getCustomerStats, addCustomer, updateCustomer, isLocalMode } = useCustomers();
   const { tickets } = useTickets();
   
   const [selectedTab, setSelectedTab] = useState('listado');
@@ -83,17 +83,31 @@ const Customers = () => {
   };
 
   const handleSave = async (customerData) => {
+    const cerrarFormulario = () => {
+      setShowForm(false);
+      setEditingCustomer(null);
+    };
+
     try {
       if (editingCustomer) {
         await updateCustomer(editingCustomer.id, customerData);
       } else {
         await addCustomer(customerData);
       }
-      setShowForm(false);
-      setEditingCustomer(null);
     } catch (error) {
       console.error('❌ Error guardando cliente:', error);
-      alert('❌ Error al guardar cliente: ' + error.message);
+      window.dispatchEvent(
+        new CustomEvent('push-message', {
+          detail: {
+            type: 'warning',
+            message: isLocalMode
+              ? 'Cliente guardado en modo local. La sincronización con Firebase quedó pendiente.'
+              : `No se pudo sincronizar con Firebase (${error.message}). Se conservará el flujo local.`
+          }
+        })
+      );
+    } finally {
+      cerrarFormulario();
     }
   };
 
