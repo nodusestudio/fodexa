@@ -157,6 +157,12 @@ export const OrderProvider = ({ children }) => {
   const networkDisabledRef = useRef(false);
   const offlineActivatedRef = useRef(false);
 
+  // 🔒 Freno de mano: evita re-inicialización cuando otros contextos cambian
+  const isInitialSyncDoneRef = useRef(false);
+  // 📌 Ref sincronizada con orders para leer estado sin ponerlo en deps de useCallback
+  const ordersRef = useRef([]);
+  ordersRef.current = orders;
+
   const setIsOfflineSafe = useCallback((nextValue) => {
     setIsOffline((prev) => (prev === nextValue ? prev : nextValue));
   }, []);
@@ -194,6 +200,7 @@ export const OrderProvider = ({ children }) => {
 
     cleanupRunRef.current = false;
     tablesLoadedRef.current = false;
+    isInitialSyncDoneRef.current = false;
   }, [uid]);
 
   // 🪑 EFECTO 0: Cargar mesas desde Firestore (SE EJECUTA UNA SOLA VEZ)
@@ -437,6 +444,7 @@ export const OrderProvider = ({ children }) => {
 
           ordersMapRef.current = nextMap;
           ordersHydratedRef.current = true;
+          isInitialSyncDoneRef.current = true; // 🔒 Inicialización completada
 
           const activeOrders = Array.from(nextMap.values()).sort((a, b) => {
             const aTime = a.timestamp ? new Date(a.timestamp).getTime() : 0;
@@ -685,7 +693,7 @@ export const OrderProvider = ({ children }) => {
     try {
       // ⚠️ Solo actualizar en Firestore
       // Dejar que onSnapshot sincronice el estado automáticamente
-      const orderBefore = orders.find(o => o.id === id);
+      const orderBefore = ordersRef.current.find(o => o.id === id); // Lee ordersRef en vez de orders (evita dep inestable)
       
       if (!orderBefore) {
         console.warn(`⚠️ Orden ${id} no está en estado local, pero procederemos con Firestore`);
@@ -767,7 +775,7 @@ export const OrderProvider = ({ children }) => {
       console.error('   Stack:', error.stack);
       throw error;
     }
-  }, [orders, ordersMode, setOrdersModeSafe, uid, user]);
+  }, [ordersMode, setOrdersModeSafe, uid, user]); // orders eliminado de deps → se lee via ordersRef
 
   // Elimina un pedido directamente de Firestore (no solo marcar como completada)
   const deleteOrder = useCallback(async (id) => {

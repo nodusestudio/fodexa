@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { collection, addDoc, updateDoc, deleteDoc, doc, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useAuth } from './AuthContext';
@@ -85,7 +85,7 @@ export const CashProvider = ({ children }) => {
     );
 
     return () => unsubscribe();
-  }, [user]);
+  }, [user?.uid]);
 
   // ✅ Cargar sesiones cerradas desde Firestore (Libro Contable)
   useEffect(() => {
@@ -119,7 +119,7 @@ export const CashProvider = ({ children }) => {
     );
 
     return () => unsubscribe();
-  }, [user]);
+  }, [user?.uid]);
 
   // ✅ RESTAURAR SESIÓN ABIERTA al recargar página (escucha permanente)
   // Usa un listener continuo para detectar cuando se abre/cierra caja
@@ -140,23 +140,24 @@ export const CashProvider = ({ children }) => {
       q,
       (snapshot) => {
         if (snapshot.empty) {
-          console.log('✅ No hay sesión abierta - caja debe abrirse');
-          // Si no hay sesión abierta y la app detecta esto, caja está cerrada
-          if (cashSession) {
-            setCashSession(null); // Hay sesión local pero no en Firestore
-          }
+          // Usar updater funcional: evita stale closure sobre cashSession
+          setCashSession((prev) => (prev === null ? null : null));
           return;
         }
 
         const openSession = snapshot.docs[0].data();
+        const incomingId = snapshot.docs[0].id;
         const restoredSession = {
           ...openSession,
-          id: snapshot.docs[0].id, // ✅ Agregar ID del documento
+          id: incomingId,
           openDate: openSession.openDate?.toDate?.() || new Date(openSession.openDate),
         };
-        
-        setCashSession(restoredSession);
-        console.log('✅ Sesión de caja actualizada:', restoredSession.id);
+
+        // Guardia: no actualizar si ya es la misma sesión (mismo ID y estado)
+        setCashSession((prev) => {
+          if (prev?.id === incomingId && prev?.status === restoredSession.status) return prev;
+          return restoredSession;
+        });
       },
       (error) => {
         console.warn('⚠️ Error buscando sesión abierta:', error.message);
@@ -164,7 +165,7 @@ export const CashProvider = ({ children }) => {
     );
 
     return () => unsubscribe();
-  }, [user]);
+  }, [user?.uid]);
 
   // Abrir caja
   const openCash = async (cashData) => {
@@ -445,7 +446,7 @@ export const CashProvider = ({ children }) => {
   };
 
   // Registrar movimiento (local, para sesión actual)
-  const addMovement = (type, amount, description, metadata = {}) => {
+  const addMovement = useCallback((type, amount, description, metadata = {}) => {
     const movement = {
       id: Date.now(),
       type,
@@ -458,7 +459,7 @@ export const CashProvider = ({ children }) => {
     
     setCashMovements(prev => [...prev, movement]);
     return movement;
-  };
+  }, []); // setCashMovements es estable → no necesita deps
 
   // ✅ Actualizar monto acumulado de domicilios entregados
   const registerDeliveryExpenses = (tickets) => {
@@ -595,7 +596,7 @@ export const CashProvider = ({ children }) => {
     };
   };
 
-  const value = {
+  const value = useMemo(() => ({
     cashSession,
     setCashSession,
     expenses,
@@ -616,7 +617,8 @@ export const CashProvider = ({ children }) => {
     getSessionsByDateRange,
     getPeriodSummary,
     isCashOpen: !!cashSession,
-  };
+  // Solo re-construir el objeto cuando el estado real cambia (no en cada render)
+  }), [cashSession, expenses, cashMovements, sessionHistory, loading, addMovement]);
 
   return (
     <CashContext.Provider value={value}>
