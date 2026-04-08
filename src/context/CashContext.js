@@ -15,6 +15,10 @@ export const CashProvider = ({ children }) => {
   const [sessionHistory, setSessionHistory] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  const isProcessingExpensesRef = useRef(false); // 🛡️ Anti-reentrada gastos
+  const isProcessingHistoryRef = useRef(false);  // 🛡️ Anti-reentrada historial
+  const isProcessingSessionRef = useRef(false);  // 🛡️ Anti-reentrada sesión
+
   // Calcular gastos automáticos de domicilios
   const calculateDeliveryExpenses = (tickets) => {
     if (!cashSession || !tickets) return 0;
@@ -66,13 +70,19 @@ export const CashProvider = ({ children }) => {
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
+        if (isProcessingExpensesRef.current) return;
+        isProcessingExpensesRef.current = true;
         const expensesData = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
           date: doc.data().date?.toDate?.() || doc.data().date,
         }));
-        setExpenses(expensesData);
+        setExpenses(prev => {
+          if (JSON.stringify(prev) === JSON.stringify(expensesData)) return prev;
+          return expensesData;
+        });
         setLoading(false);
+        isProcessingExpensesRef.current = false;
       },
       (error) => {
         console.warn('⚠️ Error cargando gastos:', error.message);
@@ -100,13 +110,19 @@ export const CashProvider = ({ children }) => {
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
+        if (isProcessingHistoryRef.current) return;
+        isProcessingHistoryRef.current = true;
         const sessions = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
           closeDate: doc.data().closeDate?.toDate?.() || new Date(doc.data().closeDate),
           openDate: doc.data().openDate?.toDate?.() || new Date(doc.data().openDate),
         }));
-        setSessionHistory(sessions);
+        setSessionHistory(prev => {
+          if (JSON.stringify(prev) === JSON.stringify(sessions)) return prev;
+          return sessions;
+        });
+        isProcessingHistoryRef.current = false;
       },
       (error) => {
         console.warn('⚠️ Error cargando sesiones cerradas:', error.message);
@@ -132,9 +148,12 @@ export const CashProvider = ({ children }) => {
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
+        if (isProcessingSessionRef.current) return;
+        isProcessingSessionRef.current = true;
+
         if (snapshot.empty) {
-          // Usar updater funcional: evita stale closure sobre cashSession
           setCashSession((prev) => (prev === null ? null : null));
+          isProcessingSessionRef.current = false;
           return;
         }
 
@@ -151,6 +170,7 @@ export const CashProvider = ({ children }) => {
           if (prev?.id === incomingId && prev?.status === restoredSession.status) return prev;
           return restoredSession;
         });
+        isProcessingSessionRef.current = false;
       },
       (error) => {
         console.warn('⚠️ Error buscando sesión abierta:', error.message);

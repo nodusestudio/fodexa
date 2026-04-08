@@ -156,6 +156,7 @@ export const OrderProvider = ({ children }) => {
   const unsubscribeOrdersRef = useRef(null);
   const networkDisabledRef = useRef(false);
   const offlineActivatedRef = useRef(false);
+  const isProcessingRef = useRef(false); // 🛡️ Bandera anti-reentrada en onSnapshot
 
   // 🔒 Freno de mano: evita re-inicialización cuando otros contextos cambian
   const isInitialSyncDoneRef = useRef(false);
@@ -201,6 +202,7 @@ export const OrderProvider = ({ children }) => {
     cleanupRunRef.current = false;
     tablesLoadedRef.current = false;
     isInitialSyncDoneRef.current = false;
+    isProcessingRef.current = false;
   }, [uid]);
 
   // 🪑 EFECTO 0: Cargar mesas desde Firestore (SE EJECUTA UNA SOLA VEZ)
@@ -388,6 +390,8 @@ export const OrderProvider = ({ children }) => {
         unsubscribeOrdersRef.current = onSnapshot(
           q,
           (snapshot) => {
+          if (isProcessingRef.current) return;
+          isProcessingRef.current = true;
           retryCountRef.current = 0;
           offlineActivatedRef.current = false;
           setIsOfflineSafe(false);
@@ -432,9 +436,15 @@ export const OrderProvider = ({ children }) => {
             return bTime - aTime;
           });
 
+          if (JSON.stringify(ordersRef.current) === JSON.stringify(activeOrders)) {
+            setLoadingSafe(false);
+            isProcessingRef.current = false;
+            return;
+          }
           setOrdersSafe(activeOrders);
           writeOrdersToCache(uid, activeOrders);
           setLoadingSafe(false);
+          isProcessingRef.current = false;
           },
           (error) => {
           if (isQuotaOrTimeoutFirestoreError(error)) {
