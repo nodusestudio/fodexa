@@ -102,6 +102,33 @@ const sanitizeOrderFromDoc = (docSnapshot) => {
   };
 };
 
+const areOrdersEqual = (prev = [], next = []) => {
+  if (prev === next) return true;
+  if (!Array.isArray(prev) || !Array.isArray(next)) return false;
+  if (prev.length !== next.length) return false;
+
+  for (let i = 0; i < prev.length; i += 1) {
+    const a = prev[i];
+    const b = next[i];
+    if (!a || !b) return false;
+
+    const aTime = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+    const bTime = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+
+    if (
+      a.id !== b.id ||
+      a.status !== b.status ||
+      a.type !== b.type ||
+      aTime !== bTime ||
+      Number(a.total || 0) !== Number(b.total || 0)
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
 export const OrderProvider = ({ children }) => {
   const auth = useAuth();
   const user = auth?.user;
@@ -128,14 +155,32 @@ export const OrderProvider = ({ children }) => {
   const retryTimeoutRef = useRef(null);
   const unsubscribeOrdersRef = useRef(null);
   const networkDisabledRef = useRef(false);
+  const offlineActivatedRef = useRef(false);
+
+  const setIsOfflineSafe = useCallback((nextValue) => {
+    setIsOffline((prev) => (prev === nextValue ? prev : nextValue));
+  }, []);
+
+  const setOrdersModeSafe = useCallback((nextValue) => {
+    setOrdersMode((prev) => (prev === nextValue ? prev : nextValue));
+  }, []);
+
+  const setLoadingSafe = useCallback((nextValue) => {
+    setLoading((prev) => (prev === nextValue ? prev : nextValue));
+  }, []);
+
+  const setOrdersSafe = useCallback((nextOrders) => {
+    setOrders((prev) => (areOrdersEqual(prev, nextOrders) ? prev : nextOrders));
+  }, []);
 
   useEffect(() => {
     ordersMapRef.current = new Map();
     ordersHydratedRef.current = false;
     retryCountRef.current = 0;
     networkDisabledRef.current = false;
-    setIsOffline(readOfflineModeFlag(uid));
-    setOrdersMode(readOfflineModeFlag(uid) ? 'offline' : 'firestore');
+    offlineActivatedRef.current = false;
+    setIsOfflineSafe(readOfflineModeFlag(uid));
+    setOrdersModeSafe(readOfflineModeFlag(uid) ? 'offline' : 'firestore');
 
     if (retryTimeoutRef.current) {
       clearTimeout(retryTimeoutRef.current);
@@ -245,10 +290,10 @@ export const OrderProvider = ({ children }) => {
   // 🔄 EFECTO 2: Listener real-time (carga y observa órdenes válidas)
   useEffect(() => {
     if (!uid) {
-      setOrders([]);
-      setLoading(false);
-      setIsOffline(readOfflineModeFlag(uid));
-      setOrdersMode(readOfflineModeFlag(uid) ? 'offline' : 'firestore');
+      setOrdersSafe([]);
+      setLoadingSafe(false);
+      setIsOfflineSafe(readOfflineModeFlag(uid));
+      setOrdersModeSafe(readOfflineModeFlag(uid) ? 'offline' : 'firestore');
       ordersMapRef.current = new Map();
       ordersHydratedRef.current = false;
 
@@ -265,10 +310,10 @@ export const OrderProvider = ({ children }) => {
       return;
     }
 
-    setLoading(true);
+    setLoadingSafe(true);
     const offlinePersisted = readOfflineModeFlag(uid);
-    setIsOffline(offlinePersisted);
-    setOrdersMode(offlinePersisted ? 'offline' : 'firestore');
+    setIsOfflineSafe(offlinePersisted);
+    setOrdersModeSafe(offlinePersisted ? 'offline' : 'firestore');
 
     const fallbackToLocalMode = () => {
       const cachedOrders = readOrdersFromCache(uid).filter(
@@ -292,14 +337,16 @@ export const OrderProvider = ({ children }) => {
           return bTime - aTime;
         });
 
-      setOrdersMode('offline');
-      setIsOffline(true);
-      setOrders(normalized);
-      setLoading(false);
+      setOrdersModeSafe('offline');
+      setIsOfflineSafe(true);
+      setOrdersSafe(normalized);
+      setLoadingSafe(false);
       ordersHydratedRef.current = true;
     };
 
     const activateOfflineMode = (reason) => {
+      if (offlineActivatedRef.current) return;
+      offlineActivatedRef.current = true;
       console.warn(`⚠️ Activando Modo Offline persistente: ${reason}`);
       writeOfflineModeFlag(uid, true);
 
@@ -355,8 +402,9 @@ export const OrderProvider = ({ children }) => {
           q,
           (snapshot) => {
           retryCountRef.current = 0;
-          setIsOffline(false);
-          setOrdersMode('firestore');
+          offlineActivatedRef.current = false;
+          setIsOfflineSafe(false);
+          setOrdersModeSafe('firestore');
           writeOfflineModeFlag(uid, false);
 
           if (retryTimeoutRef.current) {
@@ -396,9 +444,9 @@ export const OrderProvider = ({ children }) => {
             return bTime - aTime;
           });
 
-          setOrders(activeOrders);
+          setOrdersSafe(activeOrders);
           writeOrdersToCache(uid, activeOrders);
-          setLoading(false);
+          setLoadingSafe(false);
           },
           (error) => {
           if (isQuotaOrTimeoutFirestoreError(error)) {
@@ -590,7 +638,7 @@ export const OrderProvider = ({ children }) => {
         } catch (firestoreError) {
           if (isQuotaOrTimeoutFirestoreError(firestoreError)) {
             writeOfflineModeFlag(user.uid, true);
-            setOrdersMode('offline');
+            setOrdersModeSafe('offline');
 
             finalOrderId = `offline_${Date.now()}`;
             finalOrderData = {
@@ -629,7 +677,7 @@ export const OrderProvider = ({ children }) => {
       console.error('❌ Error creando orden:', error);
       throw error;
     }
-  }, [ordersMode, user, uid]);
+  }, [ordersMode, setOrdersModeSafe, user, uid]);
 
   // Actualiza un pedido existente y actualiza estado local
   const updateOrder = useCallback(async (id, data) => {
@@ -683,7 +731,7 @@ export const OrderProvider = ({ children }) => {
         } catch (error) {
           if (isQuotaOrTimeoutFirestoreError(error)) {
             writeOfflineModeFlag(user.uid, true);
-            setOrdersMode('offline');
+            setOrdersModeSafe('offline');
             setOrders((prev) => {
               const updated = prev.map((order) =>
                 order.id === id ? { ...order, ...data, updatedAt: new Date(), syncStatus: 'local' } : order
@@ -719,7 +767,7 @@ export const OrderProvider = ({ children }) => {
       console.error('   Stack:', error.stack);
       throw error;
     }
-  }, [orders, ordersMode, uid, user]);
+  }, [orders, ordersMode, setOrdersModeSafe, uid, user]);
 
   // Elimina un pedido directamente de Firestore (no solo marcar como completada)
   const deleteOrder = useCallback(async (id) => {
