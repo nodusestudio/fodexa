@@ -1,9 +1,9 @@
 // Version control for FODEXA system
 // Format: f-XXXX (starts at f-1001 and increments with each change)
 
-export const APP_VERSION = 'f-4004';
-export const VERSION_NUMBER = '44.0.0';
-export const FULL_VERSION = `f-4004 v44.0.0`;
+export const APP_VERSION = 'f-5006';
+export const VERSION_NUMBER = '7.3';
+export const FULL_VERSION = `f-5006 v7.3`;
 export const LAST_UPDATE = new Date().toLocaleDateString('es-CO');
 
 export const getVersionInfo = () => ({

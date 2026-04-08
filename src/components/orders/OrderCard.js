@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useRef, useContext } from 'react';
+import React, { memo, useState, useEffect, useRef, useContext, useMemo } from 'react';
 import { SettingsContext } from '../../context/SettingsContext';
 import { formatCurrency } from '../../utils/formatters';
 import { Edit2, CreditCard, Trash2, User, MapPin, Utensils, Truck } from 'lucide-react';
-import DeliveryTimer from './DeliveryTimer';
 
 const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitchen }) => {
   const { settings } = useContext(SettingsContext);
@@ -75,45 +74,56 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
     autoClose: false
   };
   
-  // Obtener valores actuales o usar defaults para órdenes
-  const orderButtons = settings?.orderButtons || defaultOrderButtons;
-  
-  const alarmTime = orderButtons?.alarmTime ?? defaultOrderButtons.alarmTime;
-  const alarmSound = orderButtons?.alarmSound ?? defaultOrderButtons.alarmSound;
-  const showTimer = orderButtons?.showTimer ?? defaultOrderButtons.showTimer;
-  const enableAutoAlarm = orderButtons?.enableAutoAlarm ?? defaultOrderButtons.enableAutoAlarm;
-  const colors = { 
-    ...defaultOrderButtons.colors, 
-    ...orderButtons?.colors 
-  };
-  const buttonTexts = { 
-    ...defaultOrderButtons.buttonTexts, 
-    ...orderButtons?.buttonTexts 
-  };
+  // Obtener valores actuales o usar defaults para órdenes - MEMOIZADO
+  const { alarmTime, alarmSound, showTimer, enableAutoAlarm, colors, buttonTexts } = useMemo(() => {
+    const orderButtons = settings?.orderButtons || defaultOrderButtons;
+    return {
+      alarmTime: orderButtons?.alarmTime ?? defaultOrderButtons.alarmTime,
+      alarmSound: orderButtons?.alarmSound ?? defaultOrderButtons.alarmSound,
+      showTimer: orderButtons?.showTimer ?? defaultOrderButtons.showTimer,
+      enableAutoAlarm: orderButtons?.enableAutoAlarm ?? defaultOrderButtons.enableAutoAlarm,
+      colors: { 
+        ...defaultOrderButtons.colors, 
+        ...orderButtons?.colors 
+      },
+      buttonTexts: { 
+        ...defaultOrderButtons.buttonTexts, 
+        ...orderButtons?.buttonTexts 
+      }
+    };
+  }, [settings?.orderButtons]);
 
-  // Obtener valores para botón de cocina
-  const kitchenButton = {
-    ...defaultKitchenButton,
-    ...settings?.kitchenButton
-  };
-  const kitchenButtonText = kitchenButton?.buttonText ?? defaultKitchenButton.buttonText;
-  const kitchenButtonColor = kitchenButton?.buttonColor ?? defaultKitchenButton.buttonColor;
+  // Obtener valores para botón de cocina - MEMOIZADO
+  const { kitchenButtonText, kitchenButtonColor } = useMemo(() => {
+    const kitchenButton = {
+      ...defaultKitchenButton,
+      ...settings?.kitchenButton
+    };
+    return {
+      kitchenButtonText: kitchenButton?.buttonText ?? defaultKitchenButton.buttonText,
+      kitchenButtonColor: kitchenButton?.buttonColor ?? defaultKitchenButton.buttonColor
+    };
+  }, [settings?.kitchenButton]);
 
-  // Obtener valores para pago
-  const payment = {
-    ...defaultPayment,
-    ...settings?.payment,
-    methods: {
-      ...defaultPayment.methods,
-      ...(settings?.payment?.methods || {})
-    },
-    splitPayment: {
-      ...defaultPayment.splitPayment,
-      ...(settings?.payment?.splitPayment || {})
-    }
-  };
-  const paymentButtonText = payment?.buttonText ?? defaultPayment.buttonText;
-  const paymentButtonColor = payment?.buttonColor ?? defaultPayment.buttonColor;
+  // Obtener valores para pago - MEMOIZADO
+  const { paymentButtonText, paymentButtonColor } = useMemo(() => {
+    const payment = {
+      ...defaultPayment,
+      ...settings?.payment,
+      methods: {
+        ...defaultPayment.methods,
+        ...(settings?.payment?.methods || {})
+      },
+      splitPayment: {
+        ...defaultPayment.splitPayment,
+        ...(settings?.payment?.splitPayment || {})
+      }
+    };
+    return {
+      paymentButtonText: payment?.buttonText ?? defaultPayment.buttonText,
+      paymentButtonColor: payment?.buttonColor ?? defaultPayment.buttonColor
+    };
+  }, [settings?.payment]);
 
   if (!order) return null;
   
@@ -122,21 +132,18 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
   // ============================================================
   
   // ✅ Protección 1: RECHAZAR órdenes sin status válido
-  const validStatuses = ['pending', 'waiting', 'preparing'];
+  const validStatuses = ['pending', 'waiting', 'preparing', 'ready'];
   if (!order.status || !validStatuses.includes(order.status)) {
-    console.log(`🚫 [OrderCard] NO RENDERIZAR: ${order.id} (status inválido: "${order.status}")`);
     return null;
   }
   
   // ✅ Protección 2: RECHAZAR CUALQUIER orden pagada
   if (order.status === 'completed') {
-    console.log(`🚫 [OrderCard] NO RENDERIZAR: ${order.id} (COMPLETADA - PAGADA)`);
     return null;
   }
   
   // ✅ Protección 3: RECHAZAR órdenes sin type
   if (!order.type) {
-    console.log(`🚫 [OrderCard] NO RENDERIZAR: ${order.id} (sin type definido)`);
     return null;
   }
 
@@ -146,28 +153,46 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
   const [isExpanded, setIsExpanded] = useState(false); // Siempre colapsado por defecto (ambos: mobile y desktop)
   const [displayMinutes, setDisplayMinutes] = useState(0); // 🔴 Minutos para display
   const [displaySeconds, setDisplaySeconds] = useState(0); // 🔴 Segundos para display
-  const [deliveryCountdownMinutes, setDeliveryCountdownMinutes] = useState(0); // Timer para delivery recién creado
-  const [deliveryCountdownSeconds, setDeliveryCountdownSeconds] = useState(0); // Timer para delivery recién creado
+  const [deliveryCardTimerMinutes, setDeliveryCardTimerMinutes] = useState(0); // 🚚 Timer delivery para la tarjeta
+  const [deliveryCardTimerSeconds, setDeliveryCardTimerSeconds] = useState(0); // 🚚 Timer delivery para la tarjeta
+  const [showDeliveryAlertPopup, setShowDeliveryAlertPopup] = useState(false); // 🚚 Ventana flotante de aviso de delivery
+  const [deliveryTimerMode, setDeliveryTimerMode] = useState('first'); // 🚚 'first' = firstAlarmMinutes, 'second' = secondAlarmMinutes
   const [deliveryTimerStarted, setDeliveryTimerStarted] = useState(false);
   const [showDeliveryAlertModal, setShowDeliveryAlertModal] = useState(false); // Modal cuando llega a 10 min
   const [showDeliveryTimerModal, setShowDeliveryTimerModal] = useState(false); // Control para cerrar DeliveryTimer flotante
   
-  // 🔴 Obtener configuración del timer de delivery
-  const firstAlarmMinutes = settings?.deliveryTimer?.firstAlarmMinutes ?? 10;
-  const secondAlarmMinutes = settings?.deliveryTimer?.secondAlarmMinutes ?? 5;
-  // 🚚 SIEMPRE usar el valor actual de firstAlarmMinutes (no usar state)
-  const deliveryTimerThreshold = firstAlarmMinutes;
-
-  // 🔴 LOG: Mostrar qué valores estamos usando
-  console.log(`🚚 [OrderCard CONFIG] firstAlarmMinutes=${firstAlarmMinutes}, alarmTime=${alarmTime}, settings.deliveryTimer=`, settings?.deliveryTimer);
+  // 🔴 Obtener configuración del timer de delivery - MEMOIZADO para evitar re-renders
+  const { firstAlarmMinutes, secondAlarmMinutes, deliveryTimeoutMinutes, deliveryTimerThreshold } = useMemo(() => {
+    const first = settings?.deliveryTimer?.firstAlarmMinutes ?? 10;
+    const second = settings?.deliveryTimer?.secondAlarmMinutes ?? 5;
+    const timeout = settings?.deliveryTimer?.deliveryTimeoutMinutes ?? 10;
+    return { 
+      firstAlarmMinutes: first, 
+      secondAlarmMinutes: second, 
+      deliveryTimeoutMinutes: timeout,
+      deliveryTimerThreshold: first
+    };
+  }, [settings?.deliveryTimer?.firstAlarmMinutes, settings?.deliveryTimer?.secondAlarmMinutes, settings?.deliveryTimer?.deliveryTimeoutMinutes]);
   
-  // 🔴 Obtener tiempos de Firestore
-  const preparingStartTime = order.preparingStartTime ? new Date(order.preparingStartTime) : null;
-  const servedStartTime = order.servedStartTime ? new Date(order.servedStartTime) : null;
-  const deliveryTimerStartTime = order.deliveryTimerStartTime ? new Date(order.deliveryTimerStartTime) : null;
+  // 🔴 Normalizar timestamps de Firestore (pueden ser Timestamp objects o números)
+  const normalizeTimestamp = (value) => {
+    if (!value) return null;
+    // Si es objeto Firestore Timestamp, extraer milisegundos
+    if (typeof value === 'object' && value.toMillis) return value.toMillis();
+    // Si es número, retornar tal cual
+    if (typeof value === 'number') return value;
+    // Si es string, convertir a número
+    if (typeof value === 'string') return parseInt(value, 10) || null;
+    return null;
+  };
+
+  // 🔴 Obtener tiempos de Firestore (timestamps, no Date objects para evitar recreación)
+  const preparingStartTimeTimestamp = normalizeTimestamp(order.preparingStartTime);
+  const servedStartTimeTimestamp = normalizeTimestamp(order.servedStartTime);
+  const deliveryTimerStartTimeTimestamp = normalizeTimestamp(order.deliveryTimerStartTime);
   
   // 🔴 Determinar qué contador mostrar
-  const isServedPhase = !!servedStartTime;
+  const isServedPhase = !!servedStartTimeTimestamp;
   
   // Estados para domicilio
   const [deliveryStartTime, setDeliveryStartTime] = useState(null);
@@ -177,6 +202,7 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
 
   // Refs para rastrear alarmas y prevenir doble click
   const lastDeliveryAlarmMinuteRef = useRef(-1);
+  const deliveryAlertPopupShownRef = useRef(false); // 🚚 Rastrear si ya se mostró popup de delivery
   const isProcessingStatusChangeRef = useRef(false); // 🔴 Prevenir doble click en botón de status
   const alarmTriggeredRef = useRef(false); // 🔴 Rastrear si ya se disparó alarma a los 20min
   const deliveryAlarmShownRef = useRef(false); // 🚚 Rastrear si ya se mostró alarma delivery
@@ -190,11 +216,11 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
     setAlarmTriggered(false);
 
     const interval = setInterval(() => {
-      // Usar servedStartTime si existe, si no usar preparingStartTime
-      const currentStartTime = isServedPhase ? servedStartTime : preparingStartTime;
+      // Usar servedStartTimeTimestamp si existe, si no usar preparingStartTimeTimestamp
+      const currentStartTime = isServedPhase ? servedStartTimeTimestamp : preparingStartTimeTimestamp;
       if (!currentStartTime) return;
 
-      const now = new Date();
+      const now = new Date().getTime();
       const totalSeconds = Math.floor((now - currentStartTime) / 1000);
       const minutes = Math.floor(totalSeconds / 60);
       const seconds = totalSeconds % 60;
@@ -216,7 +242,7 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [order.status, preparingStartTime, servedStartTime, isServedPhase]);
+  }, [order.status, preparingStartTimeTimestamp, servedStartTimeTimestamp, isServedPhase, alarmTime, enableAutoAlarm]);
 
   // Timer para contar tiempo de espera de domicilio
   useEffect(() => {
@@ -224,14 +250,21 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
 
     // Si no tenemos deliveryStartTime, usa el timestamp de cuando pasó a waiting (o el timestamp actual)
     if (!deliveryStartTime) {
-      setDeliveryStartTime(new Date());
+      const newStartTime = new Date().getTime();
+      setDeliveryStartTime(new Date(newStartTime));
+      // 🚚 Guardar en Firestore para que persista cuando cambias de sección
+      onUpdateStatus(order.id, { deliveryTimerStartTime: newStartTime });
       lastDeliveryAlarmMinuteRef.current = -1;
       return; // Recursión del useEffect con el nuevo deliveryStartTime
     }
 
     const interval = setInterval(() => {
-      const now = new Date();
-      const minutes = Math.floor((now - deliveryStartTime) / 60000);
+      const now = new Date().getTime();
+      // 🚚 Usar deliveryTimerStartTimeTimestamp de Firestore si existe, sino el estado local
+      const startTimeToUse = deliveryTimerStartTimeTimestamp || deliveryStartTime?.getTime?.();
+      if (!startTimeToUse) return;
+      
+      const minutes = Math.floor((now - startTimeToUse) / 60000);
       
       setDeliveryElapsedTime(minutes);
 
@@ -244,66 +277,60 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [order.status, deliveryStartTime]);
+  }, [order.status, order.id, deliveryTimerStartTimeTimestamp, deliveryStartTime, alarmTime, onUpdateStatus]);
 
-  // 🚚 CERRAR el modal DEFINITIVAMENTE cuando status cambia a 'waiting'
+  // 🚚 Timer de delivery para mostrar en la tarjeta - Se detiene al llegar al umbral configurado
   useEffect(() => {
-    if (order.status === 'waiting') {
-      console.log(`🚚 [OrderCard] Status cambió a 'waiting' - CERRANDO MODAL DEFINITIVAMENTE`);
-      setShowDeliveryTimerModal(false);
-      // El ref ya está a true gracias a handleDelivery(), así que no se reabrirá
-    }
-  }, [order.status]);
-
-  // 🚚 NO CERRAR el modal automáticamente cuando cambia a 'waiting'
-  // El usuario debe cerrar manualmente o ver la alarma flotante 
-  // (Se cierra en handleDelivery cuando hace clic en "Solicitar Domi")
-
-  // 🚚 Timer para órdenes de delivery - SIEMPRE mostrar contador
-  useEffect(() => {
-    // Timer se ejecuta para delivery en pending O waiting
-    if (order.type !== 'delivery' || (order.status !== 'pending' && order.status !== 'waiting')) {
-      setDeliveryTimerStarted(false);
+    if (order.type !== 'delivery' || order.status !== 'waiting') {
+      setDeliveryCardTimerMinutes(0);
+      setDeliveryCardTimerSeconds(0);
       return;
     }
 
-    console.log(`🚚 [OrderCard DELIVERY TIMER] Iniciando - order: ${order.id}, status: ${order.status}, firstAlarmMinutes(threshold): ${firstAlarmMinutes}`);
-
-    // Si no tiene deliveryTimerStartTime, crearlo (fallback)
-    if (!deliveryTimerStartTime) {
-      console.warn(`🚚 [OrderCard] Sin deliveryTimerStartTime, guardando uno nuevo...`);
-      const startTime = new Date().getTime();
-      onUpdateStatus(order.id, { deliveryTimerStartTime: startTime });
-      return; // Esperar a que se actualice la orden
+    // 🚚 Usar deliveryTimerStartTimeTimestamp de Firestore si existe, sino el estado local o preparingStartTimeTimestamp
+    const startTimeToUse = deliveryTimerStartTimeTimestamp || deliveryStartTime?.getTime?.() || preparingStartTimeTimestamp;
+    if (!startTimeToUse) {
+      setDeliveryCardTimerMinutes(0);
+      setDeliveryCardTimerSeconds(0);
+      return;
     }
-
-    // Reset ref cuando entra a pending
-    if (order.status === 'pending') {
-      deliveryAlarmShownRef.current = false;
-    }
-
-    setDeliveryTimerStarted(true);
 
     const interval = setInterval(() => {
-      const now = new Date();
-      const elapsedSeconds = Math.floor((now - deliveryTimerStartTime) / 1000);
+      const now = new Date().getTime();
+      const elapsedSeconds = Math.floor((now - startTimeToUse) / 1000);
       const minutes = Math.floor(elapsedSeconds / 60);
       const seconds = elapsedSeconds % 60;
 
-      setDeliveryCountdownMinutes(minutes);
-      setDeliveryCountdownSeconds(seconds);
+      // Determinar el umbral basado en el modo (first o second)
+      const targetThreshold = deliveryTimerMode === 'second' ? secondAlarmMinutes : firstAlarmMinutes;
 
-      // 🚚 ALARMA: Se dispara cuando minutos >= umbral Y (status=pending O status=waiting) Y no hemos mostrado alarma
-      if (minutes >= deliveryTimerThreshold && (order.status === 'pending' || order.status === 'waiting') && !deliveryAlarmShownRef.current) {
-        console.log(`⏰ [DELIVERY ALARM TRIGGERED] ${minutes}min >= ${deliveryTimerThreshold}min THRESHOLD - Status: ${order.status} - Mostrando modal`);
-        playAlarm();
-        setShowDeliveryTimerModal(true);
-        deliveryAlarmShownRef.current = true;
+      // El timer se para cuando llega al umbral configurado
+      if (minutes >= targetThreshold) {
+        setDeliveryCardTimerMinutes(targetThreshold);
+        setDeliveryCardTimerSeconds(0);
+        
+        // Mostrar popup cuando llega al umbral
+        if (!deliveryAlertPopupShownRef.current) {
+          setShowDeliveryAlertPopup(true);
+          deliveryAlertPopupShownRef.current = true;
+        }
+      } else {
+        setDeliveryCardTimerMinutes(minutes);
+        setDeliveryCardTimerSeconds(seconds);
       }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [order.type, order.status, deliveryTimerStartTime, deliveryTimerThreshold]);
+  }, [order.type, order.status, deliveryTimerStartTimeTimestamp, preparingStartTimeTimestamp, deliveryStartTime, deliveryTimerMode, firstAlarmMinutes, secondAlarmMinutes]);
+
+  // 🚚 Resetear popup cuando el status cambia FUERA de 'waiting'
+  useEffect(() => {
+    if (order.status !== 'waiting') {
+      deliveryAlertPopupShownRef.current = false;
+      setShowDeliveryAlertPopup(false);
+      setDeliveryTimerMode('first'); // 🚚 Solo resetear a 'first' cuando SALIMOS de waiting
+    }
+  }, [order.status]);
 
   // Reproducir alarma de sonido
   const playAlarm = () => {
@@ -365,7 +392,6 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text).then(() => {
       // Usar una notificación silenciosa sin modal ni botón
-      console.log('✓ Mensaje copiado al portapapeles');
     }).catch((err) => {
       console.error('Error al copiar:', err);
     });
@@ -378,25 +404,28 @@ const OrderCard = ({ order, onEdit, onPay, onDelete, onUpdateStatus, onPrintKitc
       return;
     }
     
-    console.log('🚚 [OrderCard] handleDelivery() EJECUTADO para orden:', order.id);
+    // 🔴 FASE 1: PRIMERO CERRAR LOS MODALES DEFINITIVAMENTE
+    setShowDeliveryAlertModal(false); // Cerrar modal del timer si está abierto
+    setShowDeliveryTimerModal(false); // Cerrar modal flotante PRIMERO
+    deliveryAlarmShownRef.current = true; // 🚚 Desactivar alarma ANTES de cambiar estado para evitar que se reabre
+    
+    // 🔴 FASE 2: COPIAR MENSAJE AL PORTAPAPELES
     const message = `me mandas un domiciliario por favor, va para ${order.deliveryData?.address || 'la dirección'}`;
     copyToClipboard(message);
     
-    // Cambiar estado a "waiting" (esperando domiciliario)
-    // Actualizar múltiples campos al mismo tiempo
+    // 🔴 FASE 3: CAMBIAR ESTADO A "waiting" (esperando domiciliario)
     const updateData = {
       status: 'waiting',
-      deliveryRequestedAt: new Date().getTime()
+      deliveryRequestedAt: new Date().getTime(),
+      deliveryTimerStartTime: new Date().getTime() // 🚚 Guardar timestamp en Firestore para persistencia
     };
     
-    console.log('🚚 [OrderCard] Llamando onUpdateStatus con:', updateData);
     onUpdateStatus(order.id, updateData);
     setDeliveryStartTime(new Date());
+    setDeliveryCardTimerMinutes(0);
+    setDeliveryCardTimerSeconds(0);
     lastDeliveryAlarmMinuteRef.current = -1; // Reset ref para nueva alarma
-    setShowDeliveryAlertModal(false); // Cerrar modal del timer si está abierto
-    setShowDeliveryTimerModal(false); // Cerrar modal flotante
-    deliveryAlarmShownRef.current = true; // 🚚 IMPORTANTE: Prevent alarm from firing again after user clicks "Solicitar Domi"
-    console.log('✅ [OrderCard] handleDelivery() completado - Alarma deshabilitada para no dispararse nuevamente');
+    
   };
 
   const handleDeliveryCompleted = () => {
@@ -422,23 +451,44 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
     setShowDeliveryWarningModal(false);
   };
 
-  // 🚚 Callback cuando se pulsa "Aún preparando" en el DeliveryTimer flotante
-  const handleContinuePreparingDelivery = () => {
-    // Resetear el timer guardando un nuevo deliveryTimerStartTime en la orden
+  // 🚚 Callback para "Aún en preparación" desde el popup - Reinicia timer a secondAlarmMinutes
+  const handleContinuePreparingFromPopup = () => {
     const newStartTime = new Date().getTime();
-    onUpdateStatus(order.id, { deliveryTimerStartTime: newStartTime });
-    setDeliveryCountdownMinutes(0);
-    setDeliveryCountdownSeconds(0);
-    setShowDeliveryAlertModal(false);
-    setShowDeliveryTimerModal(false); // Cerrar modal al continuar preparando
-    // 🚚 Reset ref para que la alarma pueda sonar de nuevo después
-    deliveryAlarmShownRef.current = false;
-    console.log(`🟡 [OrderCard] Timer reseteado. Próximo umbral: ${firstAlarmMinutes} minutos`);
+    onUpdateStatus(order.id, { deliveryTimerStartTime: newStartTime }); // 🚚 Guardar en Firestore
+    setDeliveryStartTime(new Date(newStartTime)); // 🚚 También resetear estado local
+    setDeliveryCardTimerMinutes(0);
+    setDeliveryCardTimerSeconds(0);
+    setDeliveryTimerMode('second'); // 🚚 Cambiar a segundo aviso
+    setShowDeliveryAlertPopup(false);
+    setDeliveryElapsedTime(0); // 🚚 Resetear el contador de alarma también
+    lastDeliveryAlarmMinuteRef.current = -1; // 🚚 Resetear ref de alarma
+    // Resetear ref para que el popup pueda mostrarse de nuevo
+    deliveryAlertPopupShownRef.current = false;
   };
 
+  // 🚚 Callback para "Solicitar domi" desde el popup - Cambia a ESPERANDO DOMI con timer de deliveryTimeout
+  const handleSolicitarDomiFromPopup = () => {
+    const newStartTime = new Date().getTime();
+    
+    // Cambiar estado a ESPERANDO DOMI
+    onUpdateStatus(order.id, { 
+      status: 'esperando_domi',
+      deliveryRequestedAt: newStartTime,
+      deliveryTimerStartTime: newStartTime
+    });
+    
+    setDeliveryCardTimerMinutes(0);
+    setDeliveryCardTimerSeconds(0);
+    setShowDeliveryAlertPopup(false);
+    deliveryAlertPopupShownRef.current = false;
+    
+    // Copiar mensaje
+    const message = `me mandas un domiciliario por favor, va para ${order.deliveryData?.address || 'la dirección'}`;
+    copyToClipboard(message);
+    
+  };
   // 🚚 Callback cuando se pulsa "Solicitar Domi" en el DeliveryTimer flotante
   const handleRequestDeliveryFromTimer = () => {
-    console.log('🚚 [OrderCard] handleRequestDeliveryFromTimer() ejecutado');
     setShowDeliveryAlertModal(false);
     setShowDeliveryTimerModal(false); // Cerrar modal inmediatamente
     handleDelivery();
@@ -447,7 +497,6 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
   const handleStatusChange = () => {
     // 🔴 PROTECCIÓN: Evitar doble click
     if (isProcessingStatusChangeRef.current) {
-      console.log(`⚠️ [OrderCard] Doble click prevenido en orden ${order.id}`);
       return;
     }
     
@@ -457,12 +506,10 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
       // 🔴 FASE 1: INICIA CONTADOR DE PREPARACIÓN
       const startTime = new Date().getTime();
       onUpdateStatus(order.id, { status: 'preparing', preparingStartTime: startTime });
-      console.log(`🍳 [OrderCard] Iniciando contador de preparación para orden ${order.id}`);
     } else if (order.status === 'preparing' && !servedStartTime) {
       // 🟢 FASE 2: CAMBIAR A CONTADOR DE "SERVIDO EN MESA" (reinicia contador a 00:00)
       const startTime = new Date().getTime();
       onUpdateStatus(order.id, { servedStartTime: startTime });
-      console.log(`🟢 [OrderCard] Iniciando contador de 'Servido en mesa' para orden ${order.id}`);
     }
 
     // Liberar el lock después de 500ms
@@ -525,15 +572,12 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
       order.status === 'completed' 
         ? 'bg-gray-300 dark:bg-gray-700 border-gray-400 dark:border-gray-600 opacity-75 text-gray-600 dark:text-gray-400' 
         : 'bg-white dark:bg-gray-800 border-blue-500'
-    }`} onClick={() => setIsExpanded(!isExpanded)}>
+    }`}>
       {/* HEADER COMPACTO - Siempre visible */}
-      <div className="flex justify-between items-start gap-2 cursor-pointer">
+      <div className="flex justify-between items-start gap-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <h4 className={`font-bold truncate ${order.status === 'completed' ? 'text-gray-600 dark:text-gray-500' : 'text-gray-800 dark:text-white'}`}>{getName()}</h4>
-            <span className={`text-xs ${order.status === 'completed' ? 'text-gray-500 dark:text-gray-600' : 'text-gray-500 dark:text-gray-400'}`}>
-              {isExpanded ? '▼' : '▶'}
-            </span>
           </div>
           <div className="flex items-center gap-1 mt-1 flex-wrap">
             <button
@@ -564,10 +608,10 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
               {order.type === 'delivery' && order.status === 'waiting' ? (
                 <span className="text-xs font-bold flex items-center gap-1">
                   <Truck size={14} />
-                  ESPERANDO DOMI {deliveryCountdownMinutes.toString().padStart(2, '0')}:{deliveryCountdownSeconds.toString().padStart(2, '0')}
+                  EN PREPARACIÓN {deliveryCardTimerMinutes.toString().padStart(2, '0')}:{deliveryCardTimerSeconds.toString().padStart(2, '0')}
                 </span>
               ) : (order.status === 'pending' || order.status === 'waiting') && order.type === 'delivery' ? (
-                <span className="text-xs font-bold">EN PREPARACIÓN {deliveryCountdownMinutes.toString().padStart(2, '0')}:{deliveryCountdownSeconds.toString().padStart(2, '0')}</span>
+                <span className="text-xs font-bold">EN PREPARACIÓN</span>
               ) : order.status === 'pending' 
                 ? buttonTexts.cook :  
                order.status === 'preparing' && !isServedPhase 
@@ -581,9 +625,21 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
             </button>
           </div>
         </div>
-        <div className="text-right flex-shrink-0">
-          <p className={`text-lg font-bold ${order.status === 'completed' ? 'text-gray-500 dark:text-gray-600' : 'text-blue-600 dark:text-blue-400'}`}>{formatCurrency(order.total || 0)}</p>
-          <p className={`text-xs ${order.status === 'completed' ? 'text-gray-400 dark:text-gray-700' : 'text-gray-500 dark:text-gray-400'}`}>{(order.items?.length || 0)} items</p>
+        <div className="text-right flex-shrink-0 flex flex-col items-end gap-1">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsExpanded(!isExpanded);
+            }}
+            className="text-xl p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+            title="Ver detalles"
+          >
+            {isExpanded ? '▼' : '▶'}
+          </button>
+          <div>
+            <p className={`text-lg font-bold ${order.status === 'completed' ? 'text-gray-500 dark:text-gray-600' : 'text-blue-600 dark:text-blue-400'}`}>{formatCurrency(order.total || 0)}</p>
+            <p className={`text-xs ${order.status === 'completed' ? 'text-gray-400 dark:text-gray-700' : 'text-gray-500 dark:text-gray-400'}`}>{(order.items?.length || 0)} items</p>
+          </div>
         </div>
       </div>
 
@@ -808,20 +864,53 @@ Comida rápida con acento venezolano 🇻🇪🔥`;
           </div>
         </div>
       )}
+      {/* Ventana flotante de aviso de delivery - Cuando llega a firstAlarmMinutes */}
+      {showDeliveryAlertPopup && order.type === 'delivery' && order.status === 'waiting' && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[9999]">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl p-6 max-w-md w-11/12 border-4 border-yellow-400">
+            {/* Header */}
+            <div className="text-center mb-6">
+              <div className="text-5xl mb-3">⏱️</div>
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-white">SOLICITAR DOMICILIARIO</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                Han pasado {firstAlarmMinutes} minutos desde que comenzó la preparación
+              </p>
+            </div>
 
-      {/* Floating DeliveryTimer - Aparece cuando llega al umbral (10 o 5 minutos) */}
-      {showDeliveryTimerModal && order.type === 'delivery' && (
-        <DeliveryTimer 
-          orderId={order.id} 
-          orderStatus={order.status}
-          currentMinutes={deliveryCountdownMinutes}
-          currentSeconds={deliveryCountdownSeconds}
-          onContinuePreparing={handleContinuePreparingDelivery}
-          onRequestDelivery={handleRequestDeliveryFromTimer}
-        />
+            {/* Botones */}
+            <div className="flex gap-3">
+              {/* Botón: Aún en preparación */}
+              <button
+                onClick={handleContinuePreparingFromPopup}
+                className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-4 rounded-lg transition-colors"
+              >
+                🔄 Aún en preparación
+              </button>
+
+              {/* Botón: Solicitar domi */}
+              <button
+                onClick={handleSolicitarDomiFromPopup}
+                className="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-4 rounded-lg transition-colors"
+              >
+                🚚 Solicitar Domi
+              </button>
+            </div>
+          </div>
+        </div>
       )}
+
     </div>
   );
 };
 
-export default OrderCard;
+const areEqualOrderCard = (prevProps, nextProps) => {
+  const prevOrder = prevProps?.order;
+  const nextOrder = nextProps?.order;
+
+  if (!prevOrder && !nextOrder) return true;
+  if (!prevOrder || !nextOrder) return false;
+
+  return prevOrder.id === nextOrder.id && prevOrder.status === nextOrder.status;
+};
+
+export default memo(OrderCard, areEqualOrderCard);

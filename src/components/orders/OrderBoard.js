@@ -1,114 +1,69 @@
-﻿import React, { useState } from 'react';
+﻿import React, { memo, useCallback, useMemo, useState } from 'react';
 import { useOrder } from '../../context/OrderContext';
 import OrderCard from './OrderCard';
 import { Table, ShoppingBag, Bike, Plus } from 'lucide-react';
 import KitchenTicketModal from './KitchenTicketModal';
 
 const OrderBoard = ({ onNewOrder, onEditOrder, onPayOrder, onDeleteOrder }) => {
-  const { orders = [], updateOrder } = useOrder();
-  console.log('🎯 [TABLERO] Órdenes cargadas del contexto:', orders.length);
-  orders.forEach((o, idx) => {
-    console.log(`  [${idx}] ${o.id.substring(0,8)}... type=${o.type} status=${o.status}`);
-  });
+  const { orders = [], updateOrder, isOffline } = useOrder();
 
   const [showKitchenTicket, setShowKitchenTicket] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
 
-  const handlePrintKitchen = (order) => {
+  const handlePrintKitchen = useCallback((order) => {
     setSelectedOrder(order);
     setShowKitchenTicket(true);
-  };
+  }, []);
 
-  const handleUpdateStatus = async (orderId, statusData) => {
+  const handleUpdateStatus = useCallback(async (orderId, statusData) => {
     try {
       const updateData = typeof statusData === 'string' 
         ? { status: statusData }
         : statusData;
-      
-      console.log(`🔄 Actualizando ${orderId}:`, updateData);
+
       await updateOrder(orderId, updateData);
     } catch (error) {
       console.error(`❌ Error:`, error.message);
     }
-  };
+  }, [updateOrder]);
 
-  // ============================================================
-  // 🔴 REGLA FUNDAMENTAL: Solo mostrar órdenes SIN COBRAR
-  // ============================================================
-  // VÁLIDO PARA MOSTRAR:
-  // - type='table' AND status='pending'
-  // - type='takeout' AND status='pending'  
-  // - type='delivery' AND status='pending'
-  // 
-  // EXCLUIR ABSOLUTAMENTE:
-  // - Cualquier status que NO sea 'pending', 'preparing', 'waiting'
-  // - Órdenes sin type definido
-  // - Órdenes sin status definido
-  // ============================================================
+  const { tableOrders, takeoutOrders, deliveryOrders, deliveryTotal } = useMemo(() => {
+    const validStatuses = new Set(['pending', 'preparing', 'waiting', 'ready']);
+    const nextTable = [];
+    const nextTakeout = [];
+    const nextDelivery = [];
+    let nextDeliveryTotal = 0;
 
-  // Filtro: MESA con status='pending', 'preparing', 'waiting'
-  const tableOrders = (orders || [])
-    .filter(o => {
-      // DEBE ser: type='table' Y status válido (pending, preparing, waiting)
-      const validStatuses = ['pending', 'preparing', 'waiting'];
-      const isTableValid = o.type === 'table' && validStatuses.includes(o.status);
-      
-      if (!isTableValid && o.type === 'table') {
-        console.log(`❌ EXCLUIDA MESA: ${o.id} (status="${o.status}", debe ser uno de: ${validStatuses.join(', ')})`);
+    (orders || []).forEach((order) => {
+      if (!order?.type || !validStatuses.has(order?.status)) return;
+
+      if (order.type === 'table') {
+        nextTable.push(order);
+      } else if (order.type === 'takeout') {
+        nextTakeout.push(order);
+      } else if (order.type === 'delivery') {
+        nextDelivery.push(order);
       }
-      
-      return isTableValid;
-    })
-    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-  
-  // Filtro: TAKEOUT con status='pending', 'preparing', 'waiting'
-  const takeoutOrders = (orders || [])
-    .filter(o => {
-      const validStatuses = ['pending', 'preparing', 'waiting'];
-      const isTakeoutValid = o.type === 'takeout' && validStatuses.includes(o.status);
-      
-      if (!isTakeoutValid && o.type === 'takeout') {
-        console.log(`❌ EXCLUIDA TAKEOUT: ${o.id} (status="${o.status}", debe ser uno de: ${validStatuses.join(', ')})`);
-      }
-      
-      return isTakeoutValid;
-    })
-    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-  
-  // Filtro: DELIVERY con status='pending', 'preparing', 'waiting'
-  const deliveryOrders = (orders || [])
-    .filter(o => {
-      const validStatuses = ['pending', 'preparing', 'waiting'];
-      const isDeliveryValid = o.type === 'delivery' && validStatuses.includes(o.status);
-      
-      if (!isDeliveryValid && o.type === 'delivery') {
-        console.log(`❌ EXCLUIDA DELIVERY: ${o.id} (status="${o.status}", debe ser uno de: ${validStatuses.join(', ')})`);
-      }
-      
-      return isDeliveryValid;
-    })
-    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-  
-  console.log(`🚚 [DELIVERY] Mostrando ${deliveryOrders.length} órdenes de delivery (pending/preparing/waiting)`);
-  if (deliveryOrders.length > 0) {
-    deliveryOrders.forEach(o => console.log(`   - ${o.id.substring(0,8)}... status=${o.status}`));
-  }
 
-  // Sumar costos de entrega SOLO de domicilios en espera o completados
-  // (órdenes pendientes sin pagar no tienen costo de entrega aún confirmado)
-  const deliveryTotal = (orders || [])
-    .filter(o => o.type === 'delivery' && (o.status === 'waiting' || o.status === 'completed'))
-    .reduce((sum, o) => sum + (o.deliveryCost || 0), 0);
+      if (order.type === 'delivery' && (order.status === 'waiting' || order.status === 'completed')) {
+        nextDeliveryTotal += order.deliveryCost || 0;
+      }
+    });
 
-  console.log(`📊 [TABLERO ACTUALIZADO] Mesa: ${tableOrders.length} (pending), Takeout: ${takeoutOrders.length} (pending), Delivery: ${deliveryOrders.length} (pending)`);
-  if (orders.length > tableOrders.length + takeoutOrders.length + deliveryOrders.length) {
-    console.log(`   ⚠️ ${orders.length - tableOrders.length - takeoutOrders.length - deliveryOrders.length} órdenes excluidas (status inválido)`);
-  }
+    const sortByTimestampDesc = (a, b) => new Date(b.timestamp) - new Date(a.timestamp);
+    nextTable.sort(sortByTimestampDesc);
+    nextTakeout.sort(sortByTimestampDesc);
+    nextDelivery.sort(sortByTimestampDesc);
+
+    return {
+      tableOrders: nextTable,
+      takeoutOrders: nextTakeout,
+      deliveryOrders: nextDelivery,
+      deliveryTotal: nextDeliveryTotal,
+    };
+  }, [orders]);
 
   const Column = ({ title, Icon, orders, type, color, totalCost }) => {
-    if (orders && orders.length > 0) {
-      console.log(`📦 [${title.toUpperCase()}] Mostrando ${orders.length} órdenes`);
-    }
     return (
     <div className="bg-gray-100 dark:bg-gray-900 rounded-lg sm:rounded-xl p-3 sm:p-4 min-h-[300px] sm:min-h-[400px] transition-colors">
       <div className={color + " text-white dark:text-white rounded-lg p-3 sm:p-4 mb-3 sm:mb-4 flex justify-between items-center gap-2 shadow-md transition-colors"}>
@@ -139,9 +94,7 @@ const OrderBoard = ({ onNewOrder, onEditOrder, onPayOrder, onDeleteOrder }) => {
         {!orders || orders.length === 0 ? (
           <p className="text-center text-gray-500 dark:text-gray-400 py-12">Sin pedidos</p>
         ) : (
-          orders.map((order, idx) => {
-            console.log(`  [${idx}] Renderizando: ${order.id.substring(0,8)}... (type=${order.type}, status=${order.status})`);
-            return (
+          orders.map((order, idx) => (
             <div key={order.id || idx}>
               <OrderCard 
                 order={order} 
@@ -152,8 +105,7 @@ const OrderBoard = ({ onNewOrder, onEditOrder, onPayOrder, onDeleteOrder }) => {
                 onPrintKitchen={handlePrintKitchen}
               />
             </div>
-            );
-          })
+          ))
         )}
       </div>
     </div>
@@ -162,6 +114,11 @@ const OrderBoard = ({ onNewOrder, onEditOrder, onPayOrder, onDeleteOrder }) => {
 
   return (
     <>
+      {isOffline && (
+        <div className="mb-3 px-3 py-2 rounded-lg border border-amber-300 bg-amber-50 text-amber-800 text-xs sm:text-sm">
+          Trabajando en Modo Local (Sincronizacion pausada)
+        </div>
+      )}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
         <Column title="Mesa" Icon={Table} orders={tableOrders} type="table" color="bg-blue-600" />
         <Column title="Para Llevar" Icon={ShoppingBag} orders={takeoutOrders} type="takeout" color="bg-green-600" />
@@ -178,4 +135,4 @@ const OrderBoard = ({ onNewOrder, onEditOrder, onPayOrder, onDeleteOrder }) => {
   );
 };
 
-export default OrderBoard;
+export default memo(OrderBoard);

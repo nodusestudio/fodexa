@@ -147,6 +147,16 @@ const defaultSettings = {
 
 const SettingsContext = createContext();
 
+const mergePaymentMethods = (savedMethods = {}) => {
+  return Object.keys(defaultSettings.payment.methods).reduce((acc, methodKey) => {
+    acc[methodKey] = {
+      ...defaultSettings.payment.methods[methodKey],
+      ...(savedMethods?.[methodKey] || {})
+    };
+    return acc;
+  }, {});
+};
+
 export const SettingsProvider = ({ children }) => {
   const { user } = useAuth();
   const [settings, setSettings] = useState(() => {
@@ -167,10 +177,7 @@ export const SettingsProvider = ({ children }) => {
       payment: {
         ...defaultSettings.payment,
         ...(loaded.payment || {}),
-        methods: {
-          ...defaultSettings.payment.methods,
-          ...(loaded.payment?.methods || {})
-        }
+        methods: mergePaymentMethods(loaded.payment?.methods)
       },
       deliveryTimer: {
         ...defaultSettings.deliveryTimer,
@@ -208,10 +215,7 @@ export const SettingsProvider = ({ children }) => {
             payment: {
               ...defaultSettings.payment,
               ...(firestoreSettings.payment || {}),
-              methods: {
-                ...defaultSettings.payment.methods,
-                ...(firestoreSettings.payment?.methods || {})
-              }
+              methods: mergePaymentMethods(firestoreSettings.payment?.methods)
             },
             deliveryTimer: {
               ...defaultSettings.deliveryTimer,

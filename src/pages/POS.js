@@ -11,6 +11,7 @@ import ProductGrid from '../components/products/ProductGrid';
 import CartContainer from '../components/cart/CartContainer';
 import OrderInfo from '../components/orders/OrderInfo';
 import CashFundControl from '../components/cash/CashFundControl';
+import CashOpening from '../components/cash/CashOpening';
 import PaymentModal from '../components/payments/PaymentModal';
 import { useProducts } from '../context/ProductContext';
 import { useCash } from '../context/CashContext';
@@ -43,6 +44,9 @@ const POS = () => {
   const { getActiveProducts, getActiveCategories } = useProducts();
   const dynamicProducts = getActiveProducts();
   const dynamicCategories = getActiveCategories();
+
+  // Detectar si caja está en modo LOCAL (Firestore no disponible)
+  const isLocalMode = cashSession?.id?.startsWith('local_');
 
   // ✅ PHASE 3: Validar que caja esté abierta
   useEffect(() => {
@@ -221,6 +225,23 @@ const POS = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 h-full flex flex-col transition-colors">
+      {/* ⚠️ Banner de MODO LOCAL cuando Firestore no está disponible */}
+      {isLocalMode && (
+        <div className="bg-yellow-50 dark:bg-yellow-900 dark:bg-opacity-30 border-b-2 border-yellow-400 dark:border-yellow-600 p-2 sm:p-3 md:p-4">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <AlertCircle size={20} className="sm:w-6 sm:h-6 text-yellow-600 dark:text-yellow-500 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-xs sm:text-sm font-semibold text-yellow-800 dark:text-yellow-300">
+                ⚠️ MODO LOCAL - Firebase no disponible
+              </p>
+              <p className="text-xs text-yellow-700 dark:text-yellow-400 mt-0.5">
+                Los datos se guardan localmente. Se sincronizarán cuando Firebase esté disponible.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {view === 'board' && (
         <OrderBoard 
           onNewOrder={handleNewOrder}
@@ -358,44 +379,13 @@ const POS = () => {
         />
       )}
 
-      {/* Modal - Pregunta conteo de billetes */}
+      {/* Modal - Abriendo Caja Automáticamente */}
       {showOpenCashFlow && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-4 sm:p-8 text-center space-y-4 sm:space-y-6">
-            <div className="flex justify-center">
-              <div className="w-14 sm:w-16 h-14 sm:h-16 bg-green-100 dark:bg-green-900 dark:bg-opacity-30 rounded-full flex items-center justify-center">
-                <Check size={28} className="sm:w-8 sm:h-8 text-green-600 dark:text-green-400" />
-              </div>
-            </div>
-
-            <div className="space-y-1 sm:space-y-2">
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white">
-                ✅ Caja Abierta
-              </h2>
-              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                ¿Deseas hacer el conteo de billetes y monedas ahora?
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-2 sm:gap-3 pt-2 sm:pt-4">
-              <button
-                onClick={() => {
-                  setShowOpenCashFlow(false);
-                  setShowFundModalFromPOS(true);
-                }}
-                className="px-4 sm:px-6 py-2 sm:py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors text-sm sm:text-base"
-              >
-                Sí, Contar Ahora
-              </button>
-              <button
-                onClick={() => setShowOpenCashFlow(false)}
-                className="px-4 sm:px-6 py-2 sm:py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm sm:text-base"
-              >
-                No, Más Tarde
-              </button>
-            </div>
-          </div>
-        </div>
+        <CashOpening 
+          onClose={() => {
+            setShowOpenCashFlow(false);
+          }}
+        />
       )}
 
       {/* Modal CashFundControl desde POS */}
@@ -450,15 +440,9 @@ const POS = () => {
 
             <div className="flex flex-col gap-2 sm:gap-3 pt-2 sm:pt-4">
               <button
-                onClick={async () => {
+                onClick={() => {
                   setShowNoCashModal(false);
                   setShowOpenCashFlow(true);
-                  try {
-                    await openCash({ initialAmount: 0 });
-                  } catch (error) {
-                    console.error('❌ Error abriendo caja:', error);
-                    setToast({ message: 'Error al abrir caja: ' + error.message, type: 'error' });
-                  }
                 }}
                 className="px-4 sm:px-6 py-2 sm:py-3 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-lg transition-colors text-sm sm:text-base"
               >

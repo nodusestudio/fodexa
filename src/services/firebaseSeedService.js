@@ -6,7 +6,7 @@ import { mockCategories, mockProducts, mockAddons, mockOrders, mockExpenses } fr
 export const seedCategories = async (userId) => {
   try {
     console.log('📦 Cargando categorías...');
-    const categoriesRef = collection(db, 'categories');
+    const categoriesRef = collection(db, `users/${userId}/categories`);
     
     for (const category of mockCategories) {
       await addDoc(categoriesRef, {
@@ -28,7 +28,7 @@ export const seedCategories = async (userId) => {
 export const seedProducts = async (userId) => {
   try {
     console.log('📦 Cargando productos...');
-    const productsRef = collection(db, 'products');
+    const productsRef = collection(db, `users/${userId}/products`);
     
     for (const product of mockProducts) {
       await addDoc(productsRef, {
@@ -50,7 +50,7 @@ export const seedProducts = async (userId) => {
 export const seedAddons = async (userId) => {
   try {
     console.log('📦 Cargando adicionales...');
-    const addonsRef = collection(db, 'addons');
+    const addonsRef = collection(db, `users/${userId}/addons`);
     
     for (const addon of mockAddons) {
       await addDoc(addonsRef, {
@@ -72,7 +72,7 @@ export const seedAddons = async (userId) => {
 export const seedOrders = async (userId) => {
   try {
     console.log('📦 Cargando órdenes...');
-    const ordersRef = collection(db, 'orders');
+    const ordersRef = collection(db, `users/${userId}/orders`);
     
     for (const order of mockOrders) {
       const itemsWithAddons = order.items.map(item => {
@@ -112,7 +112,7 @@ export const seedOrders = async (userId) => {
 export const seedExpenses = async (userId) => {
   try {
     console.log('📦 Cargando gastos...');
-    const expensesRef = collection(db, 'expenses');
+    const expensesRef = collection(db, `users/${userId}/expenses`);
     
     for (const expense of mockExpenses) {
       await addDoc(expensesRef, {
@@ -154,14 +154,14 @@ export const clearUserData = async (userId) => {
   try {
     console.log('🗑️ Eliminando datos del usuario...');
     
-    const collections = ['categories', 'products', 'addons', 'orders', 'expenses'];
+    const collectionNames = ['categories', 'products', 'addons', 'orders', 'expenses'];
     
-    for (const collectionName of collections) {
-      const q = query(collection(db, collectionName), where('userId', '==', userId));
+    for (const collectionName of collectionNames) {
+      const q = query(collection(db, `users/${userId}/${collectionName}`));
       const snapshot = await getDocs(q);
       
       for (const docSnap of snapshot.docs) {
-        await deleteDoc(doc(db, collectionName, docSnap.id));
+        await deleteDoc(doc(db, `users/${userId}/${collectionName}`, docSnap.id));
       }
       console.log(`✅ ${collectionName} eliminados`);
     }

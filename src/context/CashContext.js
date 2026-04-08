@@ -60,8 +60,8 @@ export const CashProvider = ({ children }) => {
     setLoading(true);
 
     const q = query(
-      collection(db, `users/${user.uid}/cash`),
-      orderBy('timestamp', 'desc')
+      collection(db, `users/${user.uid}/expenses`),
+      orderBy('date', 'desc')
     );
 
     const unsubscribe = onSnapshot(
@@ -70,7 +70,7 @@ export const CashProvider = ({ children }) => {
         const expensesData = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
-          timestamp: doc.data().timestamp?.toDate?.() || doc.data().timestamp,
+          date: doc.data().date?.toDate?.() || doc.data().date,
         }));
         setExpenses(expensesData);
         console.log('✅ Gastos cargados desde la nube:', expensesData.length);
@@ -121,17 +121,14 @@ export const CashProvider = ({ children }) => {
     return () => unsubscribe();
   }, [user]);
 
-  // ✅ RESTAURAR SESIÓN ABIERTA al recargar página (solo UNA VEZ)
-  // Usar una ref para evitar múltiples restauraciones
-  const restorationAttempted = useRef(false);
-  
+  // ✅ RESTAURAR SESIÓN ABIERTA al recargar página (escucha permanente)
+  // Usa un listener continuo para detectar cuando se abre/cierra caja
   useEffect(() => {
-    if (!user || cashSession || restorationAttempted.current) {
-      return; // Ya hay sesión, usuario no auth, o ya intentamos restaurar
+    if (!user) {
+      return; // Usuario no autenticado
     }
 
-    restorationAttempted.current = true;
-    console.log('🔍 Buscando sesión abierta para restaurar...');
+    console.log('🔍 Iniciando listener permanente de sesión abierta...');
 
     const q = query(
       collection(db, `users/${user.uid}/cashSessions`),
@@ -144,22 +141,25 @@ export const CashProvider = ({ children }) => {
       (snapshot) => {
         if (snapshot.empty) {
           console.log('✅ No hay sesión abierta - caja debe abrirse');
-          restorationAttempted.current = false; // Permitir reintento
+          // Si no hay sesión abierta y la app detecta esto, caja está cerrada
+          if (cashSession) {
+            setCashSession(null); // Hay sesión local pero no en Firestore
+          }
           return;
         }
 
         const openSession = snapshot.docs[0].data();
         const restoredSession = {
           ...openSession,
+          id: snapshot.docs[0].id, // ✅ Agregar ID del documento
           openDate: openSession.openDate?.toDate?.() || new Date(openSession.openDate),
         };
         
         setCashSession(restoredSession);
-        console.log('✅ Sesión de caja restaurada:', restoredSession.id);
+        console.log('✅ Sesión de caja actualizada:', restoredSession.id);
       },
       (error) => {
         console.warn('⚠️ Error buscando sesión abierta:', error.message);
-        restorationAttempted.current = false; // Permitir reintento en caso de error
       }
     );
 
@@ -178,6 +178,7 @@ export const CashProvider = ({ children }) => {
     const fundAmount = cashData?.fundAmount || 0;
     const breakdown = cashData?.breakdown || {};
     const openedAt = cashData?.openedAt || new Date();
+    const forceLocal = cashData?.forceLocal || false; // ⚡ Forzar modo LOCAL sin intentar Firestore
 
     const session = {
       openDate: openedAt,
@@ -190,6 +191,28 @@ export const CashProvider = ({ children }) => {
       status: 'open',
       expenses: [], // Array de egresos
     };
+    
+    // ⚡ SI SE FUERZA MODO LOCAL, No intentar Firestore - ir directo a local
+    if (forceLocal) {
+      console.warn('⚡ [MODO LOCAL] Forzando apertura de caja en modo local...');
+      const localSessionId = `local_${Date.now()}`;
+      const sessionWithId = { ...session, id: localSessionId };
+      setCashSession(sessionWithId);
+      addMovement('opening', initialAmount, 'Apertura de caja (MODO LOCAL)');
+      addMovement(
+        'expense',
+        0,
+        '🚗 Domicilios del Día',
+        { 
+          paymentType: 'efectivo',
+          category: 'Domicilios',
+          isAccumulative: true,
+          sessionId: localSessionId
+        }
+      );
+      console.log('✅ Caja abierta en MODO LOCAL - ID:', localSessionId);
+      return sessionWithId;
+    }
     
     try {
       // ✅ GUARDAR SESIÓN EN FIRESTORE inmediatamente
@@ -215,8 +238,45 @@ export const CashProvider = ({ children }) => {
       
       return sessionWithId;
     } catch (error) {
-      console.error('❌ Error guardando sesión de caja:', error);
-      throw error;
+      console.error('❌ Error guardando sesión de caja en Firestore:', error);
+      
+      // Detectar tipo de error para mensaje específico
+      let userMessage = error.message;
+      let isQuotaError = false;
+      
+      if (error.code === 'permission-denied') {
+        userMessage = 'Permiso denegado. Verifica reglas de Firestore.';
+      } else if (error.code === 'quota-exceeded' || error.message?.includes('quota') || error.message?.includes('resource-exhausted')) {
+        userMessage = 'Cuota de Firestore alcanzada temporalmente. Abriendo caja en modo local...';
+        isQuotaError = true;
+      } else if (error.message?.includes('offline')) {
+        userMessage = 'Sin conexión. Abriendo caja en modo local...';
+        isQuotaError = true;
+      }
+      
+      // ✅ FALLBACK: Abrir caja localmente si Firestore falla
+      if (isQuotaError) {
+        const localSessionId = `local_${Date.now()}`;
+        const sessionWithId = { ...session, id: localSessionId };
+        setCashSession(sessionWithId);
+        console.warn('⚠️ Caja abierta en MODO LOCAL (Firestore no disponible)');
+        console.warn('   Los datos se sincronizarán cuando Firestore esté disponible.');
+        addMovement('opening', initialAmount, 'Apertura de caja (local)');
+        addMovement(
+          'expense',
+          0,
+          '🚗 Domicilios del Día',
+          { 
+            paymentType: 'efectivo',
+            category: 'Domicilios',
+            isAccumulative: true,
+            sessionId: localSessionId
+          }
+        );
+        return sessionWithId;
+      }
+      
+      throw new Error(userMessage);
     }
   };
 
@@ -374,7 +434,7 @@ export const CashProvider = ({ children }) => {
         user: 'Cajero Demo',
       };
       
-      const docRef = await addDoc(collection(db, 'expenses'), expense);
+      const docRef = await addDoc(collection(db, `users/${user.uid}/expenses`), expense);
       addMovement('expense', expense.amount, `Egreso: ${expense.category}`, { paymentType: expense.paymentType });
       
       return { id: docRef.id, ...expense };

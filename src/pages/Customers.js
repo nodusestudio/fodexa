@@ -82,14 +82,19 @@ const Customers = () => {
     setShowDetail(true);
   };
 
-  const handleSave = (customerData) => {
-    if (editingCustomer) {
-      updateCustomer(editingCustomer.id, customerData);
-    } else {
-      addCustomer(customerData);
+  const handleSave = async (customerData) => {
+    try {
+      if (editingCustomer) {
+        await updateCustomer(editingCustomer.id, customerData);
+      } else {
+        await addCustomer(customerData);
+      }
+      setShowForm(false);
+      setEditingCustomer(null);
+    } catch (error) {
+      console.error('❌ Error guardando cliente:', error);
+      alert('❌ Error al guardar cliente: ' + error.message);
     }
-    setShowForm(false);
-    setEditingCustomer(null);
   };
 
   const handleExport = () => {

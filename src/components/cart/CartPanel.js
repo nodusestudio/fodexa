@@ -168,21 +168,15 @@ const CartPanel = ({ orderType, selectedTable, deliveryData: deliveryDataProp, c
 				console.log('✅ Orden guardada:', savedOrder);
 			}
 			
-			// ✅ Si es domicilio, crear TAMBIÉN el ticket para que aparezca en la sección de Domicilios
-			if (orderType === 'delivery') {
-				const ticketData = {
-					...savedOrder,
-					id: savedOrder.id,
-					type: 'delivery',
-					ticketNumber: savedOrder.ticketNumber || `DOM-${Date.now().toString().slice(-6)}`,
-					deliveryStatus: 'solicitar-domi',
-					createdAt: new Date().toISOString(),
-					deliveryData: deliveryData,
-					customer: deliveryData,
-				};
-				console.log('📦 Creando ticket automáticamente:', ticketData);
-				createTicket(ticketData);
-			}
+			// ✅ Crear ticket para TODAS las órdenes (no solo delivery)
+			const ticketData = {
+				...savedOrder,
+				id: savedOrder.id,
+				ticketNumber: savedOrder.ticketNumber || `TKT-${Date.now().toString().slice(-6)}`,
+				createdAt: new Date().toISOString(),
+			};
+			console.log('📦 Creando ticket automáticamente:', ticketData);
+			createTicket(ticketData);
 			
 			clearCart();
 			clearCurrentOrder();

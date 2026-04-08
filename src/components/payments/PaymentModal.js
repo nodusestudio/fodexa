@@ -71,6 +71,9 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
   const [selectedTypes, setSelectedTypes] = useState(['cash']);
   const [amounts, setAmounts] = useState({ cash: total });
   const [success, setSuccess] = useState(false);
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [paymentError, setPaymentError] = useState(null);
+  const [paymentRetryCount, setPaymentRetryCount] = useState(0);
   const [transferType, setTransferType] = useState(null);
   const [cardType, setCardType] = useState(null);
   const items = orderData?.items || [];
@@ -252,199 +255,208 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
       return;
     }
     
+    // Mostrar spinner de carga
+    setPaymentLoading(true);
+    setPaymentError(null);
+    
     console.log('🛒 [PAGO] Iniciando processamiento de pago...');
     console.log('  Orden ID:', orderData.id);
     console.log('  Tipo:', orderData.type);
     console.log('  Total:', total);
     
-    // Construir paymentMethods desde selectedTypes y amounts
-    const finalPaymentMethods = selectedTypes.map(key => {
-      const amount = parseFloat(amounts[key]) || 0;
-      const method = {
-        type: key === 'transfer' ? 'transfer' : key,
-        amount: amount,
-        change: key === 'cash' ? amount - total : 0
-      };
-      
-      // Agregar subtipo de transferencia si aplica
-      if (key === 'transfer' && transferType) {
-        method.transferType = transferType; // 'nequi' o 'bancolombia'
-      }
-      
-      // Agregar subtipo de tarjeta si aplica
-      if (key === 'card' && cardType) {
-        method.cardType = cardType; // 'visa', 'mastercard', 'amex', etc
-      }
-      
-      return method;
-    });
-
-    // Crear orden con múltiples métodos de pago
-    // Asegurar que los datos de cliente/delivery se pasen correctamente
-    let deliveryData = null;
-    if (orderData.type === 'delivery') {
-      deliveryData = orderData.deliveryData || orderData.customer || orderData.delivery || null;
-    }
-    
-    // Para domicilios pagados: status = 'waiting' (esperando domiciliario)
-    // Para otros: status = 'completed' (ya finalizado)
-    const orderStatus = orderData.type === 'delivery' ? 'waiting' : 'completed';
-    
-    const order = {
-      ...orderData,
-      subtotal,
-      total,
-      iva,
-      deliveryCost,
-      status: orderStatus,
-      paymentMethods: finalPaymentMethods,
-      paymentType: finalPaymentMethods.length === 1 ? finalPaymentMethods[0].type : 'mixed',
-      deliveryData,
-      customer: deliveryData, // for legacy/compatibility
-    };
-
-    // Calcular montos pagados por tipo ANTES de crear ticket
-    const pago_efectivo = finalPaymentMethods
-      .filter(m => m.type === 'cash')
-      .reduce((sum, m) => sum + m.amount, 0);
-    
-    const pago_digital = finalPaymentMethods
-      .filter(m => m.type === 'card' || m.type === 'transfer')
-      .reduce((sum, m) => sum + m.amount, 0);
-    
-    // Agregar datos de pago al order ANTES de crear ticket
-    // Obtener el tipo de transferencia si existe
-    const transferMethod = finalPaymentMethods.find(m => m.type === 'transfer');
-    const cardMethod = finalPaymentMethods.find(m => m.type === 'card');
-    
-    // Calcular cambio (solo en efectivo)
-    const cashMethod = finalPaymentMethods.find(m => m.type === 'cash');
-    const change = cashMethod ? Math.max(0, cashMethod.amount - total) : 0;
-    
-    const orderWithPayment = {
-      ...order,
-      pago_efectivo,
-      pago_digital,
-      change, // ✅ Agregar cambio
-      paymentType: finalPaymentMethods.length === 1 ? finalPaymentMethods[0].type : 'mixed',
-      transferType: transferMethod?.transferType || null, // Pasar el transferType explícitamente
-      cardType: cardMethod?.cardType || null, // Pasar el cardType explícitamente
-    };
-    
-    // Registrar en caja
-    if (isCashOpen) {
-      finalPaymentMethods.forEach(method => {
-        // Preparar descripción y metadata
-        let description = `Venta ${method.type} - Ticket #${Date.now().toString().slice(-6)}`;
-        const metadata = {
-          paymentType: method.type // IMPORTANTE: Guardar el tipo de pago
+    try {
+      // Construir paymentMethods desde selectedTypes y amounts
+      const finalPaymentMethods = selectedTypes.map(key => {
+        const amount = parseFloat(amounts[key]) || 0;
+        const method = {
+          type: key === 'transfer' ? 'transfer' : key,
+          amount: amount,
+          change: key === 'cash' ? amount - total : 0
         };
         
-        // Si es transferencia, agregar el subtipo a la descripción y metadata
-        if (method.type === 'transfer' && method.transferType) {
-          const transferTypeLabel = method.transferType === 'nequi' ? 'Nequi' : 'Bancolombia';
-          description = `Venta Transferencia ${transferTypeLabel} - Ticket #${Date.now().toString().slice(-6)}`;
-          metadata.transferType = method.transferType;
-          metadata.transferTypeLabel = transferTypeLabel;
+        // Agregar subtipo de transferencia si aplica
+        if (key === 'transfer' && transferType) {
+          method.transferType = transferType; // 'nequi' o 'bancolombia'
         }
         
-        // Si es tarjeta, agregar el subtipo a la descripción y metadata
-        if (method.type === 'card' && method.cardType) {
-          const cardTypeData = cardSubmethods.find(c => c.id === method.cardType);
-          const cardTypeLabel = cardTypeData?.label || method.cardType;
-          description = `Venta Tarjeta ${cardTypeLabel} - Ticket #${Date.now().toString().slice(-6)}`;
-          metadata.cardType = method.cardType;
-          metadata.cardTypeLabel = cardTypeLabel;
+        // Agregar subtipo de tarjeta si aplica
+        if (key === 'card' && cardType) {
+          method.cardType = cardType; // 'visa', 'mastercard', 'amex', etc
         }
         
-        addMovement('sale', method.amount, description, metadata);
+        return method;
       });
-    }
 
-    // Guardar ticket en local CON datos de pago incluidos desde el inicio
-    console.log('💾 [TICKET] Creando ticket con datos de pago:', {
-      pago_efectivo,
-      pago_digital,
-      type: orderData.type,
-    });
-    const newTicket = createTicket(orderWithPayment);
-    
-    // Actualizar orden en Firebase para persistir el estado
-    // ✅ IMPORTANTE: Esperar a que updateOrder se complete antes de continuar
-    if (orderData.id) {
-      const paymentType = finalPaymentMethods.length === 1 ? finalPaymentMethods[0].type : 'mixed';
-      
-      console.log('💾 [ORDEN] Actualizando orden con status:', orderStatus);
-      console.log('   ID de orden:', orderData.id);
-      console.log('   Tipo de orden:', orderData.type);
-      
-      try {
-        // ✅ ESPERAR a que se actualice en Firestore - Crítico para persistencia
-        // Construir objeto de actualización SIN campos undefined
-        const updateData = {
+      // ⏱️ TIMEOUT de 10 segundos para updateOrder en Firestore
+      const updateOrderPromise = (async () => {
+        let deliveryData = null;
+        if (orderData.type === 'delivery') {
+          deliveryData = orderData.deliveryData || orderData.customer || orderData.delivery || null;
+        }
+        
+        const orderStatus = orderData.type === 'delivery' ? 'waiting' : 'completed';
+        
+        const order = {
+          ...orderData,
+          subtotal,
+          total,
+          iva,
+          deliveryCost,
           status: orderStatus,
           paymentMethods: finalPaymentMethods,
-          paymentType: paymentType,
-          transferType: transferMethod?.transferType || null,
-          cardType: cardMethod?.cardType || null,
+          paymentType: finalPaymentMethods.length === 1 ? finalPaymentMethods[0].type : 'mixed',
+          deliveryData,
+          customer: deliveryData,
+        };
+
+        const pago_efectivo = finalPaymentMethods
+          .filter(m => m.type === 'cash')
+          .reduce((sum, m) => sum + m.amount, 0);
+        
+        const pago_digital = finalPaymentMethods
+          .filter(m => m.type === 'card' || m.type === 'transfer')
+          .reduce((sum, m) => sum + m.amount, 0);
+        
+        const transferMethod = finalPaymentMethods.find(m => m.type === 'transfer');
+        const cardMethod = finalPaymentMethods.find(m => m.type === 'card');
+        const cashMethod = finalPaymentMethods.find(m => m.type === 'cash');
+        const change = cashMethod ? Math.max(0, cashMethod.amount - total) : 0;
+        
+        const orderWithPayment = {
+          ...order,
           pago_efectivo,
           pago_digital,
-          change, // ✅ Guardar cambio en Firestore
+          change,
+          paymentType: finalPaymentMethods.length === 1 ? finalPaymentMethods[0].type : 'mixed',
+          transferType: transferMethod?.transferType || null,
+          cardType: cardMethod?.cardType || null,
         };
         
-        // Solo agregar deliveryData si es una orden de delivery y existe
-        if (orderData.type === 'delivery' && deliveryData) {
-          updateData.deliveryData = deliveryData;
+        // Registrar en caja
+        if (isCashOpen) {
+          finalPaymentMethods.forEach(method => {
+            let description = `Venta ${method.type} - Ticket #${Date.now().toString().slice(-6)}`;
+            const metadata = {
+              paymentType: method.type
+            };
+            
+            if (method.type === 'transfer' && method.transferType) {
+              const transferTypeLabel = method.transferType === 'nequi' ? 'Nequi' : 'Bancolombia';
+              description = `Venta Transferencia ${transferTypeLabel} - Ticket #${Date.now().toString().slice(-6)}`;
+              metadata.transferType = method.transferType;
+              metadata.transferTypeLabel = transferTypeLabel;
+            }
+            
+            if (method.type === 'card' && method.cardType) {
+              const cardTypeData = cardSubmethods.find(c => c.id === method.cardType);
+              const cardTypeLabel = cardTypeData?.label || method.cardType;
+              description = `Venta Tarjeta ${cardTypeLabel} - Ticket #${Date.now().toString().slice(-6)}`;
+              metadata.cardType = method.cardType;
+              metadata.cardTypeLabel = cardTypeLabel;
+            }
+            
+            addMovement('sale', method.amount, description, metadata);
+          });
+        }
+
+        console.log('💾 [TICKET] Creando ticket con datos de pago:', {
+          pago_efectivo,
+          pago_digital,
+          type: orderData.type,
+        });
+        const newTicket = createTicket(orderWithPayment);
+        
+        if (orderData.id) {
+          const paymentType = finalPaymentMethods.length === 1 ? finalPaymentMethods[0].type : 'mixed';
+          
+          console.log('💾 [ORDEN] Actualizando orden con status:', orderStatus);
+          console.log('   ID de orden:', orderData.id);
+          
+          const updateData = {
+            status: orderStatus,
+            paymentMethods: finalPaymentMethods,
+            paymentType: paymentType,
+            transferType: transferMethod?.transferType || null,
+            cardType: cardMethod?.cardType || null,
+            pago_efectivo,
+            pago_digital,
+            change,
+          };
+          
+          if (orderData.type === 'delivery' && deliveryData) {
+            updateData.deliveryData = deliveryData;
+          }
+          
+          console.log('💾 [FIRESTORE] Datos a actualizar:', updateData);
+          console.log('⏳ [TIMEOUT] Esperando respuesta de Firestore (máx 10 segundos)...');
+          
+          // ⏱️ Timeout con Promise.race
+          await Promise.race([
+            updateOrder(orderData.id, updateData),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Timeout: Firestore tardó más de 10 segundos. Verifique su conexión o intente de nuevo.')), 10000)
+            )
+          ]);
+          
+          console.log('✅ [ÉXITO] Orden actualizada en Firestore con status:', orderStatus);
+        } else {
+          console.warn('⚠️ La orden no tiene ID - No se puede actualizar en Firestore');
+          throw new Error('La orden no tiene ID para guardar');
         }
         
-        console.log('💾 [FIRESTORE] Datos a actualizar:', updateData);
+        console.log('🎉 [PAGO EXITOSO COMPLETO] Orden con ID:', orderData.id, 'Status:', orderStatus);
         
-        await updateOrder(orderData.id, updateData);
-        console.log('✅ [ÉXITO] Orden actualizada en Firestore con status:', orderStatus);
-      } catch (error) {
-        console.error('❌ [CRÍTICO] Error al actualizar orden en Firestore:', error);
-        console.error('   El pago se procesó pero la orden NO se guardó correctamente');
-        console.error('   Detalles:', error.message);
+        setSuccess(true);
+        setPaymentLoading(false);
         
-        // Mostrar error crítico al usuario
-        alert(`⚠️ ERROR CRÍTICO:\n\nEl pago se realizó pero hay un problema guardando la orden en la base de datos.\n\nDetalles: ${error.message}\n\nContacte al administrador.`);
-        
-        // No continuar con el flujo de éxito
-        console.log('⏸️ Deteniendo flujo de pago - El usuario debe reintentar');
-        return;
-      }
-    } else {
-      console.warn('⚠️ La orden no tiene ID - No se puede actualizar en Firestore');
-      alert('⚠️ ADVERTENCIA: La orden no tiene ID para guardar. Contacte al administrador.');
-      return;
-    }
-    
-    console.log('✅ Ticket + Orden actualizados correctamente:', {
-      ticketId: newTicket?.id,
-      pago_efectivo,
-      pago_digital,
-      type: orderData.type,
-      newStatus: orderStatus,
-    });
-    
-    console.log('🎉 [PAGO EXITOSO COMPLETO] Orden con ID:', orderData.id, 'Status:', orderStatus);
-    
-    setSuccess(true);
-    
-    // ✅ Disparar AUTOMÁTICAMENTE el ticket de venta para imprimir
-    setTimeout(() => {
-      window.dispatchEvent(new CustomEvent('orderSaved', { 
-        detail: {
-          ...orderWithPayment,
-          ticketType: 'customer', // Tipo de ticket: recibo de cliente
-          change: change // ✅ Pasar cambio
-        }
-      }));
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('orderSaved', { 
+            detail: {
+              ...orderWithPayment,
+              ticketType: 'customer',
+              change: change
+            }
+          }));
+          
+          setSuccess(false);
+          onClose();
+          onComplete && onComplete(finalPaymentMethods);
+        }, 1000);
+
+        return true;
+      })();
+
+      await updateOrderPromise;
+
+    } catch (error) {
+      console.error('❌ [PAGO ERROR] Fallo durante procesamiento de pago:', error);
       
-      setSuccess(false);
-      onClose();
-      onComplete && onComplete(finalPaymentMethods);
-    }, 1000);
+      // Detectar tipo de error
+      let errorTitle = '❌ Error Procesando Pago';
+      let errorMessage = error.message || 'Intente nuevamente o contacte soporte.';
+      
+      if (error.message?.includes('Timeout') || error.message?.includes('timeout') || error.message?.includes('tardó más de 10 segundos')) {
+        errorTitle = '⏱️ Timeout - Firestore No Responde';
+        errorMessage = 'La base de datos tardó demasiado. La app pasó a modo offline para que puedas continuar.';
+      } else if (error.message?.includes('Quota exceeded') || error.message?.includes('resource-exhausted') || error.message?.includes('code-resource-exhausted')) {
+        errorTitle = '💰 Cuota Excedida';
+        errorMessage = 'Firebase alcanzó su cuota. La app usa modo offline para no detener ventas.';
+      } else if (error.message?.includes('Permission denied')) {
+        errorTitle = '🔒 Permiso Denegado';
+        errorMessage = 'No tienes permiso para guardar esta orden. Contacta al administrador.';
+      } else if (error.message?.includes('no tiene ID')) {
+        errorTitle = '⚠️ Dato Incompleto';
+        errorMessage = 'La orden no está completa. Regresa e intenta de nuevo.';
+      }
+      
+      setPaymentError({
+        title: errorTitle,
+        message: errorMessage,
+        fullError: error.message
+      });
+      
+      setPaymentLoading(false);
+    }
   };
 
   const generateWhatsAppReceipt = (order) => {
@@ -633,24 +645,88 @@ function PaymentModal({ isOpen, onClose, orderData, onComplete }) {
           );
         })}
         {/* Confirmar pago */}
-        <button
-          className="bg-primary-600 hover:bg-primary-700 text-white py-3 px-6 rounded-xl w-full font-bold text-lg mt-2 disabled:opacity-60"
-          onClick={handleCompletePayment}
-          disabled={
-            paymentTypes.length === 0 || 
-            selectedTypes.length === 0 || 
-            selectedTypes.some(key => !amounts[key] || parseFloat(amounts[key]) <= 0) || 
-            !hasEnoughPayment || 
-            (selectedTypes.includes('transfer') && transferSubmethods.length > 0 && !transferType) ||
-            (selectedTypes.includes('card') && cardSubmethods.length > 0 && !cardType)
-          }
-        >
-          {selectedTypes.length > 1 ? 'Confirmar Pago Dividido' : 'Confirmar Pago'}
-        </button>
+        {!paymentError ? (
+          <button
+            className="bg-primary-600 hover:bg-primary-700 text-white py-3 px-6 rounded-xl w-full font-bold text-lg mt-2 disabled:opacity-60 flex items-center justify-center gap-2 transition-all"
+            onClick={handleCompletePayment}
+            disabled={
+              paymentLoading ||
+              paymentTypes.length === 0 || 
+              selectedTypes.length === 0 || 
+              selectedTypes.some(key => !amounts[key] || parseFloat(amounts[key]) <= 0) || 
+              !hasEnoughPayment || 
+              (selectedTypes.includes('transfer') && transferSubmethods.length > 0 && !transferType) ||
+              (selectedTypes.includes('card') && cardSubmethods.length > 0 && !cardType)
+            }
+          >
+            {paymentLoading && (
+              <>
+                <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
+                <span>Procesando...</span>
+              </>
+            )}
+            {!paymentLoading && (
+              selectedTypes.length > 1 ? 'Confirmar Pago Dividido' : 'Confirmar Pago'
+            )}
+          </button>
+        ) : (
+          // ⚠️ UI de Error
+          <div className="mt-4 space-y-3 sm:space-y-4">
+            <div className="bg-red-50 dark:bg-red-900 dark:bg-opacity-30 border border-red-200 dark:border-red-700 rounded-lg p-3 sm:p-4">
+              <div className="flex items-start gap-2 sm:gap-3">
+                <div className="text-xl sm:text-2xl flex-shrink-0">⚠️</div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-red-800 dark:text-red-300 text-sm sm:text-base mb-1">
+                    {paymentError.title}
+                  </h3>
+                  <p className="text-red-700 dark:text-red-400 text-xs sm:text-sm mb-2">
+                    {paymentError.message}
+                  </p>
+                  <p className="text-xs text-red-600 dark:text-red-500 font-mono bg-red-100 dark:bg-red-900 dark:bg-opacity-50 px-2 py-1 rounded">
+                    Detalles: {paymentError.fullError}
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Tips */}
+            <div className="bg-blue-50 dark:bg-blue-900 dark:bg-opacity-30 border border-blue-200 dark:border-blue-700 rounded-lg p-3 sm:p-4">
+              <p className="text-xs sm:text-sm font-semibold text-blue-800 dark:text-blue-300 mb-2">💡 Qué hacer:</p>
+              <ul className="text-xs sm:text-sm text-blue-700 dark:text-blue-400 space-y-1 list-disc list-inside">
+                <li>Verifica tu conexión a internet</li>
+                <li>Aguarda unos segundos e intenta de nuevo</li>
+                <li>Si el problema persiste, usa MODO LOCAL (datos se guardan localmente)</li>
+              </ul>
+            </div>
+
+            {/* Botones de acción */}
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+              <button
+                onClick={() => {
+                  setPaymentError(null);
+                  setPaymentRetryCount(paymentRetryCount + 1);
+                }}
+                className="flex-1 bg-orange-600 hover:bg-orange-700 text-white py-2 sm:py-3 px-4 sm:px-6 rounded-lg font-semibold transition-colors text-sm sm:text-base"
+              >
+                🔄 Reintentar ({paymentRetryCount + 1})
+              </button>
+              <button
+                onClick={() => {
+                  setPaymentError(null);
+                  onClose();
+                }}
+                className="flex-1 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-700 text-gray-900 dark:text-white py-2 sm:py-3 px-4 sm:px-6 rounded-lg font-semibold transition-colors text-sm sm:text-base"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Mensaje de éxito */}
         {success && (
-          <div className="mt-4 text-center text-green-600 font-bold text-lg animate-pulse">
-            ¡Pago realizado con éxito!
+          <div className="mt-4 text-center text-green-600 dark:text-green-400 font-bold text-lg animate-pulse">
+            ✅ ¡Pago realizado con éxito!
           </div>
         )}
       </div>

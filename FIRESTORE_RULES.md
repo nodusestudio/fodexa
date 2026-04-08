@@ -61,6 +61,14 @@ service cloud.firestore {
       }
     }
     
+    // ========== COLECCIONES A NIVEL RAÍZ ==========
+    
+    // Colección: savedCarts (Carritos guardados por usuario)
+    match /savedCarts/{document=**} {
+      allow read, write: if request.auth.uid != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth.uid != null && request.resource.data.userId == request.auth.uid;
+    }
+    
     // ========== OTRAS COLECCIONES PÚBLICAS ==========
     
     // Configuración global (opcional, solo lectura)

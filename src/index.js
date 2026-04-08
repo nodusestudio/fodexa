@@ -13,17 +13,25 @@ root.render(
   </React.StrictMode>
 );
 
-// Registrar Service Worker para PWA (instalable en devices)
+// Registrar Service Worker solo en producción para evitar cache vieja en desarrollo.
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker
-      .register('/service-worker.js')
-      .then((registration) => {
-        console.log('✅ Service Worker registrado exitosamente:', registration);
-      })
-      .catch((error) => {
-        console.log('❌ Error registrando Service Worker:', error);
-      });
+    if (process.env.NODE_ENV === 'production') {
+      navigator.serviceWorker
+        .register('/service-worker.js')
+        .then((registration) => {
+          console.log('✅ Service Worker registrado exitosamente:', registration);
+        })
+        .catch((error) => {
+          console.log('❌ Error registrando Service Worker:', error);
+        });
+      return;
+    }
+
+    // En desarrollo, desregistrar SW previo para que siempre cargue cambios recientes.
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      registrations.forEach((registration) => registration.unregister());
+    });
   });
 }
 

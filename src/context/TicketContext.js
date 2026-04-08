@@ -35,9 +35,11 @@ export const TicketProvider = ({ children }) => {
             transferType: data.transferType || null,
           };
         });
-        // Agregar tickets propios + demo
-        const demoTickets = tickets.filter(t => t.userId === 'shared');
-        setTickets([...ticketsData, ...demoTickets]);
+        // Agregar tickets propios + demo - usa prev en setTickets
+        setTickets(prev => {
+          const demoTickets = prev.filter(t => t.userId === 'shared');
+          return [...ticketsData, ...demoTickets];
+        });
       },
       (error) => {
         console.warn('⚠️ Error cargando tickets:', error.message);
@@ -61,6 +63,30 @@ export const TicketProvider = ({ children }) => {
   };
 
   const createTicket = (orderData) => {
+    // ✅ Protección: si no hay items, retornar sin error
+    if (!orderData || !orderData.items || orderData.items.length === 0) {
+      console.warn('⚠️ createTicket: No hay items, creando ticket vacío');
+      // Retornar un ticket mínimo
+      const emptyTicket = {
+        id: Date.now().toString(),
+        userId: user?.uid || 'anonymous',
+        ticketNumber: generateTicketNumber(),
+        orderId: orderData?.id || 'unknown',
+        orderType: orderData?.type || 'unknown',
+        ticketType: orderData?.ticketType || 'customer',
+        items: [],
+        subtotal: 0,
+        iva: 0,
+        deliveryCost: orderData?.deliveryCost || 0,
+        total: orderData?.total || 0,
+        paymentType: orderData?.paymentType || 'pending',
+        status: 'completed',
+        createdAt: new Date(),
+      };
+      setTickets(prev => [...prev, emptyTicket]);
+      return emptyTicket;
+    }
+
     // Calcular subtotal correctamente: suma de (precio * cantidad) de productos + suma de (precio de addons * cantidad)
     const subtotal = orderData.items.reduce((sum, item) => {
       const base = (parseFloat(item.price) || 0) * (item.quantity || 1);

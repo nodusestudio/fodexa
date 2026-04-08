@@ -1,6 +1,6 @@
 {
   "name": "pos-app",
-  "version": "44.00",
+  "version": "97.8.0",
   "private": true,
   "dependencies": {
     "chart.js": "^4.5.1",

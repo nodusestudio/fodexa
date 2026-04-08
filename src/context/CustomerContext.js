@@ -31,10 +31,8 @@ export const CustomerProvider = ({ children }) => {
     setLoading(true);
 
     // Crear una búsqueda: "dame todos los clientes de este usuario"
-    const q = query(
-      collection(db, `users/${user.uid}/customers`),
-      where('userId', '==', user.uid)
-    );
+    // Nota: No necesitamos where() porque ya estamos en la subcollection del usuario
+    const q = query(collection(db, `users/${user.uid}/customers`));
 
     // Escuchar cambios en tiempo real
     const unsubscribe = onSnapshot(q, (snapshot) => {

@@ -159,14 +159,13 @@ export const ReportProvider = ({ children }) => {
   // Últimos pedidos
   const getRecentOrders = (limit = 10) => {
     if (!tickets || tickets.length === 0) return [];
-    return tickets
-      .slice()
-      .reverse()
-      .slice(0, limit)
-      .map((ticket, idx) => ({
-        ...ticket,
-        ticketNumber: `#${String(tickets.length - idx).padStart(5, '0')}`,
-      }));
+    // Tomar los últimos N tickets (ya vienen ordenados por createdAt DESC)
+    const recentTickets = tickets.slice(0, limit);
+    return recentTickets.map((ticket) => ({
+      ...ticket,
+      // Usar ticketNumber original si existe, sino usar el ID
+      ticketNumber: ticket.ticketNumber || ticket.id?.substring(0, 8) || 'SN',
+    }));
   };
 
   // Obtener pedidos por tipo

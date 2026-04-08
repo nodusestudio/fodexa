@@ -1,13 +1,15 @@
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 import ProductCard from './ProductCard';
 
 
 const ProductGrid = ({ products, onAddToCart, searchQuery, category }) => {
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes((searchQuery || '').toLowerCase());
-    const matchesCategory = category === 'all' || product.category === category;
-    return matchesSearch && matchesCategory;
-  });
+  const filteredProducts = useMemo(() => {
+    return products.filter(product => {
+      const matchesSearch = product.name.toLowerCase().includes((searchQuery || '').toLowerCase());
+      const matchesCategory = category === 'all' || product.category === category;
+      return matchesSearch && matchesCategory;
+    });
+  }, [products, searchQuery, category]);
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-3 md:gap-4 lg:gap-4">
@@ -22,4 +24,4 @@ const ProductGrid = ({ products, onAddToCart, searchQuery, category }) => {
   );
 };
 
-export default ProductGrid;
+export default memo(ProductGrid);
