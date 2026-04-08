@@ -9,6 +9,7 @@ const CashContext = createContext();
 export const CashProvider = ({ children }) => {
   const auth = useAuth();
   const user = auth?.user;
+  const uid = user?.uid;
   const [cashSession, setCashSession] = useState(null);
   const [expenses, setExpenses] = useState([]);
   const [cashMovements, setCashMovements] = useState([]);
@@ -18,6 +19,9 @@ export const CashProvider = ({ children }) => {
   const isProcessingExpensesRef = useRef(false); // 🛡️ Anti-reentrada gastos
   const isProcessingHistoryRef = useRef(false);  // 🛡️ Anti-reentrada historial
   const isProcessingSessionRef = useRef(false);  // 🛡️ Anti-reentrada sesión
+  const lastProcessedExpensesRef = useRef('');   // 🧱 Último payload de gastos
+  const lastProcessedHistoryRef = useRef('');    // 🧱 Último payload de historial
+  const lastProcessedSessionRef = useRef('');    // 🧱 Último payload de sesión
 
   // Calcular gastos automáticos de domicilios
   const calculateDeliveryExpenses = (tickets) => {
@@ -54,16 +58,16 @@ export const CashProvider = ({ children }) => {
 
   // Cargar gastos desde Firestore en tiempo real
   useEffect(() => {
-    if (!user) {
-      setExpenses([]);
-      setLoading(false);
+    if (!uid) {
+      setExpenses((prev) => (prev.length ? [] : prev));
+      setLoading((prev) => (prev ? false : prev));
       return;
     }
 
-    setLoading(true);
+    setLoading((prev) => (prev ? prev : true));
 
     const q = query(
-      collection(db, `users/${user.uid}/expenses`),
+      collection(db, `users/${uid}/expenses`),
       orderBy('date', 'desc')
     );
 
@@ -72,38 +76,50 @@ export const CashProvider = ({ children }) => {
       (snapshot) => {
         if (isProcessingExpensesRef.current) return;
         isProcessingExpensesRef.current = true;
-        const expensesData = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          date: doc.data().date?.toDate?.() || doc.data().date,
-        }));
-        setExpenses(prev => {
-          if (JSON.stringify(prev) === JSON.stringify(expensesData)) return prev;
-          return expensesData;
-        });
-        setLoading(false);
-        isProcessingExpensesRef.current = false;
+        try {
+          const expensesData = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            date: doc.data().date?.toDate?.() || doc.data().date,
+          }));
+          const incomingStr = JSON.stringify(expensesData);
+
+          if (lastProcessedExpensesRef.current === incomingStr) {
+            setLoading((prev) => (prev ? false : prev));
+            return;
+          }
+
+          lastProcessedExpensesRef.current = incomingStr;
+          setExpenses(prev => {
+            if (JSON.stringify(prev) === incomingStr) return prev;
+            return expensesData;
+          });
+          setLoading((prev) => (prev ? false : prev));
+        } finally {
+          isProcessingExpensesRef.current = false;
+        }
       },
       (error) => {
+        isProcessingExpensesRef.current = false;
         console.warn('⚠️ Error cargando gastos:', error.message);
         // Para usuarios autenticados: arreglo vacío (sin fallback a mock)
-        setExpenses([]);
-        setLoading(false);
+        setExpenses((prev) => (prev.length ? [] : prev));
+        setLoading((prev) => (prev ? false : prev));
       }
     );
 
     return () => unsubscribe();
-  }, [user?.uid]);
+  }, [uid]);
 
   // ✅ Cargar sesiones cerradas desde Firestore (Libro Contable)
   useEffect(() => {
-    if (!user) {
-      setSessionHistory([]);
+    if (!uid) {
+      setSessionHistory((prev) => (prev.length ? [] : prev));
       return;
     }
 
     const q = query(
-      collection(db, `users/${user.uid}/cashSessions`),
+      collection(db, `users/${uid}/cashSessions`),
       orderBy('closeDate', 'desc')
     );
 
@@ -112,35 +128,47 @@ export const CashProvider = ({ children }) => {
       (snapshot) => {
         if (isProcessingHistoryRef.current) return;
         isProcessingHistoryRef.current = true;
-        const sessions = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          closeDate: doc.data().closeDate?.toDate?.() || new Date(doc.data().closeDate),
-          openDate: doc.data().openDate?.toDate?.() || new Date(doc.data().openDate),
-        }));
-        setSessionHistory(prev => {
-          if (JSON.stringify(prev) === JSON.stringify(sessions)) return prev;
-          return sessions;
-        });
-        isProcessingHistoryRef.current = false;
+        try {
+          const sessions = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            closeDate: doc.data().closeDate?.toDate?.() || new Date(doc.data().closeDate),
+            openDate: doc.data().openDate?.toDate?.() || new Date(doc.data().openDate),
+          }));
+          const incomingStr = JSON.stringify(sessions);
+
+          if (lastProcessedHistoryRef.current === incomingStr) {
+            return;
+          }
+
+          lastProcessedHistoryRef.current = incomingStr;
+          setSessionHistory(prev => {
+            if (JSON.stringify(prev) === incomingStr) return prev;
+            return sessions;
+          });
+        } finally {
+          isProcessingHistoryRef.current = false;
+        }
       },
       (error) => {
+        isProcessingHistoryRef.current = false;
         console.warn('⚠️ Error cargando sesiones cerradas:', error.message);
       }
     );
 
     return () => unsubscribe();
-  }, [user?.uid]);
+  }, [uid]);
 
   // ✅ RESTAURAR SESIÓN ABIERTA al recargar página (escucha permanente)
   // Usa un listener continuo para detectar cuando se abre/cierra caja
   useEffect(() => {
-    if (!user) {
+    if (!uid) {
+      setCashSession((prev) => (prev === null ? prev : null));
       return; // Usuario no autenticado
     }
 
     const q = query(
-      collection(db, `users/${user.uid}/cashSessions`),
+      collection(db, `users/${uid}/cashSessions`),
       where('status', '==', 'open'),
       orderBy('openDate', 'desc')
     );
@@ -151,34 +179,49 @@ export const CashProvider = ({ children }) => {
         if (isProcessingSessionRef.current) return;
         isProcessingSessionRef.current = true;
 
-        if (snapshot.empty) {
-          setCashSession((prev) => (prev === null ? null : null));
+        try {
+          if (snapshot.empty) {
+            const incomingStr = 'null';
+            if (lastProcessedSessionRef.current === incomingStr) {
+              return;
+            }
+            lastProcessedSessionRef.current = incomingStr;
+            setCashSession((prev) => (prev === null ? prev : null));
+            return;
+          }
+
+          const openSession = snapshot.docs[0].data();
+          const incomingId = snapshot.docs[0].id;
+          const restoredSession = {
+            ...openSession,
+            id: incomingId,
+            openDate: openSession.openDate?.toDate?.() || new Date(openSession.openDate),
+          };
+
+          const incomingStr = JSON.stringify(restoredSession);
+          if (lastProcessedSessionRef.current === incomingStr) {
+            return;
+          }
+
+          lastProcessedSessionRef.current = incomingStr;
+          // Guardia: no actualizar si ya es la misma sesión (mismo ID y estado)
+          setCashSession((prev) => {
+            if (prev?.id === incomingId && prev?.status === restoredSession.status) return prev;
+            if (JSON.stringify(prev) === incomingStr) return prev;
+            return restoredSession;
+          });
+        } finally {
           isProcessingSessionRef.current = false;
-          return;
         }
-
-        const openSession = snapshot.docs[0].data();
-        const incomingId = snapshot.docs[0].id;
-        const restoredSession = {
-          ...openSession,
-          id: incomingId,
-          openDate: openSession.openDate?.toDate?.() || new Date(openSession.openDate),
-        };
-
-        // Guardia: no actualizar si ya es la misma sesión (mismo ID y estado)
-        setCashSession((prev) => {
-          if (prev?.id === incomingId && prev?.status === restoredSession.status) return prev;
-          return restoredSession;
-        });
-        isProcessingSessionRef.current = false;
       },
       (error) => {
+        isProcessingSessionRef.current = false;
         console.warn('⚠️ Error buscando sesión abierta:', error.message);
       }
     );
 
     return () => unsubscribe();
-  }, [user?.uid]);
+  }, [uid]);
 
   // Abrir caja
   const openCash = async (cashData) => {

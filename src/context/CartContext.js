@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useMemo, useEffect } from 'react';
+import React, { createContext, useContext, useReducer, useMemo, useEffect, useRef } from 'react';
 import { collection, addDoc, doc, updateDoc, deleteDoc, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useAuth } from './AuthContext';
@@ -90,28 +90,55 @@ function cartReducer(state, action) {
 export function CartProvider({ children }) {
   const auth = useAuth();
   const user = auth?.user;
+  const uid = user?.uid;
   const [state, dispatch] = useReducer(cartReducer, initialState);
+  const savedCartsRef = useRef([]);
+  const isProcessingSavedCartsRef = useRef(false);
+  const lastProcessedSavedCartsRef = useRef('');
+
+  savedCartsRef.current = state.savedCarts;
 
   // Sincronizar carritos guardados desde Firestore
   useEffect(() => {
-    if (!user) {
-      dispatch({ type: 'SET_SAVED_CARTS', payload: [] });
+    if (!uid) {
+      if (savedCartsRef.current.length) {
+        dispatch({ type: 'SET_SAVED_CARTS', payload: [] });
+      }
+      lastProcessedSavedCartsRef.current = '';
       return;
     }
 
-    const q = query(collection(db, 'savedCarts'), where('userId', '==', user.uid));
+    const q = query(collection(db, 'savedCarts'), where('userId', '==', uid));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const carts = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      dispatch({ type: 'SET_SAVED_CARTS', payload: carts });
+      if (isProcessingSavedCartsRef.current) return;
+      isProcessingSavedCartsRef.current = true;
+
+      try {
+        const carts = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        const incomingStr = JSON.stringify(carts);
+        if (
+          lastProcessedSavedCartsRef.current === incomingStr ||
+          JSON.stringify(savedCartsRef.current) === incomingStr
+        ) {
+          return;
+        }
+
+        lastProcessedSavedCartsRef.current = incomingStr;
+        dispatch({ type: 'SET_SAVED_CARTS', payload: carts });
+      } finally {
+        isProcessingSavedCartsRef.current = false;
+      }
     }, (error) => {
+      isProcessingSavedCartsRef.current = false;
       console.error('Error fetching saved carts:', error);
     });
 
     return unsubscribe;
-  }, [user]);
+  }, [uid]);
 
   const addItem = (item) => {
     dispatch({ type: 'ADD_ITEM', payload: item });

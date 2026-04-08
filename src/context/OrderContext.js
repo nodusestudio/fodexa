@@ -157,6 +157,7 @@ export const OrderProvider = ({ children }) => {
   const networkDisabledRef = useRef(false);
   const offlineActivatedRef = useRef(false);
   const isProcessingRef = useRef(false); // 🛡️ Bandera anti-reentrada en onSnapshot
+  const lastProcessedDataRef = useRef(''); // 🧱 Bloquea payloads idénticos consecutivos
 
   // 🔒 Freno de mano: evita re-inicialización cuando otros contextos cambian
   const isInitialSyncDoneRef = useRef(false);
@@ -203,6 +204,7 @@ export const OrderProvider = ({ children }) => {
     tablesLoadedRef.current = false;
     isInitialSyncDoneRef.current = false;
     isProcessingRef.current = false;
+    lastProcessedDataRef.current = '';
   }, [uid]);
 
   // 🪑 EFECTO 0: Cargar mesas desde Firestore (SE EJECUTA UNA SOLA VEZ)
@@ -365,7 +367,9 @@ export const OrderProvider = ({ children }) => {
         unsubscribeOrdersRef.current = null;
       }
 
-      fallbackToLocalMode();
+      setTimeout(() => {
+        fallbackToLocalMode();
+      }, 0);
     };
 
     if (offlinePersisted) {
@@ -392,61 +396,71 @@ export const OrderProvider = ({ children }) => {
           (snapshot) => {
           if (isProcessingRef.current) return;
           isProcessingRef.current = true;
-          retryCountRef.current = 0;
-          offlineActivatedRef.current = false;
-          setIsOfflineSafe(false);
-          setOrdersModeSafe('firestore');
-          writeOfflineModeFlag(uid, false);
 
-          if (retryTimeoutRef.current) {
-            clearTimeout(retryTimeoutRef.current);
-            retryTimeoutRef.current = null;
-          }
+          try {
+            retryCountRef.current = 0;
+            offlineActivatedRef.current = false;
+            setIsOfflineSafe(false);
+            setOrdersModeSafe('firestore');
+            writeOfflineModeFlag(uid, false);
 
-          const nextMap = new Map(ordersMapRef.current);
+            if (retryTimeoutRef.current) {
+              clearTimeout(retryTimeoutRef.current);
+              retryTimeoutRef.current = null;
+            }
 
-          snapshot.docChanges().forEach((change) => {
-            const docId = change.doc.id;
+            const nextMap = new Map(ordersMapRef.current);
 
-            if (change.type === 'removed') {
-              nextMap.delete(docId);
+            snapshot.docChanges().forEach((change) => {
+              const docId = change.doc.id;
+
+              if (change.type === 'removed') {
+                nextMap.delete(docId);
+                return;
+              }
+
+              const sanitized = sanitizeOrderFromDoc(change.doc);
+              if (!sanitized) {
+                nextMap.delete(docId);
+                return;
+              }
+
+              if (sanitized.clientTempId && String(sanitized.clientTempId).startsWith('offline_')) {
+                nextMap.delete(String(sanitized.clientTempId));
+              }
+
+              nextMap.set(docId, sanitized);
+            });
+
+            ordersMapRef.current = nextMap;
+            ordersHydratedRef.current = true;
+            isInitialSyncDoneRef.current = true; // 🔒 Inicialización completada
+
+            const activeOrders = Array.from(nextMap.values()).sort((a, b) => {
+              const aTime = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+              const bTime = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+              return bTime - aTime;
+            });
+
+            const activeOrdersStr = JSON.stringify(activeOrders);
+            if (
+              lastProcessedDataRef.current === activeOrdersStr ||
+              JSON.stringify(ordersRef.current) === activeOrdersStr
+            ) {
+              setLoadingSafe(false);
               return;
             }
 
-            const sanitized = sanitizeOrderFromDoc(change.doc);
-            if (!sanitized) {
-              nextMap.delete(docId);
-              return;
-            }
-
-            if (sanitized.clientTempId && String(sanitized.clientTempId).startsWith('offline_')) {
-              nextMap.delete(String(sanitized.clientTempId));
-            }
-
-            nextMap.set(docId, sanitized);
-          });
-
-          ordersMapRef.current = nextMap;
-          ordersHydratedRef.current = true;
-          isInitialSyncDoneRef.current = true; // 🔒 Inicialización completada
-
-          const activeOrders = Array.from(nextMap.values()).sort((a, b) => {
-            const aTime = a.timestamp ? new Date(a.timestamp).getTime() : 0;
-            const bTime = b.timestamp ? new Date(b.timestamp).getTime() : 0;
-            return bTime - aTime;
-          });
-
-          if (JSON.stringify(ordersRef.current) === JSON.stringify(activeOrders)) {
+            lastProcessedDataRef.current = activeOrdersStr;
+            setOrdersSafe(activeOrders);
+            writeOrdersToCache(uid, activeOrders);
             setLoadingSafe(false);
+          } finally {
             isProcessingRef.current = false;
-            return;
           }
-          setOrdersSafe(activeOrders);
-          writeOrdersToCache(uid, activeOrders);
-          setLoadingSafe(false);
-          isProcessingRef.current = false;
           },
           (error) => {
+          isProcessingRef.current = false;
           if (isQuotaOrTimeoutFirestoreError(error)) {
             activateOfflineMode(`error fatal Firestore: ${error?.code || error?.message || 'desconocido'}`);
             return;
